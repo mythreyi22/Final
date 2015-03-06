@@ -5,6 +5,12 @@ import shutil
 import sys
 from subprocess import call, Popen, PIPE
 
+# TODO:
+#  error and warning handling
+#  MSBuild support
+#  MSYS support
+#  findExe() for cmake and hg
+
 def parseYuvFilename(fname):
     '''requires the format: foo_bar_WxH_FPS[_10bit][_CSP].yuv'''
 
@@ -58,6 +64,7 @@ def parseY4MHeader(fname):
 
     return (width, height, fps, depth, csp)
 
+
 def cmake(srcrelpath, generator, buildfolder, *cmakeopts, **opts):
     # srcrelpath points to repo source/ folder containing CMakeLists.txt
     # buildfolder is the relative path to build folder
@@ -74,21 +81,9 @@ def cmake(srcrelpath, generator, buildfolder, *cmakeopts, **opts):
     if generator:
         cmds.append('-G')
         cmds.append(generator)
-        if 'cflags' in opts:
-            cmds.append('-DCMAKE_C_COMPILER_ARG1=' + opts['cflags'])
-            cmds.append('-DCMAKE_CXX_COMPILER_ARG1=' + opts['cflags'])
-
-    option_strings = {
-        'checked' : '-DCHECKED_BUILD=ON',
-        '16bpp'   : '-DHIGH_BIT_DEPTH=ON',
-        'debug'   : '-DCMAKE_BUILD_TYPE=Debug',
-        'reldeb'  : '-DCMAKE_BUILD_TYPE=RelWithDebInfo',
-        'tests'   : '-DENABLE_TESTS=ON',
-        'ppa'     : '-DENABLE_PPA=ON',
-        'stats'   : '-DDETAILED_CU_STATS=ON',
-        'static'  : '-DENABLE_SHARED=OFF',
-        'noasm'   : '-DENABLE_ASSEMBLY=OFF',
-    }
+        if 'CFLAGS' in opts:
+            cmds.append('-DCMAKE_C_COMPILER_ARG1=' + opts['CFLAGS'])
+            cmds.append('-DCMAKE_CXX_COMPILER_ARG1=' + opts['CFLAGS'])
 
     for opt in cmakeopts:
         if opt in option_strings:
@@ -96,62 +91,125 @@ def cmake(srcrelpath, generator, buildfolder, *cmakeopts, **opts):
         else:
             print 'Unknown cmake option', opt
 
-    pwd = os.getcwd()
-    try:
-        os.chdir(buildfolder)
-        if generator:
-            if 'CC' in opts:
-                os.environment['CC'] = opts['CC']
-            if 'CXX' in opts:
-                os.environment['CXX'] = opts['CXX']
+    if generator:
+        if 'CC' in opts:
+            os.environ['CC'] = opts['CC']
+        if 'CXX' in opts:
+            os.environ['CXX'] = opts['CXX']
 
-        proc = Popen(cmds, stdout=PIPE, stderr=PIPE)
-        stdout, stderr = proc.communicate()
-        # TODO error and warning handling
-    finally:
-        os.chdir(pwd)
+    proc = Popen(cmds, stdout=PIPE, stderr=PIPE, cwd=buildfolder)
+    stdout, stderr = proc.communicate()
 
 
 def gmake(buildfolder):
-    pwd = os.getcwd()
-    try:
-        os.chdir(buildfolder)
-        call(['make', '-j4'])
-        # TODO error and warning handling
-    finally:
-        os.chdir(pwd)
+    call(['make'], cwd=buildfolder)
 
 
-# parse command line arguments
-#x265source, generator, buildfolder = sys.argv[1:4]
-#cmakeopts = sys.argv[4:]
-#cmake(x265source, generator, buildfolder, *cmakeopts, rebuild=True)
-#gmake(buildfolder)
+def msysmake(buildfolder):
+    call(['make'], cwd=buildfolder)
 
-# TODO:
-#  error and warning handling
-#  MSBuild support
-#  MSYS support
-#  findExe() for cmake and hg
 
-# CMake generator strings
-# make    'Unix Makefiles',
-# vc9-32  'Visual Studio 9 2008',
-# vc9     'Visual Studio 9 2008 Win64',
-# vc10-32 'Visual Studio 10',
-# vc10    'Visual Studio 10 Win64',
-# vc11-32 'Visual Studio 11',
-# vc11    'Visual Studio 11 Win64',
-# vc12-32 'Visual Studio 12',
-# vc12    'Visual Studio 12 Win64',
+sdkenv_vars = ('include', 'lib', 'mssdk', 'path', 'regkeypath', 'sdksetupdir',
+               'sdktools', 'targetos', 'vcinstalldir', 'vcroot', 'vsregkeypath')
+
+def get_sdkenv(sdkpath, arch):
+    '''extract environment vars set by vcvarsall for compiler target'''
+    vcvarsall = os.path.abspath(sdkpath + r'..\VC\vcvarsall.bat')
+    print vcvarsall
+    p = Popen(r'cmd /e:on /v:on /c call "%s" %s && set' % (vcvarsall, arch),
+              shell=False, stdout=PIPE, stderr=PIPE)
+    out, err = p.communicate()
+    newenv = {}
+    for line in out.splitlines():
+        if '=' in line:
+            k, v = line.split('=', 1)
+            if k.lower() in sdkenv_vars:
+                newenv[k.upper()] = v
+    return newenv
+
+
+def msbuild(buildfolder, generator, cmakeopts):
+    '''Build visual studio solution using specified compiler'''
+    if '12' in generator:
+        envvar = 'VSSDK120Install'
+    elif '11' in generator:
+        envvar = 'VSSDK110Install'
+    elif '10' in generator:
+        envvar = 'VSSDK100Install'
+    else:
+        raise Exception('Unsupported VC version')
+    if 'Win64' in generator:
+        arch = 'x86_amd64'
+    else:
+        arch = 'x86'
+
+    if envvar not in os.environ:
+        raise Exception(envvar + ' not found in system environment')
+
+    sdkpath = os.environ[envvar]
+    sdkenv = get_sdkenv(sdkpath, arch)
+    env = os.environ.copy()
+    env.update(sdkenv)
+
+    target = '/p:Configuration='
+    if 'debug' in cmakeopts:
+        target += 'debug'
+    elif 'reldeb' in cmakeopts:
+        target += 'RelWithDebInfo'
+    else:
+        target += 'Release'
+
+    call(['msbuild', '/clp:disableconsolecolor', target, 'x265.sln'],
+         cwd=buildfolder, env=env)
+
+
+option_strings = {
+    'checked' : '-DCHECKED_BUILD=ON',
+    '16bpp'   : '-DHIGH_BIT_DEPTH=ON',
+    'debug'   : '-DCMAKE_BUILD_TYPE=Debug',
+    'reldeb'  : '-DCMAKE_BUILD_TYPE=RelWithDebInfo',
+    'tests'   : '-DENABLE_TESTS=ON',
+    'ppa'     : '-DENABLE_PPA=ON',
+    'stats'   : '-DDETAILED_CU_STATS=ON',
+    'static'  : '-DENABLE_SHARED=OFF',
+    'noasm'   : '-DENABLE_ASSEMBLY=OFF',
+    'nocolor' : '-DCMAKE_COLOR_MAKEFILE=OFF',
+    'crt'     : '-DSTATIC_LINK_CRT=ON',
+}
+
+my_x265_source = r'C:\mcw\x265\source'
 
 my_builds = {
-    # label    buildfolder, generator, cmake-options, flags
-    'gcc'   : ('default/', 'Unix Makefiles',   'static checked', {}),
-    'gcc32' : ('gcc32/',   'Unix Makefiles',   'static',    {'cflags':'-m32'}),
-    'gcc10' : ('gcc10/',   'Unix Makefiles',   '16bpp',     {}),
-    'llvm'  : ('llvm/',    'Unix Makefiles',   'checked',   {'CC':'clang', 'CXX':'clang++'}),
-    'vc11'  : ('vc11/',    'Visual Studio 11 Win64', 'checked',   {}),
-    'vc11D' : ('vc11D/',   'Visual Studio 11 Win64', 'debug static noasm ppa', {}),
-    'win32' : ('vc11x86/', 'Visual Studio 11', 'static ppa', {}),
+    # Examples
+    #'gcc'   : ('default/', 'Unix Makefiles',   'static checked', {}),
+    #'gcc32' : ('gcc32/',   'Unix Makefiles',   'static',    {'CFLAGS':'-m32'}),
+    #'gcc10' : ('gcc10/',   'Unix Makefiles',   '16bpp',     {}),
+    #'llvm'  : ('llvm/',    'Unix Makefiles',   'checked',   {'CC':'clang', 'CXX':'clang++'}),
+    #'vc11'  : ('vc11/',    'Visual Studio 11 Win64', 'checked',   {}),
+    #'vc11D' : ('vc11D/',   'Visual Studio 11 Win64', 'debug static noasm ppa', {}),
+    #'win32' : ('vc11x86/', 'Visual Studio 11', 'static ppa', {}),
+
+    'vc12'   : ('vc12/',                         # build folder
+                'Visual Studio 12 Win64',        # cmake generator
+                'tests checked static nocolor',  # cmake options
+                {}),                             # env overrides
+
+    'vc11'   : ('vc11/',                         # build folder
+                'Visual Studio 11 Win64',        # cmake generator
+                'tests checked crt reldeb',      # cmake options
+                {}),                             # env overrides
 }
+
+# build all requested versions of x265
+for key, value in my_builds.items():
+    buildfolder, generator, cmakeopts, opts = value
+    #opts['rebuild'] = True
+    cmake(my_x265_source, generator, buildfolder, *cmakeopts.split(), **opts)
+    if generator == 'Unix Makefiles':
+        gmake(buildfolder)
+    elif generator == 'MSYS Makefiles':
+        msysmake(buildfolder)
+    elif 'Visual Studio' in generator:
+        msbuild(buildfolder, generator, cmakeopts)
+    else:
+        raise NotImplemented()
