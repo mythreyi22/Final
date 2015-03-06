@@ -101,9 +101,11 @@ def cmake(srcrelpath, generator, buildfolder, *cmakeopts, **opts):
     stdout, stderr = proc.communicate()
 
 
-def gmake(buildfolder):
-    call(['make'], cwd=buildfolder)
-
+def gmake(buildfolder, **opts):
+    if 'mingw' in opts:
+        call(['mingw32-make'], cwd=buildfolder)
+    else:
+        call(['make'], cwd=buildfolder)
 
 
 sdkenv_vars = ('include', 'lib', 'mssdk', 'path', 'regkeypath', 'sdksetupdir',
@@ -112,7 +114,6 @@ sdkenv_vars = ('include', 'lib', 'mssdk', 'path', 'regkeypath', 'sdksetupdir',
 def get_sdkenv(sdkpath, arch):
     '''extract environment vars set by vcvarsall for compiler target'''
     vcvarsall = os.path.abspath(sdkpath + r'..\VC\vcvarsall.bat')
-    print vcvarsall
     p = Popen(r'cmd /e:on /v:on /c call "%s" %s && set' % (vcvarsall, arch),
               shell=False, stdout=PIPE, stderr=PIPE)
     out, err = p.communicate()
@@ -186,6 +187,11 @@ my_builds = {
     #'vc11D' : ('vc11D/',   'Visual Studio 11 Win64', 'debug static noasm ppa', {}),
     #'win32' : ('vc11x86/', 'Visual Studio 11', 'static ppa', {}),
 
+    'mingw'  : ('mingw/',
+                'MinGW Makefiles',
+                'tests',
+                {'mingw':r'C:\mcw\msys\mingw64\bin'}),
+
     'vc12'   : ('vc12/',                         # build folder
                 'Visual Studio 12 Win64',        # cmake generator
                 'tests checked static nocolor',  # cmake options
@@ -206,9 +212,14 @@ my_builds = {
 for key, value in my_builds.items():
     buildfolder, generator, cmakeopts, opts = value
     #opts['rebuild'] = True
+    if 'mingw' in opts:
+        # insert mingw compiler path into system search path
+        path = os.environ['PATH'].split(os.pathsep)
+        path.append(opts['mingw'])
+        os.environ['PATH'] = os.pathsep.join(path)
     cmake(my_x265_source, generator, buildfolder, *cmakeopts.split(), **opts)
     if 'Makefiles' in generator:
-        gmake(buildfolder)
+        gmake(buildfolder, **opts)
     elif 'Visual Studio' in generator:
         msbuild(buildfolder, generator, cmakeopts)
     else:
