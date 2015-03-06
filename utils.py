@@ -105,9 +105,6 @@ def gmake(buildfolder):
     call(['make'], cwd=buildfolder)
 
 
-def msysmake(buildfolder):
-    call(['make'], cwd=buildfolder)
-
 
 sdkenv_vars = ('include', 'lib', 'mssdk', 'path', 'regkeypath', 'sdksetupdir',
                'sdktools', 'targetos', 'vcinstalldir', 'vcroot', 'vsregkeypath')
@@ -198,6 +195,11 @@ my_builds = {
                 'Visual Studio 11 Win64',        # cmake generator
                 'tests checked crt reldeb',      # cmake options
                 {}),                             # env overrides
+
+    # note: these regression scripts can only build and run msys targets
+    # if they are invoked from within an msys shell, so it will generally need
+    # to be handled in a seperate configuration from VC builds.
+    #'msys'   : ('msys/', 'MSYS Makefiles', 'tests', {})
 }
 
 # build all requested versions of x265
@@ -205,10 +207,8 @@ for key, value in my_builds.items():
     buildfolder, generator, cmakeopts, opts = value
     #opts['rebuild'] = True
     cmake(my_x265_source, generator, buildfolder, *cmakeopts.split(), **opts)
-    if generator == 'Unix Makefiles':
+    if 'Makefiles' in generator:
         gmake(buildfolder)
-    elif generator == 'MSYS Makefiles':
-        msysmake(buildfolder)
     elif 'Visual Studio' in generator:
         msbuild(buildfolder, generator, cmakeopts)
     else:
