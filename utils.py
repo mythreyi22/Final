@@ -221,12 +221,20 @@ my_builds = {
 for key, value in my_builds.items():
     buildfolder, generator, cmakeopts, opts = value
     #opts['rebuild'] = True
+
     if 'mingw' in opts:
-        # insert mingw compiler path into system search path
+        # insert mingw compiler path into system search path if not present
         path = os.environ['PATH'].split(os.pathsep)
-        path.append(opts['mingw'])
-        os.environ['PATH'] = os.pathsep.join(path)
+        absmingw = os.path.abspath(opts['mingw'])
+        for p in path:
+            if os.path.abspath(p) == absmingw:
+                break
+        else:
+            path.append(absmingw)
+            os.environ['PATH'] = os.pathsep.join(path)
+
     cmake(my_x265_source, generator, buildfolder, *cmakeopts.split(), **opts)
+
     if 'Makefiles' in generator:
         gmake(buildfolder, **opts)
     elif 'Visual Studio' in generator:
