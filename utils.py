@@ -157,7 +157,16 @@ def msbuild(buildfolder, generator, cmakeopts):
     else:
         target += 'Release'
 
-    call(['msbuild', '/clp:disableconsolecolor', target, 'x265.sln'],
+    msbuild = 'msbuild'
+    for f in (r'C:\Program Files (x86)\MSBuild\12.0\Bin\MSBuild.exe',
+              r'C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe',
+              r'C:\Windows\Microsoft.NET\Framework\v3.5\MSBuild.exe'):
+        if os.path.exists(f):
+            msbuild = f
+            break
+    #TODO: check for msbuild in PATH, this is not robust enough
+
+    call([msbuild, '/clp:disableconsolecolor', target, 'x265.sln'],
          cwd=buildfolder, env=env)
 
 
