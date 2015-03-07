@@ -178,6 +178,101 @@ def cmake(generator, buildfolder, cmakeopts, **opts):
     proc = Popen(cmds, stdout=PIPE, stderr=PIPE, cwd=buildfolder, env=env)
     return proc.communicate()
 
+if os.name == 'nt':
+
+    # LOL Windows
+    # Use two threads to poll stdout and stderr and write into queues
+    # http://stackoverflow.com/questions/375427/non-blocking-read-on-a-subprocess-pipe-in-python
+
+    def enqueue_output(fd, q):
+        try: 
+            while True:
+                line = fd.readline()
+                if line:
+                    q.put(line)
+                else:
+                    return
+        except:
+            fd.close()
+
+    def async_poll_process(proc):
+        from Queue import Queue, Empty
+        from threading import Thread
+        qout = Queue()
+        tout = Thread(target=enqueue_output, args=(proc.stdout, qout))
+        tout.start()
+
+        qerr = Queue()
+        terr = Thread(target=enqueue_output, args=(proc.stderr, qerr))
+        terr.start()
+
+        out = []
+        errors = ''
+        while True:
+            # note that this doesn't guaruntee we get the stdout and stderr
+            # lines in the intended order, but they should be close
+            try:
+                while not qout.empty():
+                    line = qout.get()
+                    if my_progress: print line,
+                    out.append(line)
+            except Empty:
+                pass
+
+            if not qerr.empty():
+                errors += ''.join(out[-3:])
+                out = []
+
+                try:
+                    while not qerr.empty():
+                        line = qerr.get()
+                        if my_progress: print line,
+                        errors += line
+                except Empty:
+                    pass
+
+            if proc.poll() != None and qerr.empty() and qout.empty():
+                break
+
+        tout.join()
+        terr.join()
+        return errors
+
+else:
+
+    # POSIX systems have select()
+
+    import select
+
+    def async_poll_process(proc):
+        out = []
+        errors = ''
+
+        # poll stdout and stderr file handles so we get errors in the context
+        # of the stdout compile progress reports
+        while True:
+            fds = [proc.stdout.fileno(), proc.stderr.fileno()]
+            ret = select.select(fds, [], [])
+
+            for fd in ret[0]:
+                if fd == p.stdout.fileno():
+                    line = p.stdout.readline()
+                    if line:
+                        out.append(line)
+                        if my_progress: print line,
+                if fd == p.stderr.fileno():
+                    line = p.stderr.readline()
+                    if line:
+                        if my_progress: print line,
+                        if out:
+                            errors += ''.join(out[-3:])
+                            out = []
+                        errors += line
+            if p.poll() != None:
+                break
+
+        return errors
+
 
 def gmake(buildfolder, **opts):
     origpath = os.environ['PATH']
@@ -190,38 +285,7 @@ def gmake(buildfolder, **opts):
         cmds.extend(opts['make-opts'])
 
     p = Popen(cmds, stdout=PIPE, stderr=PIPE, cwd=buildfolder)
-
-    import select
-    out = []
-    errors = ''
-
-    if os.name == 'nt':
-        out, errors = p.communicate()
-        os.environ['PATH'] = origpath
-        return errors
-
-    # poll stdout and stderr file handles so we get errors in the context
-    # of the stdout compile progress reports
-    while True:
-        reads = [p.stdout.fileno(), p.stderr.fileno()]
-        ret = select.select(reads, [], [])
-
-        for fd in ret[0]:
-            if fd == p.stdout.fileno():
-                read = p.stdout.readline()
-                if read:
-                    out.append(read)
-                    if my_progress: print read,
-            if fd == p.stderr.fileno():
-                read = p.stderr.readline()
-                if read:
-                    if my_progress: print read,
-                    if out:
-                        errors += ''.join(out[-3:])
-                        out = []
-                    errors += read
-        if p.poll() != None:
-            break
+    errors = async_poll_process(p)
 
     os.environ['PATH'] = origpath
     return errors
