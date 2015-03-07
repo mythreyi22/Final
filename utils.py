@@ -139,6 +139,7 @@ def allowNewGoldenOutputs():
         return False
     return True
 
+
 def cmake(generator, buildfolder, cmakeopts, **opts):
     # buildfolder is the relative path to build folder
 
@@ -170,9 +171,7 @@ def cmake(generator, buildfolder, cmakeopts, **opts):
         env['PATH'] += os.pathsep + opts['mingw']
 
     proc = Popen(cmds, stdout=PIPE, stderr=PIPE, cwd=buildfolder, env=env)
-    stdout, stderr = proc.communicate()
-    print stdout
-    print stderr
+    return proc.communicate()
 
 
 def gmake(buildfolder, **opts):
@@ -182,6 +181,7 @@ def gmake(buildfolder, **opts):
         call(['mingw32-make'], cwd=buildfolder, env=env)
     else:
         call(['make'], cwd=buildfolder)
+    return ''
 
 
 vcvars = ('include', 'lib', 'mssdk', 'path', 'regkeypath', 'sdksetupdir',
@@ -247,6 +247,7 @@ def msbuild(buildfolder, generator, cmakeopts):
 
     call([msbuild, '/clp:disableconsolecolor', target, 'x265.sln'],
          cwd=buildfolder, env=env)
+    return ''
 
 def validatetools():
     if not find_executable('hg'):
@@ -260,6 +261,7 @@ def setup(argv):
         raise Exception('my_x265_source does not point to x265 source/ folder')
 
 def buildall():
+    errors = ''
     for key, value in my_builds.items():
         buildfolder, generator, co, opts = value
 
@@ -270,11 +272,23 @@ def buildall():
             else:
                 print 'Unknown cmake option', o
 
-        cmake(generator, buildfolder, cmakeopts, **opts)
+        cout, cerr = cmake(generator, buildfolder, cmakeopts, **opts)
+        if cerr:
+            # cmake output is always small, pastebin the whole thing
+            errors += '** cmake errors reported for ' + key + ':: '
+            desc  = 'system   : %s\n' % my_machine_name
+            desc += 'hardware : %s\n' % my_machine_desc
+            desc += 'generator: %s\n' % generator
+            desc += 'options  : %s %s\n' % (co, str(opts))
+            desc += 'version  : %s\n\n' % hgversion()
+            errors += pastebin(desc + cout + cerr) + '\n'
+            break
 
         if 'Makefiles' in generator:
-            gmake(buildfolder, **opts)
+            errors += gmake(buildfolder, **opts)
         elif 'Visual Studio' in generator:
-            msbuild(buildfolder, generator, cmakeopts)
+            errors += msbuild(buildfolder, generator, cmakeopts)
         else:
             raise NotImplemented()
+
+    return errors
