@@ -1,0 +1,44 @@
+# Copy this conf.py.example to conf.py and configure all the variables
+# beginning with my_, then you will be able run the various test scripts
+
+my_machine_name = ''  # short name to identify encodes made on this machine
+my_machine_desc = ''  # description of hardware, CPU(s), memory, etc
+my_x265_source  = r'C:\projects\x265\source'
+my_sequences    = r'\\bigdata\sequences'
+my_goldens      = r'\\bigdata\golden'
+
+# add one entry here per build target that you would like to build and test
+my_builds = {
+    # Examples:
+    #
+    #'gcc'   :                   # build label (short name)
+    #         ('default/',       # unique build folder
+    #          'Unix Makefiles', # cmake generator
+    #          'static checked', # short-hand cmake options (see below)
+    #          {}),              # env-vars and other keyword arguments
+    #
+    #'gcc32' : ('gcc32/', 'Unix Makefiles', 'static', {'CFLAGS':'-m32'}),
+    #'gcc10' : ('gcc10/', 'Unix Makefiles', '16bpp', {}),
+    #'llvm'  : ('llvm/', 'Unix Makefiles', 'checked',
+    #           {'CC':'clang', 'CXX':'clang++'}),
+    #'vc11'  : ('vc11/', 'Visual Studio 11 Win64', 'checked', {}),
+    #'vc11D' : ('vc11D/', 'Visual Studio 11 Win64', 'debug crt noasm ppa', {}),
+    #'win32' : ('vc11x86/', 'Visual Studio 11', 'static ppa', {}),
+    #'mingw' : ('mingw/', 'MinGW Makefiles', 'tests',
+    #           {'mingw':r'C:\mcw\msys\mingw64\bin'}),
+}
+
+# short-hand strings for CMAKE options, feel free to add more
+option_strings = {
+    'checked' : '-DCHECKED_BUILD=ON',
+    '16bpp'   : '-DHIGH_BIT_DEPTH=ON',
+    'debug'   : '-DCMAKE_BUILD_TYPE=Debug',
+    'reldeb'  : '-DCMAKE_BUILD_TYPE=RelWithDebInfo',
+    'tests'   : '-DENABLE_TESTS=ON',
+    'ppa'     : '-DENABLE_PPA=ON',
+    'stats'   : '-DDETAILED_CU_STATS=ON',
+    'static'  : '-DENABLE_SHARED=OFF',
+    'noasm'   : '-DENABLE_ASSEMBLY=OFF',
+    'nocolor' : '-DCMAKE_COLOR_MAKEFILE=OFF',
+    'crt'     : '-DSTATIC_LINK_CRT=ON',
+}

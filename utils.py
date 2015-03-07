@@ -1,10 +1,16 @@
-#!/usr/bin/env python
-
 import os
 import shutil
 import sys
 from subprocess import call, Popen, PIPE
 from distutils.spawn import find_executable
+
+try:
+    from conf import my_machine_name, my_machine_desc, my_x265_source
+    from conf import my_sequences, my_goldens, option_strings, my_builds
+except ImportError, e:
+    print e
+    print 'Copy conf.py.example to conf.py and edit the file as necessary'
+    sys.exit(1)
 
 # TODO:
 #  error and warning handling
@@ -63,7 +69,7 @@ def parseY4MHeader(fname):
     return (width, height, fps, depth, csp)
 
 
-def cmake(srcrelpath, generator, buildfolder, *cmakeopts, **opts):
+def cmake(srcrelpath, generator, buildfolder, cmakeopts, **opts):
     # srcrelpath points to repo source/ folder containing CMakeLists.txt
     # buildfolder is the relative path to build folder
 
@@ -83,31 +89,34 @@ def cmake(srcrelpath, generator, buildfolder, *cmakeopts, **opts):
             cmds.append('-DCMAKE_C_COMPILER_ARG1=' + opts['CFLAGS'])
             cmds.append('-DCMAKE_CXX_COMPILER_ARG1=' + opts['CFLAGS'])
 
-    for opt in cmakeopts:
-        if opt in option_strings:
-            cmds.append(option_strings[opt])
-        else:
-            print 'Unknown cmake option', opt
+    cmds.extend(cmakeopts)
 
+    env = os.environ.copy()
     if generator:
         if 'CC' in opts:
-            os.environ['CC'] = opts['CC']
+            env['CC'] = opts['CC']
         if 'CXX' in opts:
-            os.environ['CXX'] = opts['CXX']
+            env['CXX'] = opts['CXX']
+    if 'mingw' in opts:
+        env['PATH'] += os.pathsep + opts['mingw']
 
-    proc = Popen(cmds, stdout=PIPE, stderr=PIPE, cwd=buildfolder)
+    proc = Popen(cmds, stdout=PIPE, stderr=PIPE, cwd=buildfolder, env=env)
     stdout, stderr = proc.communicate()
+    print stdout
+    print stderr
 
 
 def gmake(buildfolder, **opts):
     if 'mingw' in opts:
-        call(['mingw32-make'], cwd=buildfolder)
+        env = os.environ.copy()
+        env['PATH'] += os.pathsep + opts['mingw']
+        call(['mingw32-make'], cwd=buildfolder, env=env)
     else:
         call(['make'], cwd=buildfolder)
 
 
-sdkenv_vars = ('include', 'lib', 'mssdk', 'path', 'regkeypath', 'sdksetupdir',
-               'sdktools', 'targetos', 'vcinstalldir', 'vcroot', 'vsregkeypath')
+vcvars = ('include', 'lib', 'mssdk', 'path', 'regkeypath', 'sdksetupdir',
+          'sdktools', 'targetos', 'vcinstalldir', 'vcroot', 'vsregkeypath')
 
 def get_sdkenv(sdkpath, arch):
     '''extract environment vars set by vcvarsall for compiler target'''
@@ -119,7 +128,7 @@ def get_sdkenv(sdkpath, arch):
     for line in out.splitlines():
         if '=' in line:
             k, v = line.split('=', 1)
-            if k.lower() in sdkenv_vars:
+            if k.lower() in vcvars:
                 newenv[k.upper()] = v
     return newenv
 
@@ -148,9 +157,9 @@ def msbuild(buildfolder, generator, cmakeopts):
     env.update(sdkenv)
 
     target = '/p:Configuration='
-    if 'debug' in cmakeopts:
+    if '-DCMAKE_BUILD_TYPE=Debug' in cmakeopts:
         target += 'debug'
-    elif 'reldeb' in cmakeopts:
+    elif '-DCMAKE_BUILD_TYPE=RelWithDebInfo' in cmakeopts:
         target += 'RelWithDebInfo'
     else:
         target += 'Release'
@@ -170,80 +179,33 @@ def msbuild(buildfolder, generator, cmakeopts):
     call([msbuild, '/clp:disableconsolecolor', target, 'x265.sln'],
          cwd=buildfolder, env=env)
 
+def validatetools():
+    if not find_executable('hg'):
+        raise Exception('Unable to find Mercurial executable (hg)')
+    if not find_executable('cmake'):
+        raise Exception('Unable to find cmake executable')
 
-option_strings = {
-    'checked' : '-DCHECKED_BUILD=ON',
-    '16bpp'   : '-DHIGH_BIT_DEPTH=ON',
-    'debug'   : '-DCMAKE_BUILD_TYPE=Debug',
-    'reldeb'  : '-DCMAKE_BUILD_TYPE=RelWithDebInfo',
-    'tests'   : '-DENABLE_TESTS=ON',
-    'ppa'     : '-DENABLE_PPA=ON',
-    'stats'   : '-DDETAILED_CU_STATS=ON',
-    'static'  : '-DENABLE_SHARED=OFF',
-    'noasm'   : '-DENABLE_ASSEMBLY=OFF',
-    'nocolor' : '-DCMAKE_COLOR_MAKEFILE=OFF',
-    'crt'     : '-DSTATIC_LINK_CRT=ON',
-}
+def setup(argv):
+    validatetools()
+    if not os.path.exists(os.path.join(my_x265_source, 'CMakeLists.txt')):
+        raise Exception('my_x265_source does not point to x265 source/ folder')
 
-my_x265_source = r'C:\mcw\x265\source'
+def buildall():
+    for key, value in my_builds.items():
+        buildfolder, generator, co, opts = value
 
-my_builds = {
-    # Examples
-    #'gcc'   : ('default/', 'Unix Makefiles',   'static checked', {}),
-    #'gcc32' : ('gcc32/',   'Unix Makefiles',   'static',    {'CFLAGS':'-m32'}),
-    #'gcc10' : ('gcc10/',   'Unix Makefiles',   '16bpp',     {}),
-    #'llvm'  : ('llvm/',    'Unix Makefiles',   'checked',   {'CC':'clang', 'CXX':'clang++'}),
-    #'vc11'  : ('vc11/',    'Visual Studio 11 Win64', 'checked',   {}),
-    #'vc11D' : ('vc11D/',   'Visual Studio 11 Win64', 'debug static noasm ppa', {}),
-    #'win32' : ('vc11x86/', 'Visual Studio 11', 'static ppa', {}),
+        cmakeopts = []
+        for o in co.split():
+            if o in option_strings:
+                cmakeopts.append(option_strings[o])
+            else:
+                print 'Unknown cmake option', o
 
-    'mingw'  : ('mingw/',
-                'MinGW Makefiles',
-                'tests',
-                {'mingw':r'C:\mcw\msys\mingw64\bin'}),
+        cmake(my_x265_source, generator, buildfolder, cmakeopts, **opts)
 
-    'vc12'   : ('vc12/',                         # build folder
-                'Visual Studio 12 Win64',        # cmake generator
-                'tests checked static nocolor',  # cmake options
-                {}),                             # env overrides
-
-    'vc11'   : ('vc11/',                         # build folder
-                'Visual Studio 11 Win64',        # cmake generator
-                'tests checked crt reldeb',      # cmake options
-                {}),                             # env overrides
-
-    # note: these regression scripts can only build and run msys targets
-    # if they are invoked from within an msys shell, so it will generally need
-    # to be handled in a seperate configuration from VC builds.
-    #'msys'   : ('msys/', 'MSYS Makefiles', 'tests', {})
-}
-
-if not find_executable('hg'):
-    raise Exception('Unable to find Mercurial executable (hg)')
-if not find_executable('cmake'):
-    raise Exception('Unable to find cmake executable')
-
-# build all requested versions of x265
-for key, value in my_builds.items():
-    buildfolder, generator, cmakeopts, opts = value
-    #opts['rebuild'] = True
-
-    if 'mingw' in opts:
-        # insert mingw compiler path into system search path if not present
-        path = os.environ['PATH'].split(os.pathsep)
-        absmingw = os.path.abspath(opts['mingw'])
-        for p in path:
-            if os.path.abspath(p) == absmingw:
-                break
+        if 'Makefiles' in generator:
+            gmake(buildfolder, **opts)
+        elif 'Visual Studio' in generator:
+            msbuild(buildfolder, generator, cmakeopts)
         else:
-            path.append(absmingw)
-            os.environ['PATH'] = os.pathsep.join(path)
-
-    cmake(my_x265_source, generator, buildfolder, *cmakeopts.split(), **opts)
-
-    if 'Makefiles' in generator:
-        gmake(buildfolder, **opts)
-    elif 'Visual Studio' in generator:
-        msbuild(buildfolder, generator, cmakeopts)
-    else:
-        raise NotImplemented()
+            raise NotImplemented()
