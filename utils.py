@@ -87,6 +87,16 @@ def pastebin(content):
                           urllib.urlencode(pastebin_vars))
     return conn.read()
 
+def hgversion():
+    out, err = Popen(['hg', 'id', '-i'], stdout=PIPE, stderr=PIPE,
+                     cwd=my_x265_source).communicate()
+    if err:
+        raise Exception('Unable to determine source version: ' + err)
+    # note, if the ID ends with '+' it means the user's repository has
+    # uncommitted changes. We will never want to save golden outputs from these
+    # repositories.
+    return out[:-1] # strip line feed
+
 def cmake(generator, buildfolder, cmakeopts, **opts):
     # buildfolder is the relative path to build folder
 
