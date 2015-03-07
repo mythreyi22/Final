@@ -7,7 +7,7 @@ from distutils.spawn import find_executable
 try:
     from conf import my_machine_name, my_machine_desc, my_x265_source
     from conf import my_sequences, my_goldens, option_strings, my_builds
-    from conf import my_pastebin_key
+    from conf import my_pastebin_key, my_progress
 except ImportError, e:
     print e
     print 'Copy conf.py.example to conf.py and edit the file as necessary'
@@ -206,9 +206,11 @@ def gmake(buildfolder, **opts):
                 read = p.stdout.readline()
                 if read:
                     out.append(read)
+                    if my_progress: print read,
             if fd == p.stderr.fileno():
                 read = p.stderr.readline()
                 if read:
+                    if my_progress: print read,
                     if out:
                         errors += ''.join(out[-3:])
                         out = []
@@ -297,6 +299,8 @@ def setup(argv):
 def buildall():
     for key, value in my_builds.items():
         buildfolder, generator, co, opts = value
+
+        if my_progress: print 'building %s...'% key
 
         cmakeopts = []
         for o in co.split():

@@ -6,6 +6,7 @@ my_machine_desc = ''  # description of hardware, CPU(s), memory, etc
 my_x265_source  = r'C:\projects\x265\source'
 my_sequences    = r'\\bigdata\sequences'
 my_goldens      = r'\\bigdata\golden'
+my_progress     = True # do you want to see build / encode status on console?
 
 # if you want the script to create pastebins of warnings and errors you
 # must register at pastebin.com, sign in, then go to http://pastebin.com/api
