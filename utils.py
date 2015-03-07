@@ -4,12 +4,10 @@ import os
 import shutil
 import sys
 from subprocess import call, Popen, PIPE
+from distutils.spawn import find_executable
 
 # TODO:
 #  error and warning handling
-#  MSBuild support
-#  MSYS support
-#  findExe() for cmake and hg
 
 def parseYuvFilename(fname):
     '''requires the format: foo_bar_WxH_FPS[_10bit][_CSP].yuv'''
@@ -164,7 +162,10 @@ def msbuild(buildfolder, generator, cmakeopts):
         if os.path.exists(f):
             msbuild = f
             break
-    #TODO: check for msbuild in PATH, this is not robust enough
+    else:
+        msbuild = find_executable('msbuild')
+        if not msbuild:
+            raise Exception('Unable to find msbuild.exe')
 
     call([msbuild, '/clp:disableconsolecolor', target, 'x265.sln'],
          cwd=buildfolder, env=env)
@@ -216,6 +217,11 @@ my_builds = {
     # to be handled in a seperate configuration from VC builds.
     #'msys'   : ('msys/', 'MSYS Makefiles', 'tests', {})
 }
+
+if not find_executable('hg'):
+    raise Exception('Unable to find Mercurial executable (hg)')
+if not find_executable('cmake'):
+    raise Exception('Unable to find cmake executable')
 
 # build all requested versions of x265
 for key, value in my_builds.items():
