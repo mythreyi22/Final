@@ -23,7 +23,7 @@ my_builds = {
     #          {}),              # env-vars and other keyword arguments
     #
     #'gcc32' : ('gcc32/', 'Unix Makefiles', 'static', {'CFLAGS':'-m32'}),
-    #'gcc10' : ('gcc10/', 'Unix Makefiles', '16bpp', {}),
+    #'gcc10' : ('gcc10/', 'Unix Makefiles', '16bpp', {'make-opts': ['-j16']}),
     #'llvm'  : ('llvm/', 'Unix Makefiles', 'checked',
     #           {'CC':'clang', 'CXX':'clang++'}),
     #'vc11'  : ('vc11/', 'Visual Studio 11 Win64', 'checked', {}),
@@ -32,6 +32,14 @@ my_builds = {
     #'mingw' : ('mingw/', 'MinGW Makefiles', 'tests',
     #           {'mingw':r'C:\mcw\msys\mingw64\bin'}),
 }
+
+# Supported keyword arguments:
+#   CFLAGS - directly assigned to CMAKE CFLAG args (intended for -m32)
+#   CC,CXX - are set in the environment for cmake for selecting compilers
+#   mingw  - this path is inserted into PATH for cmake and encoder runs
+#            (You could have multiple MinGW compilers on your system,
+#             have none of them in the path, and have builds with each)
+#   make-opts - appended to make command lines (intended for parallel builds)
 
 # short-hand strings for CMAKE options, feel free to add more
 option_strings = {
