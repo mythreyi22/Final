@@ -87,8 +87,7 @@ def pastebin(content):
                           urllib.urlencode(pastebin_vars))
     return conn.read()
 
-def cmake(srcrelpath, generator, buildfolder, cmakeopts, **opts):
-    # srcrelpath points to repo source/ folder containing CMakeLists.txt
+def cmake(generator, buildfolder, cmakeopts, **opts):
     # buildfolder is the relative path to build folder
 
     if opts.get('rebuild') and os.path.exists(buildfolder):
@@ -98,7 +97,7 @@ def cmake(srcrelpath, generator, buildfolder, cmakeopts, **opts):
     else:
         generator = None
 
-    cmds = ['cmake', os.path.abspath(srcrelpath)]
+    cmds = ['cmake', os.path.abspath(my_x265_source)]
 
     if generator:
         cmds.append('-G')
@@ -219,7 +218,7 @@ def buildall():
             else:
                 print 'Unknown cmake option', o
 
-        cmake(my_x265_source, generator, buildfolder, cmakeopts, **opts)
+        cmake(generator, buildfolder, cmakeopts, **opts)
 
         if 'Makefiles' in generator:
             gmake(buildfolder, **opts)
