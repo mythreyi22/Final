@@ -74,7 +74,7 @@ def pastebin(content):
     sizelimit = 500 * 1024
 
     if not my_pastebin_key:
-        return 'Not using pastebin, no key configured. Contents:\n' + content
+        return 'No pastebin key configured. Contents:\n' + content
     elif len(content) >= sizelimit:
         content = content[:sizelimit - 30] + '\n\ntruncated to paste limit'
 
@@ -85,7 +85,12 @@ def pastebin(content):
     }
     conn = urllib.urlopen('http://pastebin.com/api/api_post.php',
                           urllib.urlencode(pastebin_vars))
-    return conn.read()
+    url = conn.read()
+    if url.startswith('http://pastebin.com/'):
+        return url
+    else:
+        return 'pastebin failed <%s> paste contents:\n%s' + (url, content)
+
 
 def hgversion():
     out, err = Popen(['hg', 'id', '-i'], stdout=PIPE, stderr=PIPE,
