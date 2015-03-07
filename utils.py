@@ -7,6 +7,7 @@ from distutils.spawn import find_executable
 try:
     from conf import my_machine_name, my_machine_desc, my_x265_source
     from conf import my_sequences, my_goldens, option_strings, my_builds
+    from conf import my_pastebin_key
 except ImportError, e:
     print e
     print 'Copy conf.py.example to conf.py and edit the file as necessary'
@@ -68,6 +69,23 @@ def parseY4MHeader(fname):
 
     return (width, height, fps, depth, csp)
 
+def pastebin(content):
+    import urllib
+    sizelimit = 500 * 1024
+
+    if not my_pastebin_key:
+        return 'Not using pastebin, no key configured. Contents:\n' + content
+    elif len(content) >= sizelimit:
+        content = content[:sizelimit - 30] + '\n\ntruncated to paste limit'
+
+    pastebin_vars = {
+        'api_option'     : 'paste',
+        'api_dev_key'    : my_pastebin_key,
+        'api_paste_code' : content
+    }
+    conn = urllib.urlopen('http://pastebin.com/api/api_post.php',
+                          urllib.urlencode(pastebin_vars))
+    return conn.read()
 
 def cmake(srcrelpath, generator, buildfolder, cmakeopts, **opts):
     # srcrelpath points to repo source/ folder containing CMakeLists.txt
