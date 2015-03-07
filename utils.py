@@ -195,6 +195,11 @@ def gmake(buildfolder, **opts):
     out = []
     errors = ''
 
+    if os.name == 'nt':
+        out, errors = p.communicate()
+        os.environ['PATH'] = origpath
+        return errors
+
     # poll stdout and stderr file handles so we get errors in the context
     # of the stdout compile progress reports
     while True:
