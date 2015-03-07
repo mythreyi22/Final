@@ -97,6 +97,48 @@ def hgversion():
     # repositories.
     return out[:-1] # strip line feed
 
+def hgsummary():
+    out, err = Popen(['hg', 'id', '-i'], stdout=PIPE, stderr=PIPE,
+                     cwd=my_x265_source).communicate()
+    if err:
+        raise Exception('Unable to determine repo summary: ' + err)
+    return out
+
+def hgrevisioninfo(rev):
+    addstatus = False
+    if rev.endswith('+'):
+        rev = rev[:-1]
+        addstatus = True
+    out, err = Popen(['hg', 'log', '-r', rev], stdout=PIPE, stderr=PIPE,
+                     cwd=my_x265_source).communicate()
+    if err:
+        raise Exception('Unable to determine revision info: ' + err)
+    if addstatus:
+        out += 'Uncommitted changes in the working directory:\n'
+        out += Popen(['hg', 'status'], stdout=PIPE,
+                     cwd=my_x265_source).communicate()[0]
+    return out
+
+def hggetphase(rev):
+    if rev.endswith('+'): rev = rev[:-1]
+    out, err = Popen(['hg', 'log', '-r', rev, '--template', '{phase}'],
+                     stdout=PIPE, stderr=PIPE, cwd=my_x265_source).communicate()
+    if err:
+        raise Exception('Unable to determine revision phase: ' + err)
+    return out
+
+def allowNewGoldenOutputs():
+    rev = hgversion()
+    if rev.endswith('+'):
+        # we do not store golden outputs if uncommitted changes
+        print 'User repo has uncommitted changes'
+        return False
+    if hggetphase(rev) != 'public':
+        # we do not store golden outputs until a revision is public (pushed)
+        print 'User repo parent rev is not public'
+        return False
+    return True
+
 def cmake(generator, buildfolder, cmakeopts, **opts):
     # buildfolder is the relative path to build folder
 
