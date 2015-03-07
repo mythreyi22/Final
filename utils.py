@@ -180,16 +180,16 @@ def cmake(generator, buildfolder, cmakeopts, **opts):
 
 
 def gmake(buildfolder, **opts):
-    env = os.environ.copy()
+    origpath = os.environ['PATH']
     if 'mingw' in opts:
-        env['PATH'] += os.pathsep + opts['mingw']
+        os.environ['PATH'] += os.pathsep + opts['mingw']
         cmds = ['mingw32-make']
     else:
         cmds = ['make']
     if 'make-opts' in opts:
         cmds.extend(opts['make-opts'])
 
-    p = Popen(cmds, stdout=PIPE, stderr=PIPE, cwd=buildfolder, env=env)
+    p = Popen(cmds, stdout=PIPE, stderr=PIPE, cwd=buildfolder)
 
     import select
     out = []
@@ -218,6 +218,7 @@ def gmake(buildfolder, **opts):
         if p.poll() != None:
             break
 
+    os.environ['PATH'] = origpath
     return errors
 
 vcvars = ('include', 'lib', 'mssdk', 'path', 'regkeypath', 'sdksetupdir',
