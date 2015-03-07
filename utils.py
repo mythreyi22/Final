@@ -180,14 +180,43 @@ def cmake(generator, buildfolder, cmakeopts, **opts):
 
 
 def gmake(buildfolder, **opts):
+    env = os.environ.copy()
     if 'mingw' in opts:
-        env = os.environ.copy()
         env['PATH'] += os.pathsep + opts['mingw']
-        call(['mingw32-make'], cwd=buildfolder, env=env)
+        cmds = ['mingw32-make']
     else:
-        call(['make'], cwd=buildfolder)
-    return ''
+        cmds = ['make']
+    if 'make-opts' in opts:
+        cmds.extend(opts['make-opts'])
 
+    p = Popen(cmds, stdout=PIPE, stderr=PIPE, cwd=buildfolder, env=env)
+
+    import select
+    out = []
+    errors = ''
+
+    # poll stdout and stderr file handles so we get errors in the context
+    # of the stdout compile progress reports
+    while True:
+        reads = [p.stdout.fileno(), p.stderr.fileno()]
+        ret = select.select(reads, [], [])
+
+        for fd in ret[0]:
+            if fd == p.stdout.fileno():
+                read = p.stdout.readline()
+                if read:
+                    out.append(read)
+            if fd == p.stderr.fileno():
+                read = p.stderr.readline()
+                if read:
+                    if out:
+                        errors += ''.join(out[-3:])
+                        out = []
+                    errors += read
+        if p.poll() != None:
+            break
+
+    return errors
 
 vcvars = ('include', 'lib', 'mssdk', 'path', 'regkeypath', 'sdksetupdir',
           'sdktools', 'targetos', 'vcinstalldir', 'vcroot', 'vsregkeypath')
@@ -266,7 +295,6 @@ def setup(argv):
         raise Exception('my_x265_source does not point to x265 source/ folder')
 
 def buildall():
-    errors = ''
     for key, value in my_builds.items():
         buildfolder, generator, co, opts = value
 
@@ -279,21 +307,24 @@ def buildall():
 
         cout, cerr = cmake(generator, buildfolder, cmakeopts, **opts)
         if cerr:
+            prefix = '** cmake errors reported for %s:: ' % key
+            errors = cout + cerr
+        elif 'Makefiles' in generator:
+            errors = gmake(buildfolder, **opts)
+            prefix = '** make warnings or errors reported for %s:: ' % key
+        elif 'Visual Studio' in generator:
+            errors = msbuild(buildfolder, generator, cmakeopts)
+            prefix = '** msbuild warnings or errors reported for %s:: ' % key
+        else:
+            raise NotImplemented()
+
+        if errors:
             # cmake output is always small, pastebin the whole thing
-            errors += '** cmake errors reported for ' + key + ':: '
             desc  = 'system   : %s\n' % my_machine_name
             desc += 'hardware : %s\n' % my_machine_desc
             desc += 'generator: %s\n' % generator
             desc += 'options  : %s %s\n' % (co, str(opts))
             desc += 'version  : %s\n\n' % hgversion()
-            errors += pastebin(desc + cout + cerr) + '\n'
-            break
+            return prefix + pastebin(desc + errors)
 
-        if 'Makefiles' in generator:
-            errors += gmake(buildfolder, **opts)
-        elif 'Visual Studio' in generator:
-            errors += msbuild(buildfolder, generator, cmakeopts)
-        else:
-            raise NotImplemented()
-
-    return errors
+    return None
