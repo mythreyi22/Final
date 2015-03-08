@@ -13,6 +13,35 @@ except ImportError, e:
     print 'Copy conf.py.example to conf.py and edit the file as necessary'
     sys.exit(1)
 
+def validatetools():
+    if not find_executable('hg'):
+        raise Exception('Unable to find Mercurial executable (hg)')
+    if not find_executable('cmake'):
+        raise Exception('Unable to find cmake executable')
+
+
+def setup(argv):
+    validatetools()
+    if not os.path.exists(os.path.join(my_x265_source, 'CMakeLists.txt')):
+        raise Exception('my_x265_source does not point to x265 source/ folder')
+
+    import getopt
+    optlist, args = getopt.getopt(argv[1:], 'hb:', ['builds=', '--help'])
+    for opt, val in optlist:
+        # restrict the list of target builds to just those specified by -b
+        # for example: ./smoke-test.py -b "gcc32 gcc10"
+        if opt in ('-b', '--builds'):
+            userbuilds = val.split()
+            delkeys = [key for key in my_builds if not key in userbuilds]
+            for key in delkeys:
+                del my_builds[key]
+        elif opt in ('-h', '--help'):
+            print sys.argv[0], '[OPTIONS]\n'
+            print '\t-h/--help            show this help'
+            print '\t-b/--builds <string> space seperated list of build targets'
+            sys.exit(0)
+
+
 if os.name == 'nt':
 
     # LOL Windows
@@ -385,6 +414,7 @@ def msbuild(buildfolder, generator, cmakeopts):
               cwd=buildfolder, env=env)
     return async_poll_process(p)
 
+
 def describeEnvironment(key):
     _, generator, co, opts = my_builds[key]
     desc  = 'system   : %s\n' % my_machine_name
@@ -393,6 +423,7 @@ def describeEnvironment(key):
     desc += 'options  : %s %s\n' % (co, str(opts))
     desc += 'version  : %s\n\n' % hgversion()
     return desc
+
 
 def testharness():
     for key in my_builds:
@@ -422,6 +453,7 @@ def testharness():
             prefix = '** testbench failure reported for %s:: ' % key
             return prefix + pastebin(desc + err)
     return None
+
 
 def buildall():
     for key in my_builds:
@@ -456,32 +488,3 @@ def buildall():
             return prefix + pastebin(desc + errors)
 
     return None
-
-
-def validatetools():
-    if not find_executable('hg'):
-        raise Exception('Unable to find Mercurial executable (hg)')
-    if not find_executable('cmake'):
-        raise Exception('Unable to find cmake executable')
-
-
-def setup(argv):
-    validatetools()
-    if not os.path.exists(os.path.join(my_x265_source, 'CMakeLists.txt')):
-        raise Exception('my_x265_source does not point to x265 source/ folder')
-
-    import getopt
-    optlist, args = getopt.getopt(argv[1:], 'hb:', ['builds=', '--help'])
-    for opt, val in optlist:
-        # restrict the list of target builds to just those specified by -b
-        # for example: ./smoke-test.py -b "gcc32 gcc10"
-        if opt in ('-b', '--builds'):
-            userbuilds = val.split()
-            delkeys = [key for key in my_builds if not key in userbuilds]
-            for key in delkeys:
-                del my_builds[key]
-        elif opt in ('-h', '--help'):
-            print sys.argv[0], '[OPTIONS]\n'
-            print '\t-h/--help            show this help'
-            print '\t-b/--builds <string> space seperated list of build targets'
-            sys.exit(0)
