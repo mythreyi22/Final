@@ -366,11 +366,48 @@ def setup(argv):
     if not os.path.exists(os.path.join(my_x265_source, 'CMakeLists.txt')):
         raise Exception('my_x265_source does not point to x265 source/ folder')
 
-def buildall():
-    for key, value in my_builds.items():
-        buildfolder, generator, co, opts = value
+def testharness(builds=None):
+    for key in my_builds:
+        if builds and key not in builds:
+            continue
 
-        if my_progress: print 'building %s...'% key
+        buildfolder, generator, co, opts = my_builds[key]
+
+        if 'tests' not in co.split():
+            continue
+
+        if my_progress:
+            print 'Running testbench for %s...'% key
+
+        bench = os.path.join(buildfolder, 'test', 'TestBench')
+        p = Popen([bench], stdout=PIPE, stderr=PIPE)
+        out, err = p.communicate()
+        if err or p.returncode:
+            desc  = 'system   : %s\n' % my_machine_name
+            desc += 'hardware : %s\n' % my_machine_desc
+            desc += 'generator: %s\n' % generator
+            desc += 'options  : %s %s\n' % (co, str(opts))
+            desc += 'version  : %s\n' % hgversion()
+            if p.returncode == -11:
+                desc += 'SIGSEGV\n'
+            elif p.returncode == -4:
+                desc += 'SIGILL\n'
+            elif p.returncode:
+                desc += 'return code %d\n' % p.returncode
+            desc += '\n'
+            prefix = '** testbench failure reported for %s:: ' % key
+            return prefix + pastebin(desc + out + err)
+    return None
+
+def buildall(builds=None):
+    for key in my_builds:
+        if builds and key not in builds:
+            continue
+
+        if my_progress:
+            print 'building %s...'% key
+
+        buildfolder, generator, co, opts = my_builds[key]
 
         cmakeopts = []
         for o in co.split():

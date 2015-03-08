@@ -11,3 +11,8 @@ errors = utils.buildall()
 if errors:
     print errors
     sys.exit(1)
+
+errors = utils.testharness()
+if errors:
+    print errors
+    sys.exit(1)
