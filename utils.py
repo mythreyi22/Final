@@ -383,6 +383,14 @@ def msbuild(buildfolder, generator, cmakeopts):
               cwd=buildfolder, env=env)
     return async_poll_process(p)
 
+def describeEnvironment(key):
+    _, generator, co, opts = my_builds[key]
+    desc  = 'system   : %s\n' % my_machine_name
+    desc += 'hardware : %s\n' % my_machine_desc
+    desc += 'generator: %s\n' % generator
+    desc += 'options  : %s %s\n' % (co, str(opts))
+    desc += 'version  : %s\n' % hgversion()
+    return desc
 
 def testharness(builds=None):
     for key in my_builds:
@@ -411,11 +419,7 @@ def testharness(builds=None):
             os.environ['PATH'] = origpath
 
         if err:
-            desc  = 'system   : %s\n' % my_machine_name
-            desc += 'hardware : %s\n' % my_machine_desc
-            desc += 'generator: %s\n' % generator
-            desc += 'options  : %s %s\n' % (co, str(opts))
-            desc += 'version  : %s\n' % hgversion()
+            desc = describeEnvironment(key)
             prefix = '** testbench failure reported for %s:: ' % key
             return prefix + pastebin(desc + err)
     return None
@@ -452,11 +456,7 @@ def buildall(builds=None):
 
         if errors:
             # cmake output is always small, pastebin the whole thing
-            desc  = 'system   : %s\n' % my_machine_name
-            desc += 'hardware : %s\n' % my_machine_desc
-            desc += 'generator: %s\n' % generator
-            desc += 'options  : %s %s\n' % (co, str(opts))
-            desc += 'version  : %s\n\n' % hgversion()
+            desc = describeEnvironment(key)
             return prefix + pastebin(desc + errors)
 
     return None
