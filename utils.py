@@ -103,7 +103,7 @@ def hgversion():
     return out[:-1] # strip line feed
 
 def hgsummary():
-    out, err = Popen(['hg', 'id', '-i'], stdout=PIPE, stderr=PIPE,
+    out, err = Popen(['hg', 'summary'], stdout=PIPE, stderr=PIPE,
                      cwd=my_x265_source).communicate()
     if err:
         raise Exception('Unable to determine repo summary: ' + err)
