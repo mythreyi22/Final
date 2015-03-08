@@ -391,7 +391,7 @@ def describeEnvironment(key):
     desc += 'hardware : %s\n' % my_machine_desc
     desc += 'generator: %s\n' % generator
     desc += 'options  : %s %s\n' % (co, str(opts))
-    desc += 'version  : %s\n' % hgversion()
+    desc += 'version  : %s\n\n' % hgversion()
     return desc
 
 def testharness():
