@@ -255,20 +255,20 @@ else:
             ret = select.select(fds, [], [])
 
             for fd in ret[0]:
-                if fd == p.stdout.fileno():
-                    line = p.stdout.readline()
+                if fd == proc.stdout.fileno():
+                    line = proc.stdout.readline()
                     if line:
                         out.append(line)
                         if my_progress: print line,
-                if fd == p.stderr.fileno():
-                    line = p.stderr.readline()
+                if fd == proc.stderr.fileno():
+                    line = proc.stderr.readline()
                     if line:
                         if my_progress: print line,
                         if out:
                             errors += ''.join(out[-3:])
                             out = []
                         errors += line
-            if p.poll() != None:
+            if proc.poll() != None:
                 break
 
         return errors
