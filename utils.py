@@ -380,33 +380,35 @@ def testharness(builds=None):
         if my_progress:
             print 'Running testbench for %s...'% key
 
-        origpath = os.environ['PATH']
-        if 'mingw' in opts:
-            os.environ['PATH'] += os.pathsep + opts['mingw']
-
         bench = os.path.join(buildfolder, 'test', 'TestBench')
-        p = Popen([bench], stdout=PIPE, stderr=PIPE)
-        out, err = p.communicate()
+        if os.name == 'nt': bench += '.exe'
+        if not os.path.isfile(bench):
+            err = 'testbench <%s> not built' % bench
+            ret = 0
+        else:
+            origpath = os.environ['PATH']
+            if 'mingw' in opts:
+                os.environ['PATH'] += os.pathsep + opts['mingw']
+            p = Popen([bench], stdout=PIPE, stderr=PIPE)
+            err = async_poll_process(p)
+            os.environ['PATH'] = origpath
+            ret = p.returncode
 
-        os.environ['PATH'] = origpath
-
-        if err or p.returncode:
+        if err or ret:
             desc  = 'system   : %s\n' % my_machine_name
             desc += 'hardware : %s\n' % my_machine_desc
             desc += 'generator: %s\n' % generator
             desc += 'options  : %s %s\n' % (co, str(opts))
             desc += 'version  : %s\n' % hgversion()
-            if p.returncode == -11:
+            if ret == -11:
                 desc += 'SIGSEGV\n'
-            elif p.returncode == -4:
+            elif ret == -4:
                 desc += 'SIGILL\n'
-            elif p.returncode:
-                desc += 'return code %d\n' % p.returncode
+            elif ret:
+                desc += 'return code %d\n' % ret
             desc += '\n'
             prefix = '** testbench failure reported for %s:: ' % key
-            return prefix + pastebin(desc + out + err)
-        elif my_progress:
-            print out
+            return prefix + pastebin(desc + err)
     return None
 
 def buildall(builds=None):
