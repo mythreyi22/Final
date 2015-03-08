@@ -351,9 +351,9 @@ def msbuild(buildfolder, generator, cmakeopts):
         if not msbuild:
             raise Exception('Unable to find msbuild.exe')
 
-    call([msbuild, '/clp:disableconsolecolor', target, 'x265.sln'],
-         cwd=buildfolder, env=env)
-    return ''
+    p = Popen([msbuild, '/clp:disableconsolecolor', target, 'x265.sln'],
+              cwd=buildfolder, env=env)
+    return async_poll_process(p)
 
 def validatetools():
     if not find_executable('hg'):
