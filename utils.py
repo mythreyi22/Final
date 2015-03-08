@@ -71,6 +71,15 @@ if os.name == 'nt':
 
         tout.join()
         terr.join()
+
+        if proc.returncode and not errors:
+            errors = out[-10:]
+        if proc.returncode == -11:
+            errors += 'SIGSEGV\n'
+        elif proc.returncode == -4:
+            errors += 'SIGILL\n'
+        elif proc.returncode:
+            errors += 'return code %d\n' % proc.returncode
         return errors
 
 else:
@@ -106,6 +115,14 @@ else:
             if proc.poll() != None:
                 break
 
+        if proc.returncode and not errors:
+            errors = out[-10:]
+        if proc.returncode == -11:
+            errors += 'SIGSEGV\n'
+        elif proc.returncode == -4:
+            errors += 'SIGILL\n'
+        elif proc.returncode:
+            errors += 'return code %d\n' % proc.returncode
         return errors
 
 
@@ -392,21 +409,13 @@ def testharness(builds=None):
             p = Popen([bench], stdout=PIPE, stderr=PIPE)
             err = async_poll_process(p)
             os.environ['PATH'] = origpath
-            ret = p.returncode
 
-        if err or ret:
+        if err:
             desc  = 'system   : %s\n' % my_machine_name
             desc += 'hardware : %s\n' % my_machine_desc
             desc += 'generator: %s\n' % generator
             desc += 'options  : %s %s\n' % (co, str(opts))
             desc += 'version  : %s\n' % hgversion()
-            if ret == -11:
-                desc += 'SIGSEGV\n'
-            elif ret == -4:
-                desc += 'SIGILL\n'
-            elif ret:
-                desc += 'return code %d\n' % ret
-            desc += '\n'
             prefix = '** testbench failure reported for %s:: ' % key
             return prefix + pastebin(desc + err)
     return None
