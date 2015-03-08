@@ -379,9 +379,16 @@ def testharness(builds=None):
         if my_progress:
             print 'Running testbench for %s...'% key
 
+        origpath = os.environ['PATH']
+        if 'mingw' in opts:
+            os.environ['PATH'] += os.pathsep + opts['mingw']
+
         bench = os.path.join(buildfolder, 'test', 'TestBench')
         p = Popen([bench], stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
+
+        os.environ['PATH'] = origpath
+
         if err or p.returncode:
             desc  = 'system   : %s\n' % my_machine_name
             desc += 'hardware : %s\n' % my_machine_desc
