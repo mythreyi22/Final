@@ -43,6 +43,7 @@ if os.name == 'nt':
 
         out = []
         errors = ''
+        exiting = False
         while True:
             # note that this doesn't guaruntee we get the stdout and stderr
             # lines in the intended order, but they should be close
@@ -66,11 +67,12 @@ if os.name == 'nt':
                 except Empty:
                     pass
 
-            if proc.poll() != None and qerr.empty() and qout.empty():
+            if proc.poll() != None and not exiting:
+                tout.join()
+                terr.join()
+                exiting = True
+            elif exiting and qerr.empty() and qout.empty():
                 break
-
-        tout.join()
-        terr.join()
 
         if proc.returncode and not errors:
             errors = out[-10:]
