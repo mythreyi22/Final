@@ -132,6 +132,14 @@ def hggetphase(rev):
         raise Exception('Unable to determine revision phase: ' + err)
     return out
 
+def hggetbranch(rev):
+    if rev.endswith('+'): rev = rev[:-1]
+    out, err = Popen(['hg', 'log', '-r', rev, '--template', '{branch}'],
+                     stdout=PIPE, stderr=PIPE, cwd=my_x265_source).communicate()
+    if err:
+        raise Exception('Unable to determine revision phase: ' + err)
+    return out
+
 def allowNewGoldenOutputs():
     rev = hgversion()
     if rev.endswith('+'):
