@@ -104,7 +104,7 @@ if os.name == 'nt':
                 break
 
         if proc.returncode and not errors:
-            errors = out[-10:]
+            errors = ''.join(out[-10:])
         if proc.returncode == -11:
             errors += 'SIGSEGV\n'
         elif proc.returncode == -4:
@@ -147,7 +147,7 @@ else:
                 break
 
         if proc.returncode and not errors:
-            errors = out[-10:]
+            errors = ''.join(out[-10:])
         if proc.returncode == -11:
             errors += 'SIGSEGV\n'
         elif proc.returncode == -4:
