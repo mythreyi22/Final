@@ -392,11 +392,8 @@ def describeEnvironment(key):
     desc += 'version  : %s\n' % hgversion()
     return desc
 
-def testharness(builds=None):
+def testharness():
     for key in my_builds:
-        if builds and key not in builds:
-            continue
-
         buildfolder, generator, co, opts = my_builds[key]
 
         if 'tests' not in co.split():
@@ -424,11 +421,8 @@ def testharness(builds=None):
             return prefix + pastebin(desc + err)
     return None
 
-def buildall(builds=None):
+def buildall():
     for key in my_builds:
-        if builds and key not in builds:
-            continue
-
         if my_progress:
             print 'building %s...'% key
 
@@ -474,3 +468,18 @@ def setup(argv):
     if not os.path.exists(os.path.join(my_x265_source, 'CMakeLists.txt')):
         raise Exception('my_x265_source does not point to x265 source/ folder')
 
+    import getopt
+    optlist, args = getopt.getopt(argv[1:], 'hb:', ['builds=', '--help'])
+    for opt, val in optlist:
+        # restrict the list of target builds to just those specified by -b
+        # for example: ./smoke-test.py -b "gcc32 gcc10"
+        if opt in ('-b', '--builds'):
+            userbuilds = val.split()
+            delkeys = [key for key in my_builds if not key in userbuilds]
+            for key in delkeys:
+                del my_builds[key]
+        elif opt in ('-h', '--help'):
+            print sys.argv[0], '[OPTIONS]\n'
+            print '\t-h/--help            show this help'
+            print '\t-b/--builds <string> space seperated list of build targets'
+            sys.exit(0)

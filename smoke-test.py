@@ -5,7 +5,7 @@ import sys
 import utils
 
 # setup will call sys.exit() if it determines the tests are unable to continue
-utils.setup(sys.argv[1:])
+utils.setup(sys.argv)
 
 errors = utils.buildall()
 if errors:
