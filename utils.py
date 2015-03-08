@@ -425,36 +425,6 @@ def describeEnvironment(key):
     return desc
 
 
-def testharness():
-    for key in my_builds:
-        buildfolder, generator, co, opts = my_builds[key]
-
-        if 'tests' not in co.split():
-            continue
-
-        if my_progress:
-            print 'Running testbench for %s...'% key
-
-        bench = os.path.join(buildfolder, 'test', 'TestBench')
-        if os.name == 'nt': bench += '.exe'
-        if not os.path.isfile(bench):
-            err = 'testbench <%s> not built' % bench
-            ret = 0
-        else:
-            origpath = os.environ['PATH']
-            if 'mingw' in opts:
-                os.environ['PATH'] += os.pathsep + opts['mingw']
-            p = Popen([bench], stdout=PIPE, stderr=PIPE)
-            err = async_poll_process(p)
-            os.environ['PATH'] = origpath
-
-        if err:
-            desc = describeEnvironment(key)
-            prefix = '** testbench failure reported for %s:: ' % key
-            return prefix + pastebin(desc + err)
-    return None
-
-
 def buildall():
     for key in my_builds:
         if my_progress:
@@ -487,4 +457,34 @@ def buildall():
             desc = describeEnvironment(key)
             return prefix + pastebin(desc + errors)
 
+    return None
+
+
+def testharness():
+    for key in my_builds:
+        buildfolder, generator, co, opts = my_builds[key]
+
+        if 'tests' not in co.split():
+            continue
+
+        if my_progress:
+            print 'Running testbench for %s...'% key
+
+        bench = os.path.join(buildfolder, 'test', 'TestBench')
+        if os.name == 'nt': bench += '.exe'
+        if not os.path.isfile(bench):
+            err = 'testbench <%s> not built' % bench
+            ret = 0
+        else:
+            origpath = os.environ['PATH']
+            if 'mingw' in opts:
+                os.environ['PATH'] += os.pathsep + opts['mingw']
+            p = Popen([bench], stdout=PIPE, stderr=PIPE)
+            err = async_poll_process(p)
+            os.environ['PATH'] = origpath
+
+        if err:
+            desc = describeEnvironment(key)
+            prefix = '** testbench failure reported for %s:: ' % key
+            return prefix + pastebin(desc + err)
     return None
