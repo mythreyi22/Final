@@ -13,179 +13,6 @@ except ImportError, e:
     print 'Copy conf.py.example to conf.py and edit the file as necessary'
     sys.exit(1)
 
-# TODO:
-#  error and warning handling
-
-def parseYuvFilename(fname):
-    '''requires the format: foo_bar_WxH_FPS[_10bit][_CSP].yuv'''
-
-    if not fname.lower().endswith('.yuv'):
-        raise Exception('parseYuv only supports YUV files')
-
-    # these steps can raise all manor of index exceptions, callers must
-    # catch them in case the YUV filename does not match our scheme
-    depth = 8
-    csp = '420'
-    words = fname[:-4].split('_')
-
-    if words[-1] in ('422','444'):
-        csp = words.pop()
-
-    if words[-1] == '10bit':
-        depth = 10
-        words.pop()
-
-    fps = words.pop()
-    width, height = words.pop().lower().split('x')
-
-    return (width, height, fps, depth, csp)
-
-
-def parseY4MHeader(fname):
-    '''read important file details from the Y4M header'''
-    header = open(fname, "r").readline() # read up to first newline
-    if not header.startswith('YUV4MPEG2'):
-        raise Exception('parseY4MHeader() did not find YUV4MPEG2 signature')
-
-    # example: C420jpeg W854 H480 F24:1 Ip A1:1
-    words = header.split()[1:]
-    csp = 420
-    depth = 8
-    for word in words:
-        if word[0] == 'C':
-            csp = word[1:4]
-            if word.endswith('p10'):
-                depth = 10
-        elif word[0] == 'W':
-            width = word[1:]
-        elif word[0] == 'H':
-            height = word[1:]
-        elif word[0] == 'F':
-            fps = word[1:].replace(':', '/')
-        elif word[0] in ('A', 'I'):
-            pass # ignored, libx265 will parse if needed
-        else:
-            print 'unknown Y4M header word'
-
-    return (width, height, fps, depth, csp)
-
-def pastebin(content):
-    import urllib
-    sizelimit = 500 * 1024
-
-    if not my_pastebin_key:
-        return 'No pastebin key configured. Contents:\n' + content
-    elif len(content) >= sizelimit:
-        content = content[:sizelimit - 30] + '\n\ntruncated to paste limit'
-
-    pastebin_vars = {
-        'api_option'     : 'paste',
-        'api_dev_key'    : my_pastebin_key,
-        'api_paste_code' : content
-    }
-    conn = urllib.urlopen('http://pastebin.com/api/api_post.php',
-                          urllib.urlencode(pastebin_vars))
-    url = conn.read()
-    if url.startswith('http://pastebin.com/'):
-        return url
-    else:
-        return 'pastebin failed <%s> paste contents:\n%s' + (url, content)
-
-
-def hgversion():
-    out, err = Popen(['hg', 'id', '-i'], stdout=PIPE, stderr=PIPE,
-                     cwd=my_x265_source).communicate()
-    if err:
-        raise Exception('Unable to determine source version: ' + err)
-    # note, if the ID ends with '+' it means the user's repository has
-    # uncommitted changes. We will never want to save golden outputs from these
-    # repositories.
-    return out[:-1] # strip line feed
-
-def hgsummary():
-    out, err = Popen(['hg', 'summary'], stdout=PIPE, stderr=PIPE,
-                     cwd=my_x265_source).communicate()
-    if err:
-        raise Exception('Unable to determine repo summary: ' + err)
-    return out
-
-def hgrevisioninfo(rev):
-    addstatus = False
-    if rev.endswith('+'):
-        rev = rev[:-1]
-        addstatus = True
-    out, err = Popen(['hg', 'log', '-r', rev], stdout=PIPE, stderr=PIPE,
-                     cwd=my_x265_source).communicate()
-    if err:
-        raise Exception('Unable to determine revision info: ' + err)
-    if addstatus:
-        out += 'Uncommitted changes in the working directory:\n'
-        out += Popen(['hg', 'status'], stdout=PIPE,
-                     cwd=my_x265_source).communicate()[0]
-    return out
-
-def hggetphase(rev):
-    if rev.endswith('+'): rev = rev[:-1]
-    out, err = Popen(['hg', 'log', '-r', rev, '--template', '{phase}'],
-                     stdout=PIPE, stderr=PIPE, cwd=my_x265_source).communicate()
-    if err:
-        raise Exception('Unable to determine revision phase: ' + err)
-    return out
-
-def hggetbranch(rev):
-    if rev.endswith('+'): rev = rev[:-1]
-    out, err = Popen(['hg', 'log', '-r', rev, '--template', '{branch}'],
-                     stdout=PIPE, stderr=PIPE, cwd=my_x265_source).communicate()
-    if err:
-        raise Exception('Unable to determine revision phase: ' + err)
-    return out
-
-def allowNewGoldenOutputs():
-    rev = hgversion()
-    if rev.endswith('+'):
-        # we do not store golden outputs if uncommitted changes
-        print 'User repo has uncommitted changes'
-        return False
-    if hggetphase(rev) != 'public':
-        # we do not store golden outputs until a revision is public (pushed)
-        print 'User repo parent rev is not public'
-        return False
-    return True
-
-
-def cmake(generator, buildfolder, cmakeopts, **opts):
-    # buildfolder is the relative path to build folder
-
-    if opts.get('rebuild') and os.path.exists(buildfolder):
-        shutil.rmtree(buildfolder)
-    if not os.path.exists(buildfolder):
-        os.mkdir(buildfolder)
-    else:
-        generator = None
-
-    cmds = ['cmake', os.path.abspath(my_x265_source)]
-
-    if generator:
-        cmds.append('-G')
-        cmds.append(generator)
-        if 'CFLAGS' in opts:
-            cmds.append('-DCMAKE_C_COMPILER_ARG1=' + opts['CFLAGS'])
-            cmds.append('-DCMAKE_CXX_COMPILER_ARG1=' + opts['CFLAGS'])
-
-    cmds.extend(cmakeopts)
-
-    env = os.environ.copy()
-    if generator:
-        if 'CC' in opts:
-            env['CC'] = opts['CC']
-        if 'CXX' in opts:
-            env['CXX'] = opts['CXX']
-    if 'mingw' in opts:
-        env['PATH'] += os.pathsep + opts['mingw']
-
-    proc = Popen(cmds, stdout=PIPE, stderr=PIPE, cwd=buildfolder, env=env)
-    return proc.communicate()
-
 if os.name == 'nt':
 
     # LOL Windows
@@ -282,6 +109,181 @@ else:
         return errors
 
 
+def parseYuvFilename(fname):
+    '''requires the format: foo_bar_WxH_FPS[_10bit][_CSP].yuv'''
+
+    if not fname.lower().endswith('.yuv'):
+        raise Exception('parseYuv only supports YUV files')
+
+    # these steps can raise all manor of index exceptions, callers must
+    # catch them in case the YUV filename does not match our scheme
+    depth = 8
+    csp = '420'
+    words = fname[:-4].split('_')
+
+    if words[-1] in ('422','444'):
+        csp = words.pop()
+
+    if words[-1] == '10bit':
+        depth = 10
+        words.pop()
+
+    fps = words.pop()
+    width, height = words.pop().lower().split('x')
+
+    return (width, height, fps, depth, csp)
+
+
+def parseY4MHeader(fname):
+    '''read important file details from the Y4M header'''
+    header = open(fname, "r").readline() # read up to first newline
+    if not header.startswith('YUV4MPEG2'):
+        raise Exception('parseY4MHeader() did not find YUV4MPEG2 signature')
+
+    # example: C420jpeg W854 H480 F24:1 Ip A1:1
+    words = header.split()[1:]
+    csp = 420
+    depth = 8
+    for word in words:
+        if word[0] == 'C':
+            csp = word[1:4]
+            if word.endswith('p10'):
+                depth = 10
+        elif word[0] == 'W':
+            width = word[1:]
+        elif word[0] == 'H':
+            height = word[1:]
+        elif word[0] == 'F':
+            fps = word[1:].replace(':', '/')
+        elif word[0] in ('A', 'I'):
+            pass # ignored, libx265 will parse if needed
+        else:
+            print 'unknown Y4M header word'
+
+    return (width, height, fps, depth, csp)
+
+def pastebin(content):
+    import urllib
+    sizelimit = 500 * 1024
+
+    if not my_pastebin_key:
+        return 'No pastebin key configured. Contents:\n' + content
+    elif len(content) >= sizelimit:
+        content = content[:sizelimit - 30] + '\n\ntruncated to paste limit'
+
+    pastebin_vars = {
+        'api_option'     : 'paste',
+        'api_dev_key'    : my_pastebin_key,
+        'api_paste_code' : content
+    }
+    conn = urllib.urlopen('http://pastebin.com/api/api_post.php',
+                          urllib.urlencode(pastebin_vars))
+    url = conn.read()
+    if url.startswith('http://pastebin.com/'):
+        return url
+    else:
+        return 'pastebin failed <%s> paste contents:\n%s' + (url, content)
+
+
+def hgversion():
+    out, err = Popen(['hg', 'id', '-i'], stdout=PIPE, stderr=PIPE,
+                     cwd=my_x265_source).communicate()
+    if err:
+        raise Exception('Unable to determine source version: ' + err)
+    # note, if the ID ends with '+' it means the user's repository has
+    # uncommitted changes. We will never want to save golden outputs from these
+    # repositories.
+    return out[:-1] # strip line feed
+
+
+def hgsummary():
+    out, err = Popen(['hg', 'summary'], stdout=PIPE, stderr=PIPE,
+                     cwd=my_x265_source).communicate()
+    if err:
+        raise Exception('Unable to determine repo summary: ' + err)
+    return out
+
+
+def hgrevisioninfo(rev):
+    addstatus = False
+    if rev.endswith('+'):
+        rev = rev[:-1]
+        addstatus = True
+    out, err = Popen(['hg', 'log', '-r', rev], stdout=PIPE, stderr=PIPE,
+                     cwd=my_x265_source).communicate()
+    if err:
+        raise Exception('Unable to determine revision info: ' + err)
+    if addstatus:
+        out += 'Uncommitted changes in the working directory:\n'
+        out += Popen(['hg', 'status'], stdout=PIPE,
+                     cwd=my_x265_source).communicate()[0]
+    return out
+
+
+def hggetphase(rev):
+    if rev.endswith('+'): rev = rev[:-1]
+    out, err = Popen(['hg', 'log', '-r', rev, '--template', '{phase}'],
+                     stdout=PIPE, stderr=PIPE, cwd=my_x265_source).communicate()
+    if err:
+        raise Exception('Unable to determine revision phase: ' + err)
+    return out
+
+
+def hggetbranch(rev):
+    if rev.endswith('+'): rev = rev[:-1]
+    out, err = Popen(['hg', 'log', '-r', rev, '--template', '{branch}'],
+                     stdout=PIPE, stderr=PIPE, cwd=my_x265_source).communicate()
+    if err:
+        raise Exception('Unable to determine revision phase: ' + err)
+    return out
+
+def allowNewGoldenOutputs():
+    rev = hgversion()
+    if rev.endswith('+'):
+        # we do not store golden outputs if uncommitted changes
+        print 'User repo has uncommitted changes'
+        return False
+    if hggetphase(rev) != 'public':
+        # we do not store golden outputs until a revision is public (pushed)
+        print 'User repo parent rev is not public'
+        return False
+    return True
+
+
+def cmake(generator, buildfolder, cmakeopts, **opts):
+    # buildfolder is the relative path to build folder
+
+    if opts.get('rebuild') and os.path.exists(buildfolder):
+        shutil.rmtree(buildfolder)
+    if not os.path.exists(buildfolder):
+        os.mkdir(buildfolder)
+    else:
+        generator = None
+
+    cmds = ['cmake', os.path.abspath(my_x265_source)]
+
+    if generator:
+        cmds.append('-G')
+        cmds.append(generator)
+        if 'CFLAGS' in opts:
+            cmds.append('-DCMAKE_C_COMPILER_ARG1=' + opts['CFLAGS'])
+            cmds.append('-DCMAKE_CXX_COMPILER_ARG1=' + opts['CFLAGS'])
+
+    cmds.extend(cmakeopts)
+
+    env = os.environ.copy()
+    if generator:
+        if 'CC' in opts:
+            env['CC'] = opts['CC']
+        if 'CXX' in opts:
+            env['CXX'] = opts['CXX']
+    if 'mingw' in opts:
+        env['PATH'] += os.pathsep + opts['mingw']
+
+    proc = Popen(cmds, stdout=PIPE, stderr=PIPE, cwd=buildfolder, env=env)
+    return proc.communicate()
+
+
 def gmake(buildfolder, **opts):
     origpath = os.environ['PATH']
     if 'mingw' in opts:
@@ -297,6 +299,7 @@ def gmake(buildfolder, **opts):
 
     os.environ['PATH'] = origpath
     return errors
+
 
 vcvars = ('include', 'lib', 'mssdk', 'path', 'regkeypath', 'sdksetupdir',
           'sdktools', 'targetos', 'vcinstalldir', 'vcroot', 'vsregkeypath')
@@ -363,16 +366,6 @@ def msbuild(buildfolder, generator, cmakeopts):
               cwd=buildfolder, env=env)
     return async_poll_process(p)
 
-def validatetools():
-    if not find_executable('hg'):
-        raise Exception('Unable to find Mercurial executable (hg)')
-    if not find_executable('cmake'):
-        raise Exception('Unable to find cmake executable')
-
-def setup(argv):
-    validatetools()
-    if not os.path.exists(os.path.join(my_x265_source, 'CMakeLists.txt')):
-        raise Exception('my_x265_source does not point to x265 source/ folder')
 
 def testharness(builds=None):
     for key in my_builds:
@@ -456,3 +449,17 @@ def buildall(builds=None):
             return prefix + pastebin(desc + errors)
 
     return None
+
+
+def validatetools():
+    if not find_executable('hg'):
+        raise Exception('Unable to find Mercurial executable (hg)')
+    if not find_executable('cmake'):
+        raise Exception('Unable to find cmake executable')
+
+
+def setup(argv):
+    validatetools()
+    if not os.path.exists(os.path.join(my_x265_source, 'CMakeLists.txt')):
+        raise Exception('my_x265_source does not point to x265 source/ folder')
+
