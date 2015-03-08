@@ -404,6 +404,8 @@ def testharness(builds=None):
             desc += '\n'
             prefix = '** testbench failure reported for %s:: ' % key
             return prefix + pastebin(desc + out + err)
+        elif my_progress:
+            print out
     return None
 
 def buildall(builds=None):
