@@ -552,6 +552,7 @@ ignored_warnings = (
     '--ssim used with AQ off: results will be invalid!',
     '--psnr used with AQ on: results will be invalid!',
     '--tune psnr should be used if attempting to benchmark psnr!',
+    'Assembly not supported in this binary',
 )
 
 def parsex265(tmpfolder, stdout, stderr):
