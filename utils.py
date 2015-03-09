@@ -1,13 +1,14 @@
 import os
 import shutil
 import sys
+import tempfile
 from subprocess import call, Popen, PIPE
 from distutils.spawn import find_executable
 
 try:
     from conf import my_machine_name, my_machine_desc, my_x265_source
     from conf import my_sequences, my_goldens, option_strings, my_builds
-    from conf import my_pastebin_key, my_progress
+    from conf import my_pastebin_key, my_progress, my_tempfolder
 except ImportError, e:
     print e
     print 'Copy conf.py.example to conf.py and edit the file as necessary'
@@ -25,6 +26,8 @@ def setup(argv):
     if not os.path.exists(os.path.join(my_x265_source, 'CMakeLists.txt')):
         raise Exception('my_x265_source does not point to x265 source/ folder')
 
+    if my_tempfolder:
+        tempfile.tempdir = my_tempfolder
     import getopt
     optlist, args = getopt.getopt(argv[1:], 'hb:', ['builds=', '--help'])
     for opt, val in optlist:
@@ -474,7 +477,6 @@ def testharness():
         if os.name == 'nt': bench += '.exe'
         if not os.path.isfile(bench):
             err = 'testbench <%s> not built' % bench
-            ret = 0
         else:
             origpath = os.environ['PATH']
             if 'mingw' in opts:
@@ -488,3 +490,113 @@ def testharness():
             prefix = '** testbench failure reported for %s:: ' % key
             return prefix + pastebin(desc + err)
     return None
+
+
+def encodeharness(key, sequence, commands, inextras):
+    '''
+    Perform a single test encode within a tempfolder
+     * key      is the shortname for the build to use, ex: 'gcc'
+     * sequence is the YUV or Y4M filename with no path
+     * commands is a list [] of commands which influence outputs (hashed)
+     * extras   is a list [] of commands which do not influence outputs
+    returns tuple of (tmpfolder path, error string)
+    '''
+
+    buildfolder, _, _, opts = my_builds[key]
+    tmpfolder = None
+
+    extras = inextras[:] # make copy so we can append locally
+    if sequence.lower().endswith('.yuv'):
+        (width, height, fps, depth, csp) = parseYuvFilename(sequence)
+        extras += ['--input-res=%sx%s' % (width, height),
+                   '--fps=%s' % fps,
+                   '--input-depth=%s' % depth,
+                   '--input-csp=i%s' % csp]
+
+    if my_progress:
+        print 'Running x265-%s %s %s' % (key, sequence, ' '.join(commands))
+
+    seqfullpath = os.path.join(my_sequences, sequence)
+    x265 = os.path.abspath(os.path.join(buildfolder, 'x265'))
+    if os.name == 'nt': x265 += '.exe'
+
+    cmds = [x265, seqfullpath, 'bitstream.hevc'] + commands + extras
+
+    stdout, stderr, errors = '', '', ''
+    if not os.path.isfile(x265):
+        errors = 'x265 <%s> cli not compiled' % x265
+    elif not os.path.isfile(seqfullpath):
+        errors = 'sequence <%s> not found' % seqfullpath
+    else:
+        tmpfolder = tempfile.mkdtemp(prefix='x265-temp')
+        origpath = os.environ['PATH']
+        if 'mingw' in opts:
+            os.environ['PATH'] += os.pathsep + opts['mingw']
+        p = Popen(cmds, cwd=tmpfolder, stdout=PIPE, stderr=PIPE)
+        stdout, stderr = p.communicate()
+        summary, errors = parsex265(tmpfolder, stdout, stderr)
+        if p.returncode:
+           errors += 'return code %d\n' % p.returncode
+        os.environ['PATH'] = origpath
+
+    if errors:
+        desc = describeEnvironment(key)
+        desc += 'command: %s %s\n' % (sequence, ' '.join(commands))
+        desc += ' extras: ' + ' '.join(extras) + '\n\n'
+        prefix = '** encoder warning or error reported for %s:: ' % key
+        errors = prefix + pastebin(desc + errors)
+    return (tmpfolder, summary, errors)
+
+ignored_warnings = (
+    '--psnr used with psy on: results will be invalid!',
+    '--ssim used with AQ off: results will be invalid!',
+    '--psnr used with AQ on: results will be invalid!',
+    '--tune psnr should be used if attempting to benchmark psnr!',
+)
+
+def parsex265(tmpfolder, stdout, stderr):
+    errors = ''
+    check = os.path.join(tmpfolder, 'x265_check_failures.txt')
+    if os.path.exists(check):
+        errors += '** check failures reported:\n' + open(check, 'r').read()
+    leaks = os.path.join(tmpfolder, 'x265_leaks.txt')
+    if os.path.exists(leaks):
+        errors += '** leaks reported:\n' + open(leaks, 'r').read()
+
+    # parse summary from last line of stdout
+    lines = stdout.splitlines()
+    words = lines[-1].split()
+    ssim, psnr, bitrate = 'N/A', 'N/A', 'N/A'
+    if 'fps),' in words:
+        index = words.index('fps),')
+        bitrate = words[index + 1]
+    if 'SSIM' in words:
+        ssim = words[-2]
+        if ssim.startswith('('): ssim = ssim[1:]
+    if 'PSNR:' in words:
+        index = words.index('PSNR:')
+        psnr = words[index + 1]
+        if psnr.endswith(','): psnr = psnr[:-1]
+    summary = 'bitrate: %s, SSIM: %s, PSNR: %s' % (bitrate, ssim, psnr)
+
+    # check for warnings in x265 logs
+    lastprog = ''
+    for line in stderr.splitlines():
+        if line.startswith(('yuv  [', 'y4m  [')):
+            pass
+        elif line.startswith('x265 ['):
+            if line[6:13] == 'warning':
+                warn = line[16:]
+                if warn not in ignored_warnings:
+                    errors += lastprog + line
+                    lastprog = ''
+            elif line[6:11] == 'error':
+                errors += lastprog + line
+                lastprog = ''
+        elif line.startswith('[') and line.endswith('\r'):
+            lastprog = line
+
+    if errors:
+        errors += '\n\nFull encoder log:\n' + stderr + stdout
+
+    return summary, errors

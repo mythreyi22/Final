@@ -8,6 +8,12 @@ my_sequences    = r'\\bigdata\sequences'
 my_goldens      = r'\\bigdata\golden'
 my_progress     = True # do you want to see build / encode status on console?
 
+# location for encoder intermediates. One temp folder will be created
+# per run, but should be deleted upon completion, so it does not require
+# much space but it should have good throughput. If not defined Python
+# will use the default temp folder for your platform and user account
+my_tempfolder   = ''
+
 # if you want the script to create pastebins of warnings and errors you
 # must register at pastebin.com, sign in, then go to http://pastebin.com/api
 # to find 'Your Unique Developer API Key'
