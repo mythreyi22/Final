@@ -628,6 +628,8 @@ ignored_warnings = (
     '--psnr used with AQ on: results will be invalid!',
     '--tune psnr should be used if attempting to benchmark psnr!',
     'Assembly not supported in this binary',
+    '!! HEVC Range Extension specifications are not finalized !!',
+    '!! This output bitstream may not be compliant with the final spec !!',
 )
 
 def parsex265(tmpfolder, stdout, stderr):
