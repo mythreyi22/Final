@@ -59,6 +59,9 @@ def setup(argv):
             print '\t   --no-bench        do not run test benches'
             sys.exit(0)
 
+ignored_compiler_warnings = (
+    'ld: warning: PIE disabled',
+)
 
 if os.name == 'nt':
 
@@ -105,15 +108,18 @@ if os.name == 'nt':
                 pass
 
             if not qerr.empty():
-                errors += ''.join(out[-3:])
-                out = []
-
                 try:
                     while not qerr.empty():
                         line = qerr.get()
                         if fulloutput: output += line
                         if my_progress: print line,
-                        errors += line
+                        for i in ignored_compiler_warnings:
+                            if line.startswith(i):
+                                break
+                        else:
+                            errors += ''.join(out[-3:])
+                            out = []
+                            errors += line
                 except Empty:
                     pass
 
@@ -170,10 +176,13 @@ else:
                         empty = False
                         if fulloutput: output += line
                         if my_progress: print line,
-                        if out:
+                        for i in ignored_compiler_warnings:
+                            if line.startswith(i):
+                                break
+                        else:
                             errors += ''.join(out[-3:])
                             out = []
-                        errors += line
+                            errors += line
             if proc.poll() != None and not exiting:
                 exiting = True
             elif exiting and empty:
