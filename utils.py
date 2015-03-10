@@ -590,8 +590,12 @@ def encodeharness(key, sequence, commands, inextras):
         os.environ['PATH'] = origpath
 
         summary, errors = parsex265(tmpfolder, stdout, stderr)
-        if p.returncode:
-           errors += 'x265 return code %d\n' % p.returncode
+        if p.returncode == -11:
+           errors += 'x265 encountered SIGSEGV\n\n'
+        elif p.returncode == -4:
+           errors += 'x265 encountered SIGILL (usually -ftrapv)\n\n'
+        elif p.returncode:
+           errors += 'x265 return code %d\n\n' % p.returncode
 
     if errors:
         desc = describeEnvironment(key)
@@ -627,19 +631,20 @@ def parsex265(tmpfolder, stdout, stderr):
         errors += '** leaks reported:\n' + open(leaks, 'r').read()
 
     # parse summary from last line of stdout
-    lines = stdout.splitlines()
-    words = lines[-1].split()
     ssim, psnr, bitrate = 'N/A', 'N/A', 'N/A'
-    if 'fps),' in words:
-        index = words.index('fps),')
-        bitrate = words[index + 1]
-    if 'SSIM' in words:
-        ssim = words[-2]
-        if ssim.startswith('('): ssim = ssim[1:]
-    if 'PSNR:' in words:
-        index = words.index('PSNR:')
-        psnr = words[index + 1]
-        if psnr.endswith(','): psnr = psnr[:-1]
+    if stdout:
+        lines = stdout.splitlines()
+        words = lines[-1].split()
+        if 'fps),' in words:
+            index = words.index('fps),')
+            bitrate = words[index + 1]
+        if 'SSIM' in words:
+            ssim = words[-2]
+            if ssim.startswith('('): ssim = ssim[1:]
+        if 'PSNR:' in words:
+            index = words.index('PSNR:')
+            psnr = words[index + 1]
+            if psnr.endswith(','): psnr = psnr[:-1]
     summary = 'bitrate: %s, SSIM: %s, PSNR: %s' % (bitrate, ssim, psnr)
 
     # check for warnings in x265 logs
