@@ -12,4 +12,6 @@
 cc5b9d4abddb lookahead uses full intra references
 6adc0fe54354 merge psy-rd default of 0.3 to default
 d4f52d3270b6 lower psy-rd default to 0.3 (last change on stable)
+6adc0fe54354 merge ultrafast deblock to default
+cefc6f03cce1 enable deblock at ultrafast (on stable)
 272781048200 added temporal layers, changed SPS slightly
