@@ -52,6 +52,7 @@ try:
 except KeyboardInterrupt:
     print 'Caught ctrl+c, exiting'
 
+# summarize results (could be an email)
 print '\n\n'
 if log:
     print 'Revision under test:'
