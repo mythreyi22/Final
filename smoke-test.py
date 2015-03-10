@@ -4,10 +4,11 @@ import sys
 import shutil
 
 import utils
-from conf import my_builds
 
 # setup will call sys.exit() if it determines the tests are unable to continue
 utils.setup(sys.argv)
+
+from conf import my_builds, my_machine_name
 
 if utils.run_make:
     errors = utils.buildall()
@@ -53,7 +54,11 @@ except KeyboardInterrupt:
 
 print '\n\n'
 if log:
-    # TODO: file log or email
+    print 'Revision under test:'
+    print utils.hgsummary()
+    print 'Last known good revision:'
+    print utils.hgrevisioninfo(lastgood)
     print log
 else:
-    print 'All tests passed'
+    print 'All smoke tests passed for %s against %s on %s' % \
+           (rev, lastgood, my_machine_name)
