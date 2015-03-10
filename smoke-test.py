@@ -36,12 +36,18 @@ configs = [
 
 extras = ['--psnr', '--ssim']
 
+testrev = utils.hgversion()
+lastgood = utils.findlastgood(testrev)
+print 'testing revision %s, validating outputs against %s' % (testrev, lastgood)
+
+log = ''
 for build in encoders:
+    desc = utils.describeEnvironment(build)
     for seq in sequences:
         for cfg in configs:
-            tmpdir, sum, errors = utils.encodeharness(build, seq, cfg, extras)
-            if errors:
-                print errors
-            elif tmpdir:
-                print sum
-                shutil.rmtree(tmpdir)
+            log += utils.runtest(build, lastgood, testrev, seq, cfg, extras, desc)
+            print
+
+if log:
+    # TODO: file log or email
+    print log

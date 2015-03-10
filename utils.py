@@ -1,7 +1,9 @@
+import datetime
 import os
 import shutil
 import sys
 import tempfile
+import time
 from subprocess import call, Popen, PIPE
 from distutils.spawn import find_executable
 
@@ -280,6 +282,16 @@ def hggetphase(rev):
     return out
 
 
+def hgrevisiondate(rev):
+    if rev.endswith('+'): rev = rev[:-1]
+    out, err = Popen(['hg', 'log', '-r', rev, '--template', '{isodate(date)}'],
+                     stdout=PIPE, stderr=PIPE, cwd=my_x265_source).communicate()
+    if err:
+        raise Exception('Unable to determine revision phase: ' + err)
+    # isodate format is '2015-03-09 12:13 -0500', we want '15-03-09'
+    return out[2:10]
+
+
 def hggetbranch(rev):
     if rev.endswith('+'): rev = rev[:-1]
     out, err = Popen(['hg', 'log', '-r', rev, '--template', '{branch}'],
@@ -534,10 +546,11 @@ def encodeharness(key, sequence, commands, inextras):
             os.environ['PATH'] += os.pathsep + opts['mingw']
         p = Popen(cmds, cwd=tmpfolder, stdout=PIPE, stderr=PIPE)
         stdout, stderr = p.communicate()
+        os.environ['PATH'] = origpath
+
         summary, errors = parsex265(tmpfolder, stdout, stderr)
         if p.returncode:
-           errors += 'return code %d\n' % p.returncode
-        os.environ['PATH'] = origpath
+           errors += 'x265 return code %d\n' % p.returncode
 
     if errors:
         desc = describeEnvironment(key)
@@ -546,6 +559,13 @@ def encodeharness(key, sequence, commands, inextras):
         prefix = '** encoder warning or error reported for %s:: ' % key
         errors = prefix + pastebin(desc + errors)
     return (tmpfolder, summary, errors)
+
+def testcasehash(sequence, commands):
+    import md5
+    m = md5.new()
+    m.update(sequence)
+    m.update(' '.join(commands))
+    return m.hexdigest()[:12]
 
 ignored_warnings = (
     '--psnr used with psy on: results will be invalid!',
@@ -601,3 +621,133 @@ def parsex265(tmpfolder, stdout, stderr):
         errors += '\n\nFull encoder log:\n' + stderr + stdout
 
     return summary, errors
+
+
+def findlastgood(testrev):
+    '''
+    output-changing-commits.txt must contain the hashes (12-bytes) of
+    commits which change outputs. All commits which are ancestors of these
+    commits should match outputs (unless they are also listed). New output
+    changing commits must be added on top so they are found before any of
+    their ancestor commits.
+
+    Lines starting with a hash are considered comments, text after the 12 byte
+    hash are ignored and can be used to describe the commit
+    '''
+    try:
+        lines = open("output-changing-commits.txt").readlines()
+    except EnvironmentError:
+        return testrev
+
+    for line in lines:
+        if line[0] == '#': continue
+        rev = line[:12]
+        out = Popen(['hg', 'log', '-r', "%s::%s" % (rev, testrev), '--template',
+                     '"{short(node)}"'], cwd=my_x265_source).communicate()[0]
+        if out:
+            return rev
+
+    return testrev
+
+
+def checkoutputs(seq, cfg, lastgood, sum, tmpdir):
+    testhash = testcasehash(seq, cfg)
+    testfolder = os.path.join(my_goldens, testhash)
+    if not os.path.isdir(testfolder):
+        return None
+    date = hgrevisiondate(lastgood)
+    lastgoodfolder = os.path.join(testfolder, date + '-' + lastgood)
+    if not os.path.isdir(lastgoodfolder):
+        return None
+    import filecmp
+    golden = os.path.join(lastgoodfolder, 'bitstream.hevc')
+    test = os.path.join(tmpdir, 'bitstream.hevc')
+    if not filecmp.cmp(golden, test):
+        oldsum = open(os.path.join(lastgoodfolder, 'summary.txt'), 'r').read()
+        res = '%s: Bitstream does not match last known good\n' % testhash
+        res += ' CMD: %s %s\n' % (seq, ' '.join(cfg))
+        res += 'PREV: %s\n' % oldsum
+        res += ' NEW: %s\n\n' % sum
+        return res
+    return False
+
+
+def newgoldenoutputs(seq, cfg, lastgood, testrev, desc, sum, tmpdir):
+    '''
+    A test was run and the outputs are good (match the last known good or if
+    no last known good is available, these new results are taken
+    '''
+
+    testhash = testcasehash(seq, cfg)
+
+    # create a new test folder if necessary
+    testfolder = os.path.join(my_goldens, testhash)
+    if not os.path.isdir(testfolder):
+        os.mkdir(testfolder)
+        fp = open(os.path.join(testfolder, 'hashed-command-line.txt'), 'w')
+        fp.write('%s %s\n' % (seq, ' '.join(cfg)))
+        fp.close()
+
+    # create a new golden output folder if necessary
+    revdate = hgrevisiondate(lastgood)
+    lastgoodfolder = os.path.join(testfolder, revdate + '-' + lastgood)
+    if not os.path.isdir(lastgoodfolder):
+        os.mkdir(lastgoodfolder)
+        shutil.copy(os.path.join(tmpdir, 'bitstream.hevc'), lastgoodfolder)
+        open(os.path.join(lastgoodfolder, 'summary.txt'), 'w').write(sum)
+
+    pfolder = os.path.join(lastgoodfolder, 'passed')
+    if not os.path.isdir(pfolder):
+        os.mkdir(pfolder)
+
+    nowdate = str(datetime.date.fromtimestamp(time.time()))[2:]
+    fname = '%s-%s-%s' % (nowdate, testrev, my_machine_name)
+    open(os.path.join(pfolder, fname), 'w').write(desc)
+
+
+def addpass(seq, cfg, lastgood, testrev, desc, sum):
+    testhash = testcasehash(seq, cfg)
+    revdate = hgrevisiondate(lastgood)
+    nowdate = str(datetime.date.fromtimestamp(time.time()))[2:]
+    fname = '%s-%s-%s' % (nowdate, testrev, my_machine_name)
+    pfn = os.path.join(my_goldens, testhash, revdate + '-' + lastgood, 'passed', fname)
+    open(pfn, 'w').write(desc + sum + '\n')
+
+
+def addfail(seq, cfg, lastgood, testrev, desc, errors):
+    testhash = testcasehash(seq, cfg)
+    revdate = hgrevisiondate(lastgood)
+    folder = os.path.join(my_goldens, testhash, revdate + '-' + lastgood, 'failed')
+    if not os.path.isdir(folder):
+        os.mkdir(folder)
+    nowdate = str(datetime.date.fromtimestamp(time.time()))[2:]
+    fname = '%s-%s-%s' % (nowdate, testrev, my_machine_name)
+    open(os.path.join(folder, fname), 'w').write(desc + errors + '\n')
+
+
+def runtest(build, lastgood, testrev, seq, cfg, extras, desc):
+    tmpdir, sum, errors = encodeharness(build, seq, cfg, extras)
+    if not tmpdir:
+        return errors
+    elif errors:
+        shutil.rmtree(tmpdir)
+        return errors
+
+    errors = checkoutputs(seq, cfg, lastgood, sum, tmpdir)
+    if errors is None:
+        # no previous results for this test case and lastgood
+        # TODO: validate with HM decoder, etc
+        newgoldenoutputs(seq, cfg, lastgood, testrev, desc, sum, tmpdir)
+        print 'No golden outputs for this last good, saving these outputs'
+        print sum
+        log = ''
+    elif errors is False:
+        print 'PASSED:', sum
+        addpass(seq, cfg, lastgood, testrev, desc, sum)
+        log = ''
+    else:
+        addfail(seq, cfg, lastgood, testrev, desc, errors)
+        log = errors
+
+    shutil.rmtree(tmpdir)
+    return log
