@@ -9,8 +9,8 @@ from distutils.spawn import find_executable
 
 try:
     from conf import my_machine_name, my_machine_desc, my_x265_source
-    from conf import my_sequences, my_goldens, option_strings, my_builds
-    from conf import my_pastebin_key, my_progress, my_tempfolder
+    from conf import my_sequences, my_goldens, option_strings, my_hm_decoder
+    from conf import my_pastebin_key, my_progress, my_tempfolder, my_builds
 except ImportError, e:
     print e
     print 'Copy conf.py.example to conf.py and edit the file as necessary'
@@ -21,6 +21,8 @@ def validatetools():
         raise Exception('Unable to find Mercurial executable (hg)')
     if not find_executable('cmake'):
         raise Exception('Unable to find cmake executable')
+    if not find_executable(my_hm_decoder):
+        raise Exception('Unable to find HM decoder')
 
 run_make  = True
 run_bench = True
@@ -74,7 +76,7 @@ if os.name == 'nt':
         except:
             fd.close()
 
-    def async_poll_process(proc):
+    def async_poll_process(proc, fulloutput):
         from Queue import Queue, Empty
         from threading import Thread
         qout = Queue()
@@ -88,12 +90,14 @@ if os.name == 'nt':
         out = []
         errors = ''
         exiting = False
+        output = ''
         while True:
             # note that this doesn't guaruntee we get the stdout and stderr
             # lines in the intended order, but they should be close
             try:
                 while not qout.empty():
                     line = qout.get()
+                    if fulloutput: output += line
                     if my_progress: print line,
                     out.append(line)
             except Empty:
@@ -106,6 +110,7 @@ if os.name == 'nt':
                 try:
                     while not qerr.empty():
                         line = qerr.get()
+                        if fulloutput: output += line
                         if my_progress: print line,
                         errors += line
                 except Empty:
@@ -126,7 +131,10 @@ if os.name == 'nt':
             errors += 'SIGILL\n'
         elif proc.returncode:
             errors += 'return code %d\n' % proc.returncode
-        return errors
+        if fulloutput:
+            return output, errors
+        else:
+            return errors
 
 else:
 
@@ -134,9 +142,10 @@ else:
 
     import select
 
-    def async_poll_process(proc):
+    def async_poll_process(proc, fulloutput):
         out = []
         errors = ''
+        output = ''
 
         # poll stdout and stderr file handles so we get errors in the context
         # of the stdout compile progress reports
@@ -148,11 +157,13 @@ else:
                 if fd == proc.stdout.fileno():
                     line = proc.stdout.readline()
                     if line:
-                        out.append(line)
+                        if fulloutput: output += line
                         if my_progress: print line,
+                        out.append(line)
                 if fd == proc.stderr.fileno():
                     line = proc.stderr.readline()
                     if line:
+                        if fulloutput: output += line
                         if my_progress: print line,
                         if out:
                             errors += ''.join(out[-3:])
@@ -169,7 +180,10 @@ else:
             errors += 'SIGILL\n'
         elif proc.returncode:
             errors += 'return code %d\n' % proc.returncode
-        return errors
+        if fulloutput:
+            return output, errors
+        else:
+            return errors
 
 
 def parseYuvFilename(fname):
@@ -310,6 +324,7 @@ def hggetbranch(rev):
         raise Exception('Unable to determine revision phase: ' + err)
     return out
 
+
 def allowNewGoldenOutputs():
     rev = hgversion()
     if rev.endswith('+'):
@@ -368,7 +383,7 @@ def gmake(buildfolder, **opts):
         cmds.extend(opts['make-opts'])
 
     p = Popen(cmds, stdout=PIPE, stderr=PIPE, cwd=buildfolder)
-    errors = async_poll_process(p)
+    errors = async_poll_process(p, False)
 
     os.environ['PATH'] = origpath
     return errors
@@ -437,7 +452,7 @@ def msbuild(buildfolder, generator, cmakeopts):
 
     p = Popen([msbuild, '/clp:disableconsolecolor', target, 'x265.sln'],
               cwd=buildfolder, env=env)
-    return async_poll_process(p)
+    return async_poll_process(p, False)
 
 
 def describeEnvironment(key):
@@ -504,7 +519,7 @@ def testharness():
             if 'mingw' in opts:
                 os.environ['PATH'] += os.pathsep + opts['mingw']
             p = Popen([bench], stdout=PIPE, stderr=PIPE)
-            err = async_poll_process(p)
+            err = async_poll_process(p, False)
             os.environ['PATH'] = origpath
 
         if err:
@@ -652,8 +667,9 @@ def findlastgood(testrev):
     for line in lines:
         if line[0] == '#': continue
         rev = line[:12]
-        out = Popen(['hg', 'log', '-r', "%s::%s" % (rev, testrev), '--template',
-                     '"{short(node)}"'], cwd=my_x265_source).communicate()[0]
+        cmds = ['hg', 'log', '-r', "%s::%s" % (rev, testrev), '--template',
+                '"{short(node)}"'],
+        out = Popen(cmds, stdout=PIPE, cwd=my_x265_source).communicate()[0]
         if out:
             return rev
 
@@ -735,6 +751,14 @@ def addfail(seq, cfg, lastgood, testrev, desc, errors):
     open(os.path.join(folder, fname), 'w').write(desc + errors + '\n')
 
 
+def checkdecoder(tmpdir):
+    cmds = [os.path.abspath(my_hm_decoder), '-b', 'bitstream.hevc']
+    proc = Popen(cmds, stdout=PIPE, stderr=PIPE, cwd=tmpdir)
+    stdout, errors = async_poll_process(proc, True)
+    hashErrors = [line for line in stdout.splitlines() if '***ERROR***' in line]
+    return hashErrors + errors
+
+
 def runtest(build, lastgood, testrev, seq, cfg, extras, desc):
     tmpdir, sum, errors = encodeharness(build, seq, cfg, extras)
     if not tmpdir:
@@ -745,12 +769,15 @@ def runtest(build, lastgood, testrev, seq, cfg, extras, desc):
 
     errors = checkoutputs(seq, cfg, lastgood, sum, tmpdir)
     if errors is None:
-        # no previous results for this test case and lastgood
-        # TODO: validate with HM decoder, etc
-        newgoldenoutputs(seq, cfg, lastgood, testrev, desc, sum, tmpdir)
-        print 'No golden outputs for this last good, saving these outputs'
-        print sum
-        log = ''
+        print 'No golden outputs for this last good, checking with decoder'
+        errors = checkdecoder(tmpdir)
+        if errors;
+            log = errors
+        else:
+            print 'Bitstream decoded ok'
+            print sum
+            newgoldenoutputs(seq, cfg, lastgood, testrev, desc, sum, tmpdir)
+            log = ''
     elif errors is False:
         print 'PASSED:', sum
         addpass(seq, cfg, lastgood, testrev, desc, sum)

@@ -6,6 +6,7 @@ my_machine_desc = ''  # description of hardware, CPU(s), memory, etc
 my_x265_source  = r'C:\projects\x265\source'
 my_sequences    = r'\\bigdata\sequences'
 my_goldens      = r'\\bigdata\golden'
+my_hm_decoder   = r'C:\projects\hm\bin\TAppDecoderStatic'
 my_progress     = True # do you want to see build / encode status on console?
 
 # location for encoder intermediates. One temp folder will be created
