@@ -684,7 +684,7 @@ def findlastgood(testrev):
     return testrev
 
 
-def checkoutputs(seq, cfg, lastfname, sum, tmpdir):
+def checkoutputs(key, seq, cfg, lastfname, sum, tmpdir):
     testhash = testcasehash(seq, cfg)
     testfolder = os.path.join(my_goldens, testhash, lastfname)
     if not os.path.isdir(testfolder):
@@ -693,7 +693,8 @@ def checkoutputs(seq, cfg, lastfname, sum, tmpdir):
     test = os.path.join(tmpdir, 'bitstream.hevc')
     if not filecmp.cmp(golden, test):
         oldsum = open(os.path.join(testfolder, 'summary.txt'), 'r').read()
-        res = '%s: Bitstream does not match last known good\n' % testhash
+        res = '%s: %s output does not match last known good for group %s\n' % \
+               (testhash, key, my_builds[key][1])
         res += ' CMD: %s %s\n' % (seq, ' '.join(cfg))
         res += 'PREV: %s\n' % oldsum
         res += ' NEW: %s\n\n' % sum
@@ -770,7 +771,7 @@ def runtest(build, lastgood, testrev, seq, cfg, extras, desc):
     lastfname = '%s-%s-%s' % (revdate, group, lastgood)
     testhash = testcasehash(seq, cfg)
 
-    errors = checkoutputs(seq, cfg, lastfname, sum, tmpdir)
+    errors = checkoutputs(build, seq, cfg, lastfname, sum, tmpdir)
     if errors is None:
         print 'No golden outputs for this last good, checking with decoder'
         errors = checkdecoder(tmpdir)
@@ -788,7 +789,7 @@ def runtest(build, lastgood, testrev, seq, cfg, extras, desc):
         log = ''
     else:
         addfail(testhash, lastfname, testrev, desc, errors)
-        print 'FAILED'
+        print 'MISMATCH'
         log = errors
 
     shutil.rmtree(tmpdir)
