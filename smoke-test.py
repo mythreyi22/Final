@@ -12,13 +12,13 @@ utils.setup(sys.argv)
 if utils.run_make:
     errors = utils.buildall()
     if errors:
-        print errors
+        print '\n\n' + errors
         sys.exit(1)
 
 if utils.run_bench:
     errors = utils.testharness()
     if errors:
-        print errors
+        print '\n\n' + errors
         sys.exit(1)
 
 sequences = [
@@ -48,6 +48,7 @@ for key in my_builds:
             log += utils.runtest(key, lastgood, rev, seq, cfg, extras, desc)
             print
 
+print '\n\n'
 if log:
     # TODO: file log or email
     print log
