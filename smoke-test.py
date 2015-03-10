@@ -4,6 +4,7 @@ import sys
 import shutil
 
 import utils
+from conf import my_builds
 
 # setup will call sys.exit() if it determines the tests are unable to continue
 utils.setup(sys.argv)
@@ -19,9 +20,6 @@ if utils.run_bench:
     if errors:
         print errors
         sys.exit(1)
-
-from conf import my_builds
-encoders = my_builds.keys()
 
 sequences = [
     'RaceHorses_416x240_30_10bit.yuv',
@@ -43,7 +41,7 @@ lastgood = utils.findlastgood(rev)
 print 'testing revision %s, validating against %s\n' % (rev, lastgood)
 
 log = ''
-for key in encoders:
+for key in my_builds:
     desc = utils.describeEnvironment(key)
     for seq in sequences:
         for cfg in configs:
@@ -53,3 +51,5 @@ for key in encoders:
 if log:
     # TODO: file log or email
     print log
+else:
+    print 'All tests passed'

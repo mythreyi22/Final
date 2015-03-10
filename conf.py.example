@@ -26,20 +26,25 @@ my_builds = {
     #
     #'gcc'   :                   # build label (short name)
     #         ('default/',       # unique build folder
+    #          'gcc',            # build group, see below
     #          'Unix Makefiles', # cmake generator
     #          'static checked', # short-hand cmake options (see below)
     #          {}),              # env-vars and other keyword arguments
     #
-    #'gcc32' : ('gcc32/', 'Unix Makefiles', 'static', {'CFLAGS':'-m32'}),
-    #'gcc10' : ('gcc10/', 'Unix Makefiles', '16bpp', {'make-opts': ['-j16']}),
-    #'llvm'  : ('llvm/', 'Unix Makefiles', 'checked',
+    #'gcc32' : ('gcc32/', 'gcc', 'Unix Makefiles', 'static', {'CFLAGS':'-m32'}),
+    #'gcc10' : ('gcc10/', 'gcc10', 'Unix Makefiles', '16bpp', {'make-opts': ['-j16']}),
+    #'llvm'  : ('llvm/', 'gcc', 'Unix Makefiles', 'checked',
     #           {'CC':'clang', 'CXX':'clang++'}),
-    #'vc11'  : ('vc11/', 'Visual Studio 11 Win64', 'checked', {}),
-    #'vc11D' : ('vc11D/', 'Visual Studio 11 Win64', 'debug crt noasm ppa', {}),
-    #'win32' : ('vc11x86/', 'Visual Studio 11', 'static ppa', {}),
-    #'mingw' : ('mingw/', 'MinGW Makefiles', 'tests',
+    #'vc11'  : ('vc11/', 'vc', 'Visual Studio 11 Win64', 'checked', {}),
+    #'vc11D' : ('vc11D/', 'vc', 'Visual Studio 11 Win64', 'debug crt noasm ppa', {}),
+    #'win32' : ('vc11x86/', 'vc', 'Visual Studio 11', 'static ppa', {}),
+    #'mingw' : ('mingw/', 'gcc', 'MinGW Makefiles', 'tests',
     #           {'mingw':r'C:\mcw\msys\mingw64\bin'}),
 }
+
+# Many builds of x265 will produce the same outputs given the same input
+# sequence and command line. The 'build group' string identifies these
+# groups of encoder builds which are expected to match outputs
 
 # Supported keyword arguments:
 #   CFLAGS - directly assigned to CMAKE CFLAG args (intended for -m32)

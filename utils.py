@@ -1,4 +1,5 @@
 import datetime
+import filecmp
 import os
 import shutil
 import sys
@@ -462,7 +463,7 @@ def msbuild(buildfolder, generator, cmakeopts):
 
 
 def describeEnvironment(key):
-    _, generator, co, opts = my_builds[key]
+    _, _, generator, co, opts = my_builds[key]
     desc  = 'system   : %s\n' % my_machine_name
     desc += 'hardware : %s\n' % my_machine_desc
     desc += 'generator: %s\n' % generator
@@ -476,7 +477,7 @@ def buildall():
         if my_progress:
             print 'building %s...'% key
 
-        buildfolder, generator, co, opts = my_builds[key]
+        buildfolder, _, generator, co, opts = my_builds[key]
 
         cmakeopts = []
         for o in co.split():
@@ -508,7 +509,7 @@ def buildall():
 
 def testharness():
     for key in my_builds:
-        buildfolder, generator, co, opts = my_builds[key]
+        buildfolder, _, generator, co, opts = my_builds[key]
 
         if 'tests' not in co.split():
             continue
@@ -545,7 +546,7 @@ def encodeharness(key, sequence, commands, inextras):
     returns tuple of (tmpfolder path, error string)
     '''
 
-    buildfolder, _, _, opts = my_builds[key]
+    buildfolder, _, _, _, opts = my_builds[key]
     tmpfolder = None
 
     extras = inextras[:] # make copy so we can append locally
@@ -590,6 +591,7 @@ def encodeharness(key, sequence, commands, inextras):
         prefix = '** encoder warning or error reported for %s:: ' % key
         errors = prefix + pastebin(desc + errors)
     return (tmpfolder, summary, errors)
+
 
 def testcasehash(sequence, commands):
     import md5
@@ -682,20 +684,15 @@ def findlastgood(testrev):
     return testrev
 
 
-def checkoutputs(seq, cfg, lastgood, sum, tmpdir):
+def checkoutputs(seq, cfg, lastfname, sum, tmpdir):
     testhash = testcasehash(seq, cfg)
-    testfolder = os.path.join(my_goldens, testhash)
+    testfolder = os.path.join(my_goldens, testhash, lastfname)
     if not os.path.isdir(testfolder):
         return None
-    date = hgrevisiondate(lastgood)
-    lastgoodfolder = os.path.join(testfolder, date + '-' + lastgood)
-    if not os.path.isdir(lastgoodfolder):
-        return None
-    import filecmp
-    golden = os.path.join(lastgoodfolder, 'bitstream.hevc')
+    golden = os.path.join(testfolder, 'bitstream.hevc')
     test = os.path.join(tmpdir, 'bitstream.hevc')
     if not filecmp.cmp(golden, test):
-        oldsum = open(os.path.join(lastgoodfolder, 'summary.txt'), 'r').read()
+        oldsum = open(os.path.join(testfolder, 'summary.txt'), 'r').read()
         res = '%s: Bitstream does not match last known good\n' % testhash
         res += ' CMD: %s %s\n' % (seq, ' '.join(cfg))
         res += 'PREV: %s\n' % oldsum
@@ -704,13 +701,17 @@ def checkoutputs(seq, cfg, lastgood, sum, tmpdir):
     return False
 
 
-def newgoldenoutputs(seq, cfg, lastgood, testrev, desc, sum, tmpdir):
+def newgoldenoutputs(seq, cfg, lastfname, testrev, desc, sum, tmpdir):
     '''
     A test was run and the outputs are good (match the last known good or if
     no last known good is available, these new results are taken
     '''
 
     testhash = testcasehash(seq, cfg)
+
+    # create golden folder if necessary
+    if not os.path.isdir(my_goldens):
+        os.mkdir(my_goldens)
 
     # create a new test folder if necessary
     testfolder = os.path.join(my_goldens, testhash)
@@ -721,35 +722,26 @@ def newgoldenoutputs(seq, cfg, lastgood, testrev, desc, sum, tmpdir):
         fp.close()
 
     # create a new golden output folder if necessary
-    revdate = hgrevisiondate(lastgood)
-    lastgoodfolder = os.path.join(testfolder, revdate + '-' + lastgood)
+    lastgoodfolder = os.path.join(testfolder, lastfname)
     if not os.path.isdir(lastgoodfolder):
         os.mkdir(lastgoodfolder)
         shutil.copy(os.path.join(tmpdir, 'bitstream.hevc'), lastgoodfolder)
         open(os.path.join(lastgoodfolder, 'summary.txt'), 'w').write(sum)
 
-    pfolder = os.path.join(lastgoodfolder, 'passed')
-    if not os.path.isdir(pfolder):
-        os.mkdir(pfolder)
+    addpass(testhash, lastfname, testrev, desc, sum)
 
+
+def addpass(testhash, lastfname, testrev, desc, sum):
+    folder = os.path.join(my_goldens, testhash, lastfname, 'passed')
+    if not os.path.isdir(folder):
+        os.mkdir(folder)
     nowdate = str(datetime.date.fromtimestamp(time.time()))[2:]
     fname = '%s-%s-%s' % (nowdate, testrev, my_machine_name)
-    open(os.path.join(pfolder, fname), 'w').write(desc)
+    open(os.path.join(folder, fname), 'w').write(desc + sum + '\n')
 
 
-def addpass(seq, cfg, lastgood, testrev, desc, sum):
-    testhash = testcasehash(seq, cfg)
-    revdate = hgrevisiondate(lastgood)
-    nowdate = str(datetime.date.fromtimestamp(time.time()))[2:]
-    fname = '%s-%s-%s' % (nowdate, testrev, my_machine_name)
-    pfn = os.path.join(my_goldens, testhash, revdate + '-' + lastgood, 'passed', fname)
-    open(pfn, 'w').write(desc + sum + '\n')
-
-
-def addfail(seq, cfg, lastgood, testrev, desc, errors):
-    testhash = testcasehash(seq, cfg)
-    revdate = hgrevisiondate(lastgood)
-    folder = os.path.join(my_goldens, testhash, revdate + '-' + lastgood, 'failed')
+def addfail(testhash, lastfname, testrev, desc, errors):
+    folder = os.path.join(my_goldens, testhash, lastfname, 'failed')
     if not os.path.isdir(folder):
         os.mkdir(folder)
     nowdate = str(datetime.date.fromtimestamp(time.time()))[2:]
@@ -773,7 +765,12 @@ def runtest(build, lastgood, testrev, seq, cfg, extras, desc):
         shutil.rmtree(tmpdir)
         return errors
 
-    errors = checkoutputs(seq, cfg, lastgood, sum, tmpdir)
+    group = my_builds[build][1]
+    revdate = hgrevisiondate(lastgood)
+    lastfname = '%s-%s-%s' % (revdate, group, lastgood)
+    testhash = testcasehash(seq, cfg)
+
+    errors = checkoutputs(seq, cfg, lastfname, sum, tmpdir)
     if errors is None:
         print 'No golden outputs for this last good, checking with decoder'
         errors = checkdecoder(tmpdir)
@@ -783,14 +780,14 @@ def runtest(build, lastgood, testrev, seq, cfg, extras, desc):
         else:
             print 'Bitstream decoded ok'
             print sum
-            newgoldenoutputs(seq, cfg, lastgood, testrev, desc, sum, tmpdir)
+            newgoldenoutputs(seq, cfg, lastfname, testrev, desc, sum, tmpdir)
             log = ''
     elif errors is False:
         print 'PASSED:', sum
-        addpass(seq, cfg, lastgood, testrev, desc, sum)
+        addpass(testhash, lastfname, testrev, desc, sum)
         log = ''
     else:
-        addfail(seq, cfg, lastgood, testrev, desc, errors)
+        addfail(testhash, lastfname, testrev, desc, errors)
         print 'FAILED'
         log = errors
 
