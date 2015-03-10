@@ -30,8 +30,8 @@ sequences = [
 ]
 
 configs = [
-    ['--preset=superfast', '-f50', '--hash=1'],
-    ['--preset=medium', '-f50', '--hash=1'],
+    ['--preset=superfast', '-f50', '--hash=1', '--no-info'],
+    ['--preset=medium', '-f50', '--hash=1', '--no-info'],
 ]
 
 extras = ['--psnr', '--ssim']
