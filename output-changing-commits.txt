@@ -10,6 +10,9 @@
 
 50d3bb223180 adaptive quant cost fixes
 cc5b9d4abddb lookahead uses full intra references
+d7bf99b426e9 fix to avoid false abr restarts
+44368ba91acd fix non-determinism issue in slice type decisions
+359daecfbb47 fix the BRef cost estimates in vbv lookahead
 6adc0fe54354 merge psy-rd default of 0.3 to default
 d4f52d3270b6 lower psy-rd default to 0.3 (last change on stable)
 6adc0fe54354 merge ultrafast deblock to default
