@@ -28,15 +28,25 @@ def validatetools():
 run_make  = True
 run_bench = True
 rebuild   = False
+save_results = True
 
 def setup(argv):
-    global run_make, run_bench, rebuild
+    global run_make, run_bench, rebuild, save_results
     validatetools()
     if not os.path.exists(os.path.join(my_x265_source, 'CMakeLists.txt')):
         raise Exception('my_x265_source does not point to x265 source/ folder')
 
     if my_tempfolder:
         tempfile.tempdir = my_tempfolder
+
+    # do not write new golden outputs or write pass/fail files if revision
+    # under test is not public
+    save_results = allowNewGoldenOutputs()
+    if not save_results:
+        print 'NOTE: Revision under test is not public or has uncommited changes.'
+        print 'No new golden outputs will be generated during this run, neither'
+        print 'will it create pass/fail files.'
+
     import getopt
     longopts = ['builds=', 'help', 'no-make', 'no-bench', 'rebuild']
     optlist, args = getopt.getopt(argv[1:], 'hb:', longopts)
@@ -587,7 +597,7 @@ def encodeharness(key, sequence, commands, inextras, desc):
 
     cmds = [x265, seqfullpath, 'bitstream.hevc'] + commands + extras
 
-    stdout, stderr, errors, summary = '', '', '', ''
+    logs, errors, summary = '', '', ''
     if not os.path.isfile(x265):
         errors = 'x265 <%s> cli not compiled\n\n' % x265
     elif not os.path.isfile(seqfullpath):
@@ -601,6 +611,9 @@ def encodeharness(key, sequence, commands, inextras, desc):
         stdout, stderr = p.communicate()
         os.environ['PATH'] = origpath
 
+        logs = stderr + stdout
+        logs = logs.replace('\r', '\n')
+
         summary, errors = parsex265(tmpfolder, stdout, stderr)
         if p.returncode == -11:
            errors += 'x265 encountered SIGSEGV\n\n'
@@ -612,7 +625,7 @@ def encodeharness(key, sequence, commands, inextras, desc):
     if errors:
         prefix = '** encoder warning or error reported for %s:: ' % key
         errors = prefix + pastebin(desc + errors)
-    return (tmpfolder, summary, errors)
+    return (tmpfolder, logs, summary, errors)
 
 
 def testcasehash(sequence, commands):
@@ -728,11 +741,13 @@ def checkoutputs(key, seq, cfg, lastfname, sum, tmpdir, desc):
     return False
 
 
-def newgoldenoutputs(seq, cfg, lastfname, testrev, desc, sum, tmpdir):
+def newgoldenoutputs(seq, cfg, lastfname, testrev, desc, sum, logs, tmpdir):
     '''
     A test was run and the outputs are good (match the last known good or if
     no last known good is available, these new results are taken
     '''
+    if not save_results:
+        return
 
     testhash = testcasehash(seq, cfg)
 
@@ -755,25 +770,30 @@ def newgoldenoutputs(seq, cfg, lastfname, testrev, desc, sum, tmpdir):
         shutil.copy(os.path.join(tmpdir, 'bitstream.hevc'), lastgoodfolder)
         open(os.path.join(lastgoodfolder, 'summary.txt'), 'w').write(sum)
 
-    addpass(testhash, lastfname, testrev, desc, sum)
+    addpass(testhash, lastfname, testrev, desc, logs)
+    print 'new golden outputs stored'
 
 
-def addpass(testhash, lastfname, testrev, desc, sum):
+def addpass(testhash, lastfname, testrev, desc, logs):
+    if not save_results:
+        return
     folder = os.path.join(my_goldens, testhash, lastfname, 'passed')
     if not os.path.isdir(folder):
         os.mkdir(folder)
     nowdate = str(datetime.date.fromtimestamp(time.time()))[2:]
-    fname = '%s-%s-%s' % (nowdate, testrev, my_machine_name)
-    open(os.path.join(folder, fname), 'w').write(desc + sum + '\n')
+    fname = '%s-%s-%s.txt' % (nowdate, testrev, my_machine_name)
+    open(os.path.join(folder, fname), 'w').write(desc + logs + '\n')
 
 
-def addfail(testhash, lastfname, testrev, desc, errors):
+def addfail(testhash, lastfname, testrev, desc, logs, errors):
+    if not save_results:
+        return
     folder = os.path.join(my_goldens, testhash, lastfname, 'failed')
     if not os.path.isdir(folder):
         os.mkdir(folder)
     nowdate = str(datetime.date.fromtimestamp(time.time()))[2:]
-    fname = '%s-%s-%s' % (nowdate, testrev, my_machine_name)
-    open(os.path.join(folder, fname), 'w').write(desc + errors + '\n')
+    fname = '%s-%s-%s.txt' % (nowdate, testrev, my_machine_name)
+    open(os.path.join(folder, fname), 'w').write(desc + errors + logs + '\n')
 
 
 def checkdecoder(tmpdir):
@@ -793,7 +813,7 @@ def runtest(build, lastgood, testrev, seq, cfg, extras, desc):
     fulldesc += 'command: %s %s\n' % (seq, ' '.join(cfg))
     fulldesc += ' extras: ' + ' '.join(extras) + '\n\n'
 
-    tmpdir, sum, errors = encodeharness(build, seq, cfg, extras, fulldesc)
+    tmpdir, logs, sum, errors = encodeharness(build, seq, cfg, extras, fulldesc)
     if not tmpdir:
         return errors
     elif errors:
@@ -815,15 +835,15 @@ def runtest(build, lastgood, testrev, seq, cfg, extras, desc):
         else:
             print 'Bitstream decoded ok'
             print sum
-            newgoldenoutputs(seq, cfg, lastfname, testrev, fulldesc, sum, tmpdir)
             log = ''
+            newgoldenoutputs(seq, cfg, lastfname, testrev, fulldesc, sum, logs, tmpdir)
     elif errors is False:
-        print 'PASSED:', sum
-        addpass(testhash, lastfname, testrev, fulldesc, sum)
+        print 'PASS'
+        addpass(testhash, lastfname, testrev, fulldesc, logs)
         log = ''
     else:
-        addfail(testhash, lastfname, testrev, fulldesc, errors)
-        print 'MISMATCH'
+        addfail(testhash, lastfname, testrev, fulldesc, logs, errors)
+        print 'OUTPUT CHANGE'
         log = errors
 
     shutil.rmtree(tmpdir)
