@@ -32,22 +32,22 @@ sequences = [
 ]
 
 configs = [
-    ['--preset=superfast', '-f50'],
-    ['--preset=medium', '-f50'],
+    ['--preset=superfast', '-f50', '--hash=1'],
+    ['--preset=medium', '-f50', '--hash=1'],
 ]
 
 extras = ['--psnr', '--ssim']
 
-testrev = utils.hgversion()
-lastgood = utils.findlastgood(testrev)
-print 'testing revision %s, validating outputs against %s' % (testrev, lastgood)
+rev = utils.hgversion()
+lastgood = utils.findlastgood(rev)
+print 'testing revision %s, validating against %s\n' % (rev, lastgood)
 
 log = ''
-for build in encoders:
-    desc = utils.describeEnvironment(build)
+for key in encoders:
+    desc = utils.describeEnvironment(key)
     for seq in sequences:
         for cfg in configs:
-            log += utils.runtest(build, lastgood, testrev, seq, cfg, extras, desc)
+            log += utils.runtest(key, lastgood, rev, seq, cfg, extras, desc)
             print
 
 if log:

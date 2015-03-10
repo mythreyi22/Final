@@ -778,6 +778,7 @@ def runtest(build, lastgood, testrev, seq, cfg, extras, desc):
         print 'No golden outputs for this last good, checking with decoder'
         errors = checkdecoder(tmpdir)
         if errors:
+            print 'Decoder check failed'
             log = errors
         else:
             print 'Bitstream decoded ok'
@@ -790,6 +791,7 @@ def runtest(build, lastgood, testrev, seq, cfg, extras, desc):
         log = ''
     else:
         addfail(seq, cfg, lastgood, testrev, desc, errors)
+        print 'FAILED'
         log = errors
 
     shutil.rmtree(tmpdir)
