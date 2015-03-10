@@ -146,6 +146,7 @@ else:
         out = []
         errors = ''
         output = ''
+        exiting = False
 
         # poll stdout and stderr file handles so we get errors in the context
         # of the stdout compile progress reports
@@ -153,23 +154,28 @@ else:
             fds = [proc.stdout.fileno(), proc.stderr.fileno()]
             ret = select.select(fds, [], [])
 
+            empty = True
             for fd in ret[0]:
                 if fd == proc.stdout.fileno():
                     line = proc.stdout.readline()
                     if line:
+                        empty = False
                         if fulloutput: output += line
                         if my_progress: print line,
                         out.append(line)
                 if fd == proc.stderr.fileno():
                     line = proc.stderr.readline()
                     if line:
+                        empty = False
                         if fulloutput: output += line
                         if my_progress: print line,
                         if out:
                             errors += ''.join(out[-3:])
                             out = []
                         errors += line
-            if proc.poll() != None:
+            if proc.poll() != None and not exiting:
+                exiting = True
+            elif exiting and empty:
                 break
 
         if proc.returncode and not errors:
@@ -752,11 +758,11 @@ def addfail(seq, cfg, lastgood, testrev, desc, errors):
 
 
 def checkdecoder(tmpdir):
-    cmds = [os.path.abspath(my_hm_decoder), '-b', 'bitstream.hevc']
+    cmds = [my_hm_decoder, '-b', 'bitstream.hevc']
     proc = Popen(cmds, stdout=PIPE, stderr=PIPE, cwd=tmpdir)
     stdout, errors = async_poll_process(proc, True)
-    hashErrors = [line for line in stdout.splitlines() if '***ERROR***' in line]
-    return hashErrors + errors
+    hashErrors = [l for l in stdout.splitlines() if '***ERROR***' in l]
+    return ''.join(hashErrors) + errors
 
 
 def runtest(build, lastgood, testrev, seq, cfg, extras, desc):
@@ -771,7 +777,7 @@ def runtest(build, lastgood, testrev, seq, cfg, extras, desc):
     if errors is None:
         print 'No golden outputs for this last good, checking with decoder'
         errors = checkdecoder(tmpdir)
-        if errors;
+        if errors:
             log = errors
         else:
             print 'Bitstream decoded ok'
