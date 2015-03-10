@@ -550,7 +550,7 @@ def testharness():
     return None
 
 
-def encodeharness(key, sequence, commands, inextras):
+def encodeharness(key, sequence, commands, inextras, desc):
     '''
     Perform a single test encode within a tempfolder
      * key      is the shortname for the build to use, ex: 'gcc'
@@ -580,11 +580,11 @@ def encodeharness(key, sequence, commands, inextras):
 
     cmds = [x265, seqfullpath, 'bitstream.hevc'] + commands + extras
 
-    stdout, stderr, errors = '', '', ''
+    stdout, stderr, errors, summary = '', '', '', ''
     if not os.path.isfile(x265):
-        errors = 'x265 <%s> cli not compiled' % x265
+        errors = 'x265 <%s> cli not compiled\n\n' % x265
     elif not os.path.isfile(seqfullpath):
-        errors = 'sequence <%s> not found' % seqfullpath
+        errors = 'sequence <%s> not found\n\n' % seqfullpath
     else:
         tmpfolder = tempfile.mkdtemp(prefix='x265-temp')
         origpath = os.environ['PATH']
@@ -603,9 +603,6 @@ def encodeharness(key, sequence, commands, inextras):
            errors += 'x265 return code %d\n\n' % p.returncode
 
     if errors:
-        desc = describeEnvironment(key)
-        desc += 'command: %s %s\n' % (sequence, ' '.join(commands))
-        desc += ' extras: ' + ' '.join(extras) + '\n\n'
         prefix = '** encoder warning or error reported for %s:: ' % key
         errors = prefix + pastebin(desc + errors)
     return (tmpfolder, summary, errors)
@@ -703,7 +700,7 @@ def findlastgood(testrev):
     return testrev
 
 
-def checkoutputs(key, seq, cfg, lastfname, sum, tmpdir):
+def checkoutputs(key, seq, cfg, lastfname, sum, tmpdir, desc):
     testhash = testcasehash(seq, cfg)
     testfolder = os.path.join(my_goldens, testhash, lastfname)
     if not os.path.isdir(testfolder):
@@ -714,7 +711,7 @@ def checkoutputs(key, seq, cfg, lastfname, sum, tmpdir):
         oldsum = open(os.path.join(testfolder, 'summary.txt'), 'r').read()
         res = '%s: %s output does not match last known good for group %s\n' % \
                (testhash, key, my_builds[key][1])
-        res += ' CMD: %s %s\n' % (seq, ' '.join(cfg))
+        res += desc
         res += 'PREV: %s\n' % oldsum
         res += ' NEW: %s\n\n' % sum
         return res
@@ -774,11 +771,19 @@ def checkdecoder(tmpdir):
     proc = Popen(cmds, stdout=PIPE, stderr=PIPE, cwd=tmpdir)
     stdout, errors = async_poll_process(proc, True)
     hashErrors = [l for l in stdout.splitlines() if '***ERROR***' in l]
-    return ''.join(hashErrors) + errors
+    if hashErrors or errors:
+        return 'Validation failed with %s\n\n' % my_hm_decoder + \
+               '\n'.join(hashErrors) + '\n' + errors + '\n'
+    else:
+        return ''
 
 
 def runtest(build, lastgood, testrev, seq, cfg, extras, desc):
-    tmpdir, sum, errors = encodeharness(build, seq, cfg, extras)
+    fulldesc = desc
+    fulldesc += 'command: %s %s\n' % (seq, ' '.join(cfg))
+    fulldesc += ' extras: ' + ' '.join(extras) + '\n\n'
+
+    tmpdir, sum, errors = encodeharness(build, seq, cfg, extras, fulldesc)
     if not tmpdir:
         return errors
     elif errors:
@@ -790,24 +795,24 @@ def runtest(build, lastgood, testrev, seq, cfg, extras, desc):
     lastfname = '%s-%s-%s' % (revdate, group, lastgood)
     testhash = testcasehash(seq, cfg)
 
-    errors = checkoutputs(build, seq, cfg, lastfname, sum, tmpdir)
+    errors = checkoutputs(build, seq, cfg, lastfname, sum, tmpdir, fulldesc)
     if errors is None:
-        print 'No golden outputs for this last good, checking with decoder'
+        print 'No golden outputs for this last good, validating with decoder'
         errors = checkdecoder(tmpdir)
         if errors:
             print 'Decoder check failed'
-            log = errors
+            log = fulldesc + errors
         else:
             print 'Bitstream decoded ok'
             print sum
-            newgoldenoutputs(seq, cfg, lastfname, testrev, desc, sum, tmpdir)
+            newgoldenoutputs(seq, cfg, lastfname, testrev, fulldesc, sum, tmpdir)
             log = ''
     elif errors is False:
         print 'PASSED:', sum
-        addpass(testhash, lastfname, testrev, desc, sum)
+        addpass(testhash, lastfname, testrev, fulldesc, sum)
         log = ''
     else:
-        addfail(testhash, lastfname, testrev, desc, errors)
+        addfail(testhash, lastfname, testrev, fulldesc, errors)
         print 'MISMATCH'
         log = errors
 

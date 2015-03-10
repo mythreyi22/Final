@@ -40,13 +40,16 @@ rev = utils.hgversion()
 lastgood = utils.findlastgood(rev)
 print 'testing revision %s, validating against %s\n' % (rev, lastgood)
 
-log = ''
-for key in my_builds:
-    desc = utils.describeEnvironment(key)
-    for seq in sequences:
-        for cfg in configs:
-            log += utils.runtest(key, lastgood, rev, seq, cfg, extras, desc)
-            print
+try:
+    log = ''
+    for key in my_builds:
+        desc = utils.describeEnvironment(key)
+        for seq in sequences:
+            for cfg in configs:
+                log += utils.runtest(key, lastgood, rev, seq, cfg, extras, desc)
+                print
+except KeyboardInterrupt:
+    print 'Caught ctrl+c, exiting'
 
 print '\n\n'
 if log:
