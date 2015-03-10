@@ -472,7 +472,7 @@ def msbuild(buildfolder, generator, cmakeopts):
             raise Exception('Unable to find msbuild.exe')
 
     p = Popen([msbuild, '/clp:disableconsolecolor', target, 'x265.sln'],
-              cwd=buildfolder, env=env)
+              stdout=PIPE, stderr=PIPE, cwd=buildfolder, env=env)
     return async_poll_process(p, False)
 
 
@@ -488,8 +488,7 @@ def describeEnvironment(key):
 
 def buildall():
     for key in my_builds:
-        if my_progress:
-            print 'building %s...'% key
+        print 'building %s...'% key
 
         buildfolder, _, generator, co, opts = my_builds[key]
 
@@ -528,8 +527,7 @@ def testharness():
         if 'tests' not in co.split():
             continue
 
-        if my_progress:
-            print 'Running testbench for %s...'% key
+        print 'Running testbench for %s...'% key
 
         bench = os.path.join(buildfolder, 'test', 'TestBench')
         if os.name == 'nt': bench += '.exe'
@@ -560,7 +558,7 @@ def encodeharness(key, sequence, commands, inextras, desc):
     returns tuple of (tmpfolder path, error string)
     '''
 
-    buildfolder, _, _, _, opts = my_builds[key]
+    buildfolder, _, generator, cmakeopts, opts = my_builds[key]
     tmpfolder = None
 
     extras = inextras[:] # make copy so we can append locally
@@ -571,11 +569,20 @@ def encodeharness(key, sequence, commands, inextras, desc):
                    '--input-depth=%s' % depth,
                    '--input-csp=i%s' % csp]
 
-    if my_progress:
-        print 'Running x265-%s %s %s' % (key, sequence, ' '.join(commands))
+    print 'Running x265-%s %s %s' % (key, sequence, ' '.join(commands))
 
     seqfullpath = os.path.join(my_sequences, sequence)
-    x265 = os.path.abspath(os.path.join(buildfolder, 'x265'))
+
+    if 'Visual Studio' in generator:
+        if '-DCMAKE_BUILD_TYPE=Debug' in cmakeopts:
+            target = 'debug'
+        elif '-DCMAKE_BUILD_TYPE=RelWithDebInfo' in cmakeopts:
+            target = 'RelWithDebInfo'
+        else:
+            target = 'Release'
+        x265 = os.path.abspath(os.path.join(buildfolder, target, 'x265'))
+    else:
+        x265 = os.path.abspath(os.path.join(buildfolder, 'x265'))
     if os.name == 'nt': x265 += '.exe'
 
     cmds = [x265, seqfullpath, 'bitstream.hevc'] + commands + extras
