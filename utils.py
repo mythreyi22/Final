@@ -665,7 +665,8 @@ def parsex265(tmpfolder, stdout, stderr):
             if line[6:13] == 'warning':
                 warn = line[16:]
                 if warn not in ignored_warnings:
-                    errors += lastprog + line
+                    print line
+                    errors += lastprog + line + '\n'
                     lastprog = ''
             elif line[6:11] == 'error':
                 errors += lastprog + line
@@ -674,7 +675,7 @@ def parsex265(tmpfolder, stdout, stderr):
             lastprog = line
 
     if errors:
-        errors += '\n\nFull encoder log:\n' + stderr + stdout
+        errors += '\n\nFull encoder log:\n' + stderr + stdout + '\n'
 
     return summary, errors
 
