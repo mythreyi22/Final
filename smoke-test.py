@@ -8,15 +8,17 @@ import utils
 # setup will call sys.exit() if it determines the tests are unable to continue
 utils.setup(sys.argv)
 
-errors = utils.buildall()
-if errors:
-    print errors
-    sys.exit(1)
+if utils.run_make:
+    errors = utils.buildall()
+    if errors:
+        print errors
+        sys.exit(1)
 
-errors = utils.testharness()
-if errors:
-    print errors
-    sys.exit(1)
+if utils.run_bench:
+    errors = utils.testharness()
+    if errors:
+        print errors
+        sys.exit(1)
 
 from conf import my_builds
 encoders = my_builds.keys()

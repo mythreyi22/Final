@@ -22,8 +22,11 @@ def validatetools():
     if not find_executable('cmake'):
         raise Exception('Unable to find cmake executable')
 
+run_make  = True
+run_bench = True
 
 def setup(argv):
+    global run_make, run_bench
     validatetools()
     if not os.path.exists(os.path.join(my_x265_source, 'CMakeLists.txt')):
         raise Exception('my_x265_source does not point to x265 source/ folder')
@@ -31,7 +34,8 @@ def setup(argv):
     if my_tempfolder:
         tempfile.tempdir = my_tempfolder
     import getopt
-    optlist, args = getopt.getopt(argv[1:], 'hb:', ['builds=', '--help'])
+    longopts = ['builds=', 'help', 'no-make', 'no-bench']
+    optlist, args = getopt.getopt(argv[1:], 'hb:', longopts)
     for opt, val in optlist:
         # restrict the list of target builds to just those specified by -b
         # for example: ./smoke-test.py -b "gcc32 gcc10"
@@ -40,10 +44,16 @@ def setup(argv):
             delkeys = [key for key in my_builds if not key in userbuilds]
             for key in delkeys:
                 del my_builds[key]
+        elif opt == '--no-make':
+            run_make = False
+        elif opt == '--no-bench':
+            run_bench = False
         elif opt in ('-h', '--help'):
             print sys.argv[0], '[OPTIONS]\n'
             print '\t-h/--help            show this help'
             print '\t-b/--builds <string> space seperated list of build targets'
+            print '\t   --no-make         do not compile sources'
+            print '\t   --no-bench        do not run test benches'
             sys.exit(0)
 
 
