@@ -27,9 +27,10 @@ def validatetools():
 
 run_make  = True
 run_bench = True
+rebuild   = False
 
 def setup(argv):
-    global run_make, run_bench
+    global run_make, run_bench, rebuild
     validatetools()
     if not os.path.exists(os.path.join(my_x265_source, 'CMakeLists.txt')):
         raise Exception('my_x265_source does not point to x265 source/ folder')
@@ -37,7 +38,7 @@ def setup(argv):
     if my_tempfolder:
         tempfile.tempdir = my_tempfolder
     import getopt
-    longopts = ['builds=', 'help', 'no-make', 'no-bench']
+    longopts = ['builds=', 'help', 'no-make', 'no-bench', 'rebuild']
     optlist, args = getopt.getopt(argv[1:], 'hb:', longopts)
     for opt, val in optlist:
         # restrict the list of target builds to just those specified by -b
@@ -51,12 +52,15 @@ def setup(argv):
             run_make = False
         elif opt == '--no-bench':
             run_bench = False
+        elif opt == '--rebuild':
+            rebuild = True
         elif opt in ('-h', '--help'):
             print sys.argv[0], '[OPTIONS]\n'
             print '\t-h/--help            show this help'
             print '\t-b/--builds <string> space seperated list of build targets'
             print '\t   --no-make         do not compile sources'
             print '\t   --no-bench        do not run test benches'
+            print '\t   --rebuild         remove old build folders and rebuild'
             sys.exit(0)
 
 ignored_compiler_warnings = (
@@ -357,8 +361,9 @@ def allowNewGoldenOutputs():
 def cmake(generator, buildfolder, cmakeopts, **opts):
     # buildfolder is the relative path to build folder
 
-    if opts.get('rebuild') and os.path.exists(buildfolder):
+    if rebuild and os.path.exists(buildfolder):
         shutil.rmtree(buildfolder)
+        if os.name == 'nt': time.sleep(1)
     if not os.path.exists(buildfolder):
         os.mkdir(buildfolder)
     else:
