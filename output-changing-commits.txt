@@ -12,10 +12,11 @@
 cc5b9d4abddb lookahead uses full intra references
 d7bf99b426e9 fix to avoid false abr restarts
 44368ba91acd fix non-determinism issue in slice type decisions
-359daecfbb47 fix the BRef cost estimates in vbv lookahead
+9a6849146225 merge bref fixes into default
+359daecfbb47 fix the BRef cost estimates in vbv lookahead (last change on stable)
 0c23bfd6b0d4 NUMA pools and slicetype batching / coop slices
 6adc0fe54354 merge psy-rd default of 0.3 to default
-d4f52d3270b6 lower psy-rd default to 0.3 (last change on stable)
+d4f52d3270b6 lower psy-rd default to 0.3
 6adc0fe54354 merge ultrafast deblock to default
 cefc6f03cce1 enable deblock at ultrafast (on stable)
 272781048200 added temporal layers, changed SPS slightly
