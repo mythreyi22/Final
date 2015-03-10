@@ -1,0 +1,15 @@
+# Lines in this file beginning with a hash # or less than 12 characters
+# long are considered comments
+
+# All other lines are considered to contain a 12-byte string of the
+# 'short' hash of a Mercurial commit in the x265 repository which is
+# known to change outputs. Ordering is important in this list but
+# simple, a commit must appear *above* any commits which are ancestors
+# of itself. If you always add new lines to the top, this should be
+# enforced implicitly.
+
+50d3bb223180 adaptive quant cost fixes
+cc5b9d4abddb lookahead uses full intra references
+6adc0fe54354 merge psy-rd default of 0.3 to default
+d4f52d3270b6 lower psy-rd default to 0.3 (last change on stable)
+272781048200 added temporal layers, changed SPS slightly

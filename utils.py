@@ -696,10 +696,10 @@ def findlastgood(testrev):
         return testrev
 
     for line in lines:
-        if line[0] == '#': continue
+        if len(line) < 12 or line[0] == '#': continue
         rev = line[:12]
-        cmds = ['hg', 'log', '-r', "%s::%s" % (rev, testrev), '--template',
-                '"{short(node)}"'],
+        cmds = ['hg', 'log', '-r', "%s::%s" % (rev, testrev),
+                '--template', '"{short(node)}"']
         out = Popen(cmds, stdout=PIPE, cwd=my_x265_source).communicate()[0]
         if out:
             return rev
