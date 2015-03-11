@@ -542,8 +542,18 @@ def testharness():
 
         print 'Running testbench for %s...'% key
 
-        bench = os.path.join(buildfolder, 'test', 'TestBench')
+        if 'Visual Studio' in generator:
+            if '-DCMAKE_BUILD_TYPE=Debug' in co:
+                target = 'debug'
+            elif '-DCMAKE_BUILD_TYPE=RelWithDebInfo' in co:
+                target = 'RelWithDebInfo'
+            else:
+                target = 'Release'
+            bench = os.path.abspath(os.path.join(buildfolder, 'test', target, 'TestBench'))
+        else:
+            bench = os.path.abspath(os.path.join(buildfolder, 'test', 'TestBench'))
         if os.name == 'nt': bench += '.exe'
+
         if not os.path.isfile(bench):
             err = 'testbench <%s> not built' % bench
         else:
