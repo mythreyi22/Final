@@ -802,8 +802,21 @@ def checkdecoder(tmpdir):
     stdout, errors = async_poll_process(proc, True)
     hashErrors = [l for l in stdout.splitlines() if '***ERROR***' in l]
     if hashErrors or errors:
+        # Any stream which causes decode errors is saved into
+        # goldens/bad-streams under an MD5 hash of its contents
+        badbitstreamfolder = os.path.join(my_goldens, 'bad-streams')
+        if not os.path.exists(badbitstreamfolder):
+            os.mkdir(badbitstreamfolder)
+        badfn = os.path.join(tmpdir, 'bitstream.hevc')
+        import md5
+        m = md5.new()
+        m.update(open(badfn, 'rb').read())
+        hashname = m.hexdigest()
+        hashfname = os.path.join(badbitstreamfolder, hashname + '.hevc')
+        shutil.copy(badfn, hashfname)
         return 'Validation failed with %s\n\n' % my_hm_decoder + \
-               '\n'.join(hashErrors) + '\n' + errors + '\n'
+               '\n'.join(hashErrors) + '\n' + errors + '\n' + \
+                'This bitstream was saved to %s\n' % hashfname
     else:
         return ''
 
