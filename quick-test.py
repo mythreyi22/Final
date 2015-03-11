@@ -64,6 +64,14 @@ rev = utils.hgversion()
 lastgood = utils.findlastgood(rev)
 print 'testing revision %s, validating against %s\n' % (rev, lastgood)
 
+# do not use debug builds for long-running tests (they are only intended
+# for smoke testing)
+debugs = [key for key in my_builds if 'debug' in my_builds[key][3]]
+if debugs:
+    print 'Discarding debug builds <%s>\n', debugs
+    for k in debugs:
+        del my_builds[k]
+
 try:
     log = ''
     for x in xrange(20):
