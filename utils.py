@@ -1,11 +1,13 @@
 import datetime
 import filecmp
+import md5
 import os
 import shutil
 import sys
 import tempfile
 import time
-from subprocess import call, Popen, PIPE
+import urllib
+from subprocess import Popen, PIPE
 from distutils.spawn import find_executable
 
 try:
@@ -17,24 +19,22 @@ except ImportError, e:
     print 'Copy conf.py.example to conf.py and edit the file as necessary'
     sys.exit(1)
 
-def validatetools():
-    if not find_executable('hg'):
-        raise Exception('Unable to find Mercurial executable (hg)')
-    if not find_executable('cmake'):
-        raise Exception('Unable to find cmake executable')
-    if not find_executable(my_hm_decoder):
-        raise Exception('Unable to find HM decoder')
-
 run_make  = True
 run_bench = True
 rebuild   = False
 save_results = True
 
 def setup(argv):
-    global run_make, run_bench, rebuild, save_results
-    validatetools()
+    if not find_executable('hg'):
+        raise Exception('Unable to find Mercurial executable (hg)')
+    if not find_executable('cmake'):
+        raise Exception('Unable to find cmake executable')
+    if not find_executable(my_hm_decoder):
+        raise Exception('Unable to find HM decoder')
     if not os.path.exists(os.path.join(my_x265_source, 'CMakeLists.txt')):
         raise Exception('my_x265_source does not point to x265 source/ folder')
+
+    global run_make, run_bench, rebuild, save_results
 
     if my_tempfolder:
         tempfile.tempdir = my_tempfolder
@@ -74,7 +74,7 @@ def setup(argv):
             sys.exit(0)
 
 ignored_compiler_warnings = (
-    'ld: warning: PIE disabled',
+    'ld: warning: PIE disabled', # link warning on 32bit GCC builds on Mac
 )
 
 if os.name == 'nt':
@@ -272,8 +272,8 @@ def parseY4MHeader(fname):
 
     return (width, height, fps, depth, csp)
 
+
 def pastebin(content):
-    import urllib
     sizelimit = 500 * 1024
 
     if not my_pastebin_key:
@@ -561,13 +561,20 @@ def testharness():
     return None
 
 
+def testcasehash(sequence, commands):
+    m = md5.new()
+    m.update(sequence)
+    m.update(' '.join(commands))
+    return m.hexdigest()[:12]
+
+
 def encodeharness(key, sequence, commands, inextras, desc):
     '''
     Perform a single test encode within a tempfolder
      * key      is the shortname for the build to use, ex: 'gcc'
      * sequence is the YUV or Y4M filename with no path
      * commands is a list [] of commands which influence outputs (hashed)
-     * extras   is a list [] of commands which do not influence outputs
+     * inextras is a list [] of commands which do not influence outputs
     returns tuple of (tmpfolder path, error string)
     '''
 
@@ -632,13 +639,6 @@ def encodeharness(key, sequence, commands, inextras, desc):
         errors = prefix + pastebin(desc + errors)
     return (tmpfolder, logs, summary, errors)
 
-
-def testcasehash(sequence, commands):
-    import md5
-    m = md5.new()
-    m.update(sequence)
-    m.update(' '.join(commands))
-    return m.hexdigest()[:12]
 
 ignored_warnings = (
     '--psnr used with psy on: results will be invalid!',
@@ -813,7 +813,6 @@ def checkdecoder(tmpdir):
         if not os.path.exists(badbitstreamfolder):
             os.mkdir(badbitstreamfolder)
         badfn = os.path.join(tmpdir, 'bitstream.hevc')
-        import md5
         m = md5.new()
         m.update(open(badfn, 'rb').read())
         hashname = m.hexdigest()
