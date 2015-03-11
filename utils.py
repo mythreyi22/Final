@@ -602,8 +602,10 @@ def encodeharness(key, sequence, commands, inextras, desc):
 
     logs, errors, summary = '', '', ''
     if not os.path.isfile(x265):
+        print 'x265 executable not found'
         errors = 'x265 <%s> cli not compiled\n\n' % x265
     elif not os.path.isfile(seqfullpath):
+        print 'Sequence not found'
         errors = 'sequence <%s> not found\n\n' % seqfullpath
     else:
         tmpfolder = tempfile.mkdtemp(prefix='x265-temp')
