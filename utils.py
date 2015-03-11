@@ -217,7 +217,7 @@ else:
 
 
 def parseYuvFilename(fname):
-    '''requires the format: foo_bar_WxH_FPS[_10bit][_CSP].yuv'''
+    '''requires the format: foo_bar_WxH_FPS[_10bit][_CSP][_crop].yuv'''
 
     if not fname.lower().endswith('.yuv'):
         raise Exception('parseYuv only supports YUV files')
@@ -227,6 +227,9 @@ def parseYuvFilename(fname):
     depth = 8
     csp = '420'
     words = fname[:-4].split('_')
+
+    if words[-1] == 'crop':
+        words.pop()
 
     if words[-1] in ('422','444'):
         csp = words.pop()
