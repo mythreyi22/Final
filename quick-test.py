@@ -68,7 +68,7 @@ print 'testing revision %s, validating against %s\n' % (rev, lastgood)
 # for smoke testing)
 debugs = [key for key in my_builds if 'debug' in my_builds[key][3]]
 if debugs:
-    print 'Discarding debug builds <%s>\n', debugs
+    print 'Discarding debug builds <%s>\n' % ' '.join(debugs)
     for k in debugs:
         del my_builds[k]
 
