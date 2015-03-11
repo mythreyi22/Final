@@ -426,9 +426,13 @@ def gmake(buildfolder, **opts):
 vcvars = ('include', 'lib', 'mssdk', 'path', 'regkeypath', 'sdksetupdir',
           'sdktools', 'targetos', 'vcinstalldir', 'vcroot', 'vsregkeypath')
 
-def get_sdkenv(sdkpath, arch):
+def get_sdkenv(vcpath, arch):
     '''extract environment vars set by vcvarsall for compiler target'''
-    vcvarsall = os.path.abspath(sdkpath + r'..\VC\vcvarsall.bat')
+
+    vcvarsall = os.path.abspath(os.path.join(vcpath, 'vcvarsall.bat'))
+    if not os.path.exists(vcvarsall):
+        raise Exception(vcvarsall + ' not found')
+
     p = Popen(r'cmd /e:on /v:on /c call "%s" %s && set' % (vcvarsall, arch),
               shell=False, stdout=PIPE, stderr=PIPE)
     out, err = p.communicate()
@@ -443,24 +447,44 @@ def get_sdkenv(sdkpath, arch):
 
 def msbuild(buildfolder, generator, cmakeopts):
     '''Build visual studio solution using specified compiler'''
+    if os.name != 'nt':
+        raise Exception('Visual Studio builds only supported on Windows')
+
+    # Look for Visual Studio install location within the registry
+    key = r'SOFTWARE\Wow6432Node\Microsoft\VisualStudio'
     if '12' in generator:
-        envvar = 'VSSDK120Install'
+        key += r'\12.0'
     elif '11' in generator:
-        envvar = 'VSSDK110Install'
+        key += r'\11.0'
     elif '10' in generator:
-        envvar = 'VSSDK100Install'
+        key += r'\10.0'
+    elif '9' in generator:
+        key += r'\9.0'
     else:
         raise Exception('Unsupported VC version')
+
+    import _winreg
+    vcpath = ''
+    win32key = 'SOFTWARE' + key[20:] # trim out Wow6432Node\
+    for k in (key, win32key):
+        try:
+            hkey = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, k)
+            pfx = _winreg.QueryValueEx(hkey, 'InstallDir')[0]
+            if pfx and os.path.exists(pfx):
+                vcpath = os.path.abspath(pfx + r'\..\..\VC')
+                break;
+        except (WindowsError, EnvironmentError), e:
+            pass
+
+    if not vcpath:
+        raise Exception(win32key + ' not found or is invalid')
+
     if 'Win64' in generator:
         arch = 'x86_amd64'
     else:
         arch = 'x86'
 
-    if envvar not in os.environ:
-        raise Exception(envvar + ' not found in system environment')
-
-    sdkpath = os.environ[envvar]
-    sdkenv = get_sdkenv(sdkpath, arch)
+    sdkenv = get_sdkenv(vcpath, arch)
     env = os.environ.copy()
     env.update(sdkenv)
 
