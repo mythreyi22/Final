@@ -816,7 +816,7 @@ def checkdecoder(tmpdir):
         shutil.copy(badfn, hashfname)
         return 'Validation failed with %s\n\n' % my_hm_decoder + \
                '\n'.join(hashErrors) + '\n' + errors + '\n' + \
-                'This bitstream was saved to %s\n' % hashfname
+               'This bitstream was saved to %s\n' % hashfname
     else:
         return ''
 
@@ -855,6 +855,7 @@ def runtest(build, lastgood, testrev, seq, cfg, extras, desc):
         addpass(testhash, lastfname, testrev, fulldesc, logs)
         log = ''
     else:
+        errors += checkdecoder(tmpdir)
         addfail(testhash, lastfname, testrev, fulldesc, logs, errors)
         print 'OUTPUT CHANGE'
         log = errors
