@@ -45,7 +45,7 @@ def setup(argv):
     if not save_results:
         print 'NOTE: Revision under test is not public or has uncommited changes.'
         print 'No new golden outputs will be generated during this run, neither'
-        print 'will it create pass/fail files.'
+        print 'will it create pass/fail files.\n'
 
     import getopt
     longopts = ['builds=', 'help', 'no-make', 'no-bench', 'rebuild']
@@ -362,11 +362,9 @@ def allowNewGoldenOutputs():
     rev = hgversion()
     if rev.endswith('+'):
         # we do not store golden outputs if uncommitted changes
-        print 'User repo has uncommitted changes'
         return False
     if hggetphase(rev) != 'public':
         # we do not store golden outputs until a revision is public (pushed)
-        print 'User repo parent rev is not public'
         return False
     return True
 
