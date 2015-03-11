@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import os
 import random
 import sys
 import shutil
@@ -9,7 +10,7 @@ import utils
 # setup will call sys.exit() if it determines the tests are unable to continue
 utils.setup(sys.argv)
 
-from conf import my_builds, my_machine_name
+from conf import my_builds, my_machine_name, my_sequences
 
 if utils.run_make:
     errors = utils.buildall()
@@ -17,27 +18,14 @@ if utils.run_make:
         print '\n\n' + errors
         sys.exit(1)
 
-# note: remove lines of any sequences you do not have, feel free to add more
-sequences = [
-    'big_buck_bunny_360p24.y4m',
-    'BasketballDrive_1920x1080_50.y4m',
-    'KristenAndSara_1280x720_60.y4m',
-    'ducks_take_off_444_720p50.y4m',
-    'mobile_calendar_422_ntsc.y4m',
-    'vtc1nw_422_ntsc.y4m',
-    'washdc_422_ntsc.y4m',
-    'DucksAndLegs_1920x1080_60_10bit_422.yuv',
-    'CrowdRun_1920x1080_50_10bit_422.yuv',
-    'CrowdRun_1920x1080_50_10bit_444.yuv',
-    'NebutaFestival_2560x1600_60_10bit_crop.yuv',
-]
-
-configs = [
-    ['--preset=superfast', '--hash=1'],
-    ['--preset=medium', '--hash=2'],
-    ['--preset=slower', '--hash=3'],
-    ['--preset=medium', '--bitrate=1000', '--hash=2'],
-]
+sequences, configs = {}, {} # use dictionaries to prune dups
+for line in open('regression-tests.txt').readlines():
+    if len(line) < 3 or line[0] == '#': continue
+    seq, command = line.split(',')
+    if os.path.exists(os.path.join(my_sequences, seq)):
+        sequences[seq] = 1
+    if '--vbv' not in command:
+        configs[command] = 1
 
 always = ['--no-info']
 
@@ -56,13 +44,13 @@ spotchecks = (
     '--log=frame',
     '--log=debug',
     '--log=full',
-    '--pools=+,-',
-    '--pools=-,+',
+    '--pools=1', # pools=0 disables pool features
+    '--pools=2',
 )
 
 rev = utils.hgversion()
 lastgood = utils.findlastgood(rev)
-print 'testing revision %s, validating against %s\n' % (rev, lastgood)
+print '\ntesting revision %s, validating against %s\n' % (rev, lastgood)
 
 # do not use debug builds for long-running tests (they are only intended
 # for smoke testing)
@@ -72,11 +60,13 @@ if debugs:
     for k in debugs:
         del my_builds[k]
 
+print 'Running 1000 test encodes, press CTRL+C to abort (maybe twice)\n'
+
 try:
     log = ''
-    for x in xrange(20):
-        seq = random.choice(sequences)
-        cfg = random.choice(configs)
+    for x in xrange(1000):
+        seq = random.choice(sequences.keys())
+        cfg = random.choice(configs.keys()).split()
         cmdline = cfg[:] + always
         extras = ['--psnr', '--ssim', random.choice(spotchecks)]
         build = random.choice(my_builds.keys())
