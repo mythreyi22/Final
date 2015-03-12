@@ -27,7 +27,7 @@ for line in open('regression-tests.txt').readlines():
     if '--vbv' not in command:
         configs[command] = 1
 
-always = ['--no-info']
+always = ['--no-info', '--hash=1']
 
 # these options can be added to any test and should not affect outputs
 spotchecks = (

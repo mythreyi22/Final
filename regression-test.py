@@ -18,7 +18,7 @@ if utils.run_make:
         print '\n\n' + errors
         sys.exit(1)
 
-always = ['--no-info']
+always = ['--no-info', '--hash=1']
 
 # these options can be added to any test and should not affect outputs
 spotchecks = (
