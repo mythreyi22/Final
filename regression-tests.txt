@@ -11,8 +11,8 @@ big_buck_bunny_360p24.y4m,--preset medium --bitrate 1000 --pass 1,--preset mediu
 BasketballDrive_1920x1080_50.y4m,--preset fast
 BasketballDrive_1920x1080_50.y4m,--preset faster
 BasketballDrive_1920x1080_50.y4m,--preset medium --ctu 16 --max-tu-size 8
-BasketballDrive_1920x1080_50.y4m,--preset medium --keyint -1 --nr 100
-BasketballDrive_1920x1080_50.y4m,--preset slow
+BasketballDrive_1920x1080_50.y4m,--preset medium --keyint -1 --nr-inter 100 -F4
+BasketballDrive_1920x1080_50.y4m,--preset slow --nr-intra 100 -F4
 BasketballDrive_1920x1080_50.y4m,--preset slower --lossless
 BasketballDrive_1920x1080_50.y4m,--preset superfast --psy-rd 1 --ctu 16 --no-wpp
 BasketballDrive_1920x1080_50.y4m,--preset ultrafast
@@ -44,15 +44,15 @@ DucksAndLegs_1920x1080_60_10bit_422.yuv,--preset medium
 DucksAndLegs_1920x1080_60_10bit_422.yuv,--preset slower --temporal-layers
 DucksAndLegs_1920x1080_60_10bit_422.yuv,--preset superfast --weightp
 DucksAndLegs_1920x1080_60_10bit_422.yuv,--preset veryslow --tskip
-DucksAndLegs_1920x1080_60_10bit_444.yuv,--preset medium --nr 500
+DucksAndLegs_1920x1080_60_10bit_444.yuv,--preset medium --nr-inter 500 -F4
 DucksAndLegs_1920x1080_60_10bit_444.yuv,--preset slower --no-weightp
-DucksAndLegs_1920x1080_60_10bit_444.yuv,--preset superfast --weightp --nr 1000
+DucksAndLegs_1920x1080_60_10bit_444.yuv,--preset superfast --weightp --nr-intra 1000 -F4
 FourPeople_1280x720_60.y4m,--preset medium --qp 38
 FourPeople_1280x720_60.y4m,--preset slower
 FourPeople_1280x720_60.y4m,--preset superfast --pools 0
 Keiba_832x480_30.y4m,--preset medium --pmode
-Keiba_832x480_30.y4m,--preset slower --fast-intra --nr 500
-Keiba_832x480_30.y4m,--preset superfast --no-fast-intra --nr 1000
+Keiba_832x480_30.y4m,--preset slower --fast-intra --nr-inter 500 -F4
+Keiba_832x480_30.y4m,--preset superfast --no-fast-intra --nr-intra 1000 -F4
 Kimono1_1920x1080_24_10bit_444.yuv,--preset medium
 Kimono1_1920x1080_24_10bit_444.yuv,--preset slower
 Kimono1_1920x1080_24_10bit_444.yuv,--preset superfast --weightp
@@ -156,10 +156,10 @@ tearsofsteel-4k-1000f-s214.y4m,--preset slower
 tearsofsteel-4k-1000f-s214.y4m,--preset superfast
 test_party_640x360_25fps.y4m,--preset fast
 test_party_640x360_25fps.y4m,--preset faster
-test_party_640x360_25fps.y4m,--preset medium --ctu 16 --nr 1000
+test_party_640x360_25fps.y4m,--preset medium --ctu 16 --nr-inter 1000 -F4
 test_party_640x360_25fps.y4m,--preset slow --max-tu-size 16
 test_party_640x360_25fps.y4m,--preset slower
-test_party_640x360_25fps.y4m,--preset superfast --ctu 16 --nr 500
+test_party_640x360_25fps.y4m,--preset superfast --ctu 16 --nr-intra 500 -F4
 test_party_640x360_25fps.y4m,--preset ultrafast --ctu 16
 test_party_640x360_25fps.y4m,--preset veryfast
 test_party_640x360_25fps.y4m,--preset veryslow
@@ -167,8 +167,8 @@ tos_215to1215_4096x1714_444_10bit_24fps.yuv,--preset medium
 tos_215to1215_4096x1714_444_10bit_24fps.yuv,--preset slower
 tos_215to1215_4096x1714_444_10bit_24fps.yuv,--preset superfast --weightp
 vtc1nw_422_ntsc.y4m,--preset medium --scaling-list default
-vtc1nw_422_ntsc.y4m,--preset slower --nr 1000 --no-wpp
-vtc1nw_422_ntsc.y4m,--preset superfast --weightp --nr 100
+vtc1nw_422_ntsc.y4m,--preset slower --nr-inter 1000 -F4 --no-wpp
+vtc1nw_422_ntsc.y4m,--preset superfast --weightp --nr-intra 100 -F4
 washdc_422_ntsc.y4m,--preset fast
 washdc_422_ntsc.y4m,--preset faster --rdoq-level 1
 washdc_422_ntsc.y4m,--preset medium --no-weightp
