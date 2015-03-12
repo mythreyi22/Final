@@ -895,7 +895,12 @@ def runtest(build, lastgood, testrev, seq, cfg, extras, desc):
     else:
         errors += checkdecoder(tmpdir)
         addfail(testhash, lastfname, testrev, fulldesc, logs, errors)
-        print 'OUTPUT CHANGE'
+        if errors:
+            print 'OUTPUT CHANGE WITH DECODE ERRORS'
+        else:
+            fname = os.path.join(my_goldens, testhash, lastfname, 'summary.txt')
+            lastsum = open(fname, 'r').read()
+            print 'OUTPUT CHANGE: <%s> to <%s>' % (lastsum, sum)
         log = errors
 
     shutil.rmtree(tmpdir)
