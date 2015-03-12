@@ -32,6 +32,8 @@ spotchecks = (
     '--recon=recon.yuv',
     '--recon=recon.y4m',
     '--csv=test.csv',
+    '--no-progress',
+    '--log=none',
     '--log=frame',
     '--log=debug',
     '--log=full',
