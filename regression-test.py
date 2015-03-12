@@ -57,10 +57,14 @@ try:
         desc = utils.describeEnvironment(build)
         for line in open('regression-tests.txt').readlines():
             if len(line) < 3 or line[0] == '#': continue
-            seq, command = line.split(',')
-            cmdline = command.split() + always
+            seq, command = line.split(',', 1)
             extras = ['--psnr', '--ssim', random.choice(spotchecks)]
-            log += utils.runtest(build, lastgood, rev, seq, cmdline, extras, desc)
+            if ',' in command:
+                multipass = [cmd.split() + always for cmd in command.split(',')]
+                log += utils.multipasstest(build, lastgood, rev, seq, multipass, extras, desc)
+            else:
+                cmdline = command.split() + always
+                log += utils.runtest(build, lastgood, rev, seq, cmdline, extras, desc)
             print
 except KeyboardInterrupt:
     print 'Caught ctrl+c, exiting'

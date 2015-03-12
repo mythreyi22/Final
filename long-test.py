@@ -21,7 +21,7 @@ if utils.run_make:
 sequences, configs = {}, {} # use dictionaries to prune dups
 for line in open('regression-tests.txt').readlines():
     if len(line) < 3 or line[0] == '#': continue
-    seq, command = line.split(',')
+    seq, command = line.split(',', 1)
     if os.path.exists(os.path.join(my_sequences, seq)):
         sequences[seq] = 1
     if '--vbv' not in command:
@@ -66,12 +66,16 @@ try:
     log = ''
     for x in xrange(1000):
         seq = random.choice(sequences.keys())
-        cfg = random.choice(configs.keys()).split()
-        cmdline = cfg[:] + always
+        cfg = random.choice(configs.keys())
         extras = ['--psnr', '--ssim', random.choice(spotchecks)]
         build = random.choice(my_builds.keys())
         desc = utils.describeEnvironment(build)
-        log += utils.runtest(build, lastgood, rev, seq, cmdline, extras, desc)
+        if ',' in cfg:
+            multipass = [cmd.split() + always for cmd in command.split(',')]
+            log += utils.multipasstest(build, lastgood, rev, seq, multipass, extras, desc)
+        else:
+            cmdline = cfg[:] + always
+            log += utils.runtest(build, lastgood, rev, seq, cmdline, extras, desc)
         print
 except KeyboardInterrupt:
     print 'Caught ctrl+c, exiting'
