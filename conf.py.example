@@ -9,6 +9,8 @@ my_goldens      = r'\\bigdata\golden'
 my_hm_decoder   = r'C:\projects\hm\bin\TAppDecoderStatic'
 my_progress     = True # do you want to see build / encode status on console?
 
+# note that on POSIX systems you can use '~/' to signify your home dir
+
 # location for encoder intermediates. One temp folder will be created
 # per run, but should be deleted upon completion, so it does not require
 # much space but it should have good throughput. If not defined Python

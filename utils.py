@@ -14,6 +14,13 @@ try:
     from conf import my_machine_name, my_machine_desc, my_x265_source
     from conf import my_sequences, my_goldens, option_strings, my_hm_decoder
     from conf import my_pastebin_key, my_progress, my_tempfolder, my_builds
+
+    # support ~/repos/x265 syntax
+    my_x265_source = os.path.expanduser(my_x265_source)
+    my_sequences = os.path.expanduser(my_sequences)
+    my_goldens = os.path.expanduser(my_goldens)
+    my_hm_decoder = os.path.expanduser(my_hm_decoder)
+    my_tempfolder = os.path.expanduser(my_tempfolder)
 except ImportError, e:
     print e
     print 'Copy conf.py.example to conf.py and edit the file as necessary'
