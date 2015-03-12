@@ -896,14 +896,29 @@ def _test(build, tmpfolder, lastgood, testrev, seq, cfg, extras, desc):
             newgoldenoutputs(seq, cfg, lastfname, testrev, fulldesc, sum, logs, tmpfolder)
             return ''
     elif errors:
+        fname = os.path.join(my_goldens, testhash, lastfname, 'summary.txt')
+        lastsum = open(fname, 'r').read()
+
         decodeerr = checkdecoder(tmpfolder)
         addfail(testhash, lastfname, testrev, fulldesc, logs, errors + decodeerr)
         if decodeerr:
             print 'OUTPUT CHANGE WITH DECODE ERRORS'
             return errors
+        else if '--vbv-bufsize' in cfg:
+            # VBV encodes are non-deterministic, check that golden output
+            # bitrate is within 1% of new bitrate. Extract bitrate from summary
+            # example summary: bitrate: 121.95, SSIM: 20.747, PSNR: 53.359
+            lastbitrate = float(lastsum.split(',')[0].split(' ')[1])
+            newbitrate = float(sum.split(',')[0].split(' ')[1])
+            diff = abs(lastbitrate - newbitrate) / lastbitrate
+            print 'VBV OUTPUT CHANGED BY %.2f%%' % (diff * 100)
+            if diff > 0.01:
+                errors += 'VBV bitrate changed by %.2f%%\n' % (diff * 100)
+                return errors
+            else:
+                # this is considered a passing test
+                return ''
         else:
-            fname = os.path.join(my_goldens, testhash, lastfname, 'summary.txt')
-            lastsum = open(fname, 'r').read()
             print 'OUTPUT CHANGE: <%s> to <%s>' % (lastsum, sum)
             return errors + decodeerr
     else:
