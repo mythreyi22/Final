@@ -684,6 +684,7 @@ ignored_warnings = (
     '!! HEVC Range Extension specifications are not finalized !!',
     '!! This output bitstream may not be compliant with the final spec !!',
     'Max TU size should be less than or equal to max CU size, setting max TU size = 16',
+    'No thread pool allocated, --wpp disabled',
 )
 
 def parsex265(tmpfolder, stdout, stderr):
