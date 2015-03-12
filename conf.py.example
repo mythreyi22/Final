@@ -57,6 +57,7 @@ my_builds = {
 # short-hand strings for CMAKE options, feel free to add more
 option_strings = {
     'checked' : '-DCHECKED_BUILD=ON',
+    'ftrapv'  : '-DENABLE_AGGRESSIVE_CHECKS=ON',
     '16bpp'   : '-DHIGH_BIT_DEPTH=ON',
     'debug'   : '-DCMAKE_BUILD_TYPE=Debug',
     'reldeb'  : '-DCMAKE_BUILD_TYPE=RelWithDebInfo',
