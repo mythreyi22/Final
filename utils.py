@@ -904,7 +904,7 @@ def _test(build, tmpfolder, lastgood, testrev, seq, cfg, extras, desc):
         if decodeerr:
             print 'OUTPUT CHANGE WITH DECODE ERRORS'
             return errors
-        else if '--vbv-bufsize' in cfg:
+        elif '--vbv-bufsize' in cfg:
             # VBV encodes are non-deterministic, check that golden output
             # bitrate is within 1% of new bitrate. Extract bitrate from summary
             # example summary: bitrate: 121.95, SSIM: 20.747, PSNR: 53.359
