@@ -271,15 +271,15 @@ washdc_422_ntsc.y4m,--preset veryslow --psy-rdoq 2.0 --rdoq-level 2
 RaceHorses_416x240_30_10bit.yuv,--preset medium --bitrate 700 --vbv-bufsize 900 --vbv-maxrate 700
 RaceHorses_416x240_30_10bit.yuv,--preset superfast --bitrate 600 --vbv-bufsize 600 --vbv-maxrate 600
 RaceHorses_416x240_30_10bit.yuv,--preset veryslow --bitrate 1100 --vbv-bufsize 1100 --vbv-maxrate 1200
-112.yuv,--preset medium --bitrate 1000 --vbv-maxrate 1500 --vbv-bufsize 1500 --aud
-112.yuv,--preset medium --bitrate 10000 --vbv-maxrate 10000 --vbv-bufsize 15000 --hrd
-112.yuv,--preset medium --bitrate 4000 --vbv-maxrate 12000 --vbv-bufsize 12000 --repeat-headers
-112.yuv,--preset superfast --bitrate 1000 --vbv-maxrate 1000 --vbv-bufsize 1500 --hrd
-112.yuv,--preset superfast --bitrate 30000 --vbv-maxrate 30000 --vbv-bufsize 30000 --repeat-headers
-112.yuv,--preset superfast --bitrate 4000 --vbv-maxrate 6000 --vbv-bufsize 6000 --aud
-112.yuv,--preset veryslow --bitrate 1000 --vbv-maxrate 3000 --vbv-bufsize 3000 --repeat-headers
-112.yuv,--preset veryslow --bitrate 10000 --vbv-maxrate 15000 --vbv-bufsize 15000 --aud
-112.yuv,--preset veryslow --bitrate 4000 --vbv-maxrate 4000 --vbv-bufsize 6000 --hrd
+112_1920x1080_25.yuv,--preset medium --bitrate 1000 --vbv-maxrate 1500 --vbv-bufsize 1500 --aud
+112_1920x1080_25.yuv,--preset medium --bitrate 10000 --vbv-maxrate 10000 --vbv-bufsize 15000 --hrd
+112_1920x1080_25.yuv,--preset medium --bitrate 4000 --vbv-maxrate 12000 --vbv-bufsize 12000 --repeat-headers
+112_1920x1080_25.yuv,--preset superfast --bitrate 1000 --vbv-maxrate 1000 --vbv-bufsize 1500 --hrd
+112_1920x1080_25.yuv,--preset superfast --bitrate 30000 --vbv-maxrate 30000 --vbv-bufsize 30000 --repeat-headers
+112_1920x1080_25.yuv,--preset superfast --bitrate 4000 --vbv-maxrate 6000 --vbv-bufsize 6000 --aud
+112_1920x1080_25.yuv,--preset veryslow --bitrate 1000 --vbv-maxrate 3000 --vbv-bufsize 3000 --repeat-headers
+112_1920x1080_25.yuv,--preset veryslow --bitrate 10000 --vbv-maxrate 15000 --vbv-bufsize 15000 --aud
+112_1920x1080_25.yuv,--preset veryslow --bitrate 4000 --vbv-maxrate 4000 --vbv-bufsize 6000 --hrd
 big_buck_bunny_360p24.y4m,--preset medium --bitrate 1000 --vbv-bufsize 3000 --vbv-maxrate 3000 --repeat-headers
 big_buck_bunny_360p24.y4m,--preset medium --bitrate 3000 --vbv-bufsize 3000 --vbv-maxrate 3000 --hrd
 big_buck_bunny_360p24.y4m,--preset medium --bitrate 400 --vbv-bufsize 600 --vbv-maxrate 600 --aud
