@@ -749,6 +749,7 @@ def findlastgood(testrev):
     except EnvironmentError:
         return testrev
 
+    if testrev.endswith('+'): testrev = testrev[:-1]
     for line in lines:
         if len(line) < 12 or line[0] == '#': continue
         rev = line[:12]
