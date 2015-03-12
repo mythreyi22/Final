@@ -600,18 +600,22 @@ def testcasehash(sequence, commands):
     return m.hexdigest()[:12]
 
 
-def encodeharness(key, sequence, commands, inextras, desc):
+def encodeharness(key, tmpfolder, sequence, commands, inextras, desc):
     '''
     Perform a single test encode within a tempfolder
      * key      is the shortname for the build to use, ex: 'gcc'
+     * tmpfolder is a temporary folder in which the test will run
      * sequence is the YUV or Y4M filename with no path
-     * commands is a list [] of commands which influence outputs (hashed)
-     * inextras is a list [] of commands which do not influence outputs
-    returns tuple of (tmpfolder path, error string)
+     * commands is a list [] of params which influence outputs (hashed)
+     * inextras is a list [] of params which do not influence outputs
+     * desc     is a description of the test environment
+    returns tuple of (logs, summary, error)
+       logs    - stderr and stdout in paste-friendly format (encode log)
+       summary - bitrate, psnr, ssim
+       error   - full description of encoder warnings and errors and test env
     '''
 
     buildfolder, _, generator, cmakeopts, opts = my_builds[key]
-    tmpfolder = None
 
     extras = inextras[:] # make copy so we can append locally
     if sequence.lower().endswith('.yuv'):
@@ -647,7 +651,6 @@ def encodeharness(key, sequence, commands, inextras, desc):
         print 'Sequence not found'
         errors = 'sequence <%s> not found\n\n' % seqfullpath
     else:
-        tmpfolder = tempfile.mkdtemp(prefix='x265-temp')
         origpath = os.environ['PATH']
         if 'mingw' in opts:
             os.environ['PATH'] += os.pathsep + opts['mingw']
@@ -669,7 +672,7 @@ def encodeharness(key, sequence, commands, inextras, desc):
     if errors:
         prefix = '** encoder warning or error reported for %s:: ' % key
         errors = prefix + pastebin(desc + errors)
-    return (tmpfolder, logs, summary, errors)
+    return (logs, summary, errors)
 
 
 ignored_warnings = (
@@ -859,16 +862,20 @@ def checkdecoder(tmpdir):
         return ''
 
 
-def runtest(build, lastgood, testrev, seq, cfg, extras, desc):
+def _test(build, tmpfolder, lastgood, testrev, seq, cfg, extras, desc):
+    '''
+    Run a test encode within the specified temp folder
+    Check to see if golden outputs exist:
+        If they exist, verify bit-exactness or report divergence
+        If not, validate new bitstream with decoder then save
+    '''
     fulldesc = desc
     fulldesc += 'command: %s %s\n' % (seq, ' '.join(cfg))
     fulldesc += ' extras: ' + ' '.join(extras) + '\n\n'
 
-    tmpdir, logs, sum, errors = encodeharness(build, seq, cfg, extras, fulldesc)
-    if not tmpdir:
-        return errors
-    elif errors:
-        shutil.rmtree(tmpdir)
+    # run the encoder, abort early if any errors encountered
+    logs, sum, errors = encodeharness(build, tmpfolder, seq, cfg, extras, fulldesc)
+    if errors:
         return errors
 
     group = my_builds[build][1]
@@ -876,32 +883,51 @@ def runtest(build, lastgood, testrev, seq, cfg, extras, desc):
     lastfname = '%s-%s-%s' % (revdate, group, lastgood)
     testhash = testcasehash(seq, cfg)
 
-    errors = checkoutputs(build, seq, cfg, lastfname, sum, tmpdir, fulldesc)
+    # check against last known good outputs
+    errors = checkoutputs(build, seq, cfg, lastfname, sum, tmpfolder, fulldesc)
     if errors is None:
-        print 'No golden outputs for this last good, validating with decoder'
-        errors = checkdecoder(tmpdir)
+        print 'No golden outputs for this test case, validating with decoder'
+        errors = checkdecoder(tmpfolder)
         if errors:
-            print 'Decoder check failed'
-            log = fulldesc + errors
+            print 'Decoder validation failed'
+            return fulldesc + errors
         else:
-            print 'Bitstream decoded ok'
-            print sum
-            log = ''
-            newgoldenoutputs(seq, cfg, lastfname, testrev, fulldesc, sum, logs, tmpdir)
-    elif errors is False:
-        print 'PASS'
-        addpass(testhash, lastfname, testrev, fulldesc, logs)
-        log = ''
-    else:
-        errors += checkdecoder(tmpdir)
-        addfail(testhash, lastfname, testrev, fulldesc, logs, errors)
-        if errors:
+            print 'Decoder validation ok:', sum
+            newgoldenoutputs(seq, cfg, lastfname, testrev, fulldesc, sum, logs, tmpfolder)
+            return ''
+    elif errors:
+        decodeerr = checkdecoder(tmpfolder)
+        addfail(testhash, lastfname, testrev, fulldesc, logs, errors + decodeerr)
+        if decodeerr:
             print 'OUTPUT CHANGE WITH DECODE ERRORS'
+            return errors
         else:
             fname = os.path.join(my_goldens, testhash, lastfname, 'summary.txt')
             lastsum = open(fname, 'r').read()
             print 'OUTPUT CHANGE: <%s> to <%s>' % (lastsum, sum)
-        log = errors
+            return errors + decodeerr
+    else:
+        addpass(testhash, lastfname, testrev, fulldesc, logs)
+        print 'PASS'
+        return ''
 
-    shutil.rmtree(tmpdir)
-    return log
+def runtest(build, lastgood, testrev, seq, cfg, extras, desc):
+    tmpfolder = tempfile.mkdtemp(prefix='x265-temp')
+    try:
+        return _test(build, tmpfolder, lastgood, testrev, seq, cfg, extras, desc)
+    finally:
+        shutil.rmtree(tmpfolder)
+
+def multipasstest(build, lastgood, testrev, seq, multipass, extras, desc):
+    # multipass is an array of command lines, each encode command line is run
+    # in series (each given the same input sequence and 'extras' options and
+    # within the same temp folder so multi-pass stats files and analysis load /
+    # save files will be left unharmed between calls
+    tmpfolder = tempfile.mkdtemp(prefix='x265-temp')
+    try:
+        log = ''
+        for cfg in multipass:
+            log += _test(build, tmpfolder, lastgood, testrev, seq, cfg, extras, desc)
+        return log
+    finally:
+        shutil.rmtree(tmpfolder)
