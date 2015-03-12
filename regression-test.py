@@ -53,11 +53,17 @@ if debugs:
 
 try:
     log = ''
+    missing = set()
     for build in my_builds:
         desc = utils.describeEnvironment(build)
         for line in open('regression-tests.txt').readlines():
             if len(line) < 3 or line[0] == '#': continue
             seq, command = line.split(',', 1)
+            if not os.path.exists(os.path.join(my_sequences, seq)):
+                if seq not in missing:
+                    print 'Ignoring missing sequence', seq
+                    missing.add(seq)
+                continue
             extras = ['--psnr', '--ssim', random.choice(spotchecks)]
             if ',' in command:
                 multipass = [cmd.split() + always for cmd in command.split(',')]
