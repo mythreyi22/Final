@@ -30,6 +30,7 @@ run_make  = True
 run_bench = True
 rebuild   = False
 save_results = True
+skip_string = None
 test_file = None
 
 def setup(argv, preferredlist):
@@ -58,7 +59,7 @@ def setup(argv, preferredlist):
         print 'will it create pass/fail files.\n'
 
     import getopt
-    longopts = ['builds=', 'help', 'no-make', 'no-bench', 'rebuild', 'tests=']
+    longopts = ['builds=', 'help', 'no-make', 'no-bench', 'rebuild', 'skip=', 'tests=']
     optlist, args = getopt.getopt(argv[1:], 'hb:t:', longopts)
     for opt, val in optlist:
         # restrict the list of target builds to just those specified by -b
@@ -68,6 +69,8 @@ def setup(argv, preferredlist):
             delkeys = [key for key in my_builds if not key in userbuilds]
             for key in delkeys:
                 del my_builds[key]
+        elif opt == '--skip':
+            skip_string = val
         elif opt in ('-t', '--tests'):
             test_file = val
         elif opt == '--no-make':
@@ -81,6 +84,7 @@ def setup(argv, preferredlist):
             print '\t-h/--help            show this help'
             print '\t-b/--builds <string> space seperated list of build targets'
             print '\t-t/--tests <fname>   location of text file with test cases'
+            print '\t   --skip <string>   skip test cases matching string'
             print '\t   --no-make         do not compile sources'
             print '\t   --no-bench        do not run test benches'
             print '\t   --rebuild         remove old build folders and rebuild'
@@ -953,6 +957,9 @@ def _test(build, tmpfolder, lastgood, testrev, seq, cfg, extras, desc):
 def runtest(build, lastgood, testrev, seq, cfg, extras, desc):
     tmpfolder = tempfile.mkdtemp(prefix='x265-temp')
     try:
+        if skip_string and skip_string in ' '.join(cfg):
+            print 'Skipping test', ' '.join(cfg)
+            return ''
         return _test(build, tmpfolder, lastgood, testrev, seq, cfg, extras, desc)
     finally:
         shutil.rmtree(tmpfolder)
@@ -966,6 +973,9 @@ def multipasstest(build, lastgood, testrev, seq, multipass, extras, desc):
     try:
         log = ''
         for cfg in multipass:
+            if skip_string and skip_string in ' '.join(cfg):
+                print 'Skipping test', ' '.join(cfg)
+                return ''
             log += _test(build, tmpfolder, lastgood, testrev, seq, cfg, extras, desc)
         return log
     finally:
