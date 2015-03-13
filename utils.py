@@ -699,6 +699,7 @@ def parsex265(tmpfolder, stdout, stderr):
     check = os.path.join(tmpfolder, 'x265_check_failures.txt')
     if os.path.exists(check):
         errors += '** check failures reported:\n' + open(check, 'r').read()
+    leaks = os.path.join(tmpfolder, 'x265_leaks.txt')
     if os.path.exists(leaks):
         contents = open(leaks, 'r').read()
         if 'No memory leaks detected' not in contents:
