@@ -58,7 +58,7 @@ try:
     missing = set()
     for build in my_builds:
         desc = utils.describeEnvironment(build)
-        for line in open('regression-tests.txt').readlines():
+        for line in open(utils.test_file).readlines():
             if len(line) < 3 or line[0] == '#': continue
             seq, command = line.split(',', 1)
             if not os.path.exists(os.path.join(my_sequences, seq)):

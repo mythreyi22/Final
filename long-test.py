@@ -19,7 +19,7 @@ if utils.run_make:
         sys.exit(1)
 
 sequences, configs = {}, {} # use dictionaries to prune dups
-for line in open('regression-tests.txt').readlines():
+for line in open(utils.test_file).readlines():
     if len(line) < 3 or line[0] == '#': continue
     seq, command = line.split(',', 1)
     if os.path.exists(os.path.join(my_sequences, seq)):

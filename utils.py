@@ -30,6 +30,7 @@ run_make  = True
 run_bench = True
 rebuild   = False
 save_results = True
+test_file = 'regression-tests.txt'
 
 def setup(argv):
     if not find_executable('hg'):
@@ -41,7 +42,7 @@ def setup(argv):
     if not os.path.exists(os.path.join(my_x265_source, 'CMakeLists.txt')):
         raise Exception('my_x265_source does not point to x265 source/ folder')
 
-    global run_make, run_bench, rebuild, save_results
+    global run_make, run_bench, rebuild, save_results, test_file
 
     if my_tempfolder:
         tempfile.tempdir = my_tempfolder
@@ -55,8 +56,8 @@ def setup(argv):
         print 'will it create pass/fail files.\n'
 
     import getopt
-    longopts = ['builds=', 'help', 'no-make', 'no-bench', 'rebuild']
-    optlist, args = getopt.getopt(argv[1:], 'hb:', longopts)
+    longopts = ['builds=', 'help', 'no-make', 'no-bench', 'rebuild', 'tests=']
+    optlist, args = getopt.getopt(argv[1:], 'hb:t:', longopts)
     for opt, val in optlist:
         # restrict the list of target builds to just those specified by -b
         # for example: ./smoke-test.py -b "gcc32 gcc10"
@@ -65,6 +66,8 @@ def setup(argv):
             delkeys = [key for key in my_builds if not key in userbuilds]
             for key in delkeys:
                 del my_builds[key]
+        elif opt in ('-t', '--tests'):
+            test_file = val
         elif opt == '--no-make':
             run_make = False
         elif opt == '--no-bench':
@@ -75,6 +78,7 @@ def setup(argv):
             print sys.argv[0], '[OPTIONS]\n'
             print '\t-h/--help            show this help'
             print '\t-b/--builds <string> space seperated list of build targets'
+            print '\t-t/--tests <fname>   location of text file with test cases'
             print '\t   --no-make         do not compile sources'
             print '\t   --no-bench        do not run test benches'
             print '\t   --rebuild         remove old build folders and rebuild'
