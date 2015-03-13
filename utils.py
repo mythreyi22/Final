@@ -96,7 +96,7 @@ def setup(argv, preferredlist):
             print '\t   --rebuild         remove old build folders and rebuild'
             sys.exit(0)
 
-    listInRepo = os.path.join(my_x265_source, 'source', 'test', test_file)
+    listInRepo = os.path.join(my_x265_source, 'test', test_file)
     if os.path.exists(listInRepo):
         test_file = listInRepo
     elif not os.path.exists(test_file):
