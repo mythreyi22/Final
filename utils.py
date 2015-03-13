@@ -107,6 +107,20 @@ ignored_compiler_warnings = (
     'ld: warning: PIE disabled', # link warning on 32bit GCC builds on Mac
 )
 
+ignored_x265_warnings = (
+    '--psnr used with psy on: results will be invalid!',
+    '--ssim used with AQ off: results will be invalid!',
+    '--psnr used with AQ on: results will be invalid!',
+    '--tune psnr should be used if attempting to benchmark psnr!',
+    'Assembly not supported in this binary',
+    '!! HEVC Range Extension specifications are not finalized !!',
+    '!! This output bitstream may not be compliant with the final spec !!',
+    'Max TU size should be less than or equal to max CU size, setting max TU size = 16',
+    'No thread pool allocated, --wpp disabled',
+    'No thread pool allocated, --pme disabled',
+)
+
+
 if os.name == 'nt':
 
     # LOL Windows
@@ -705,19 +719,6 @@ def encodeharness(key, tmpfolder, sequence, commands, inextras, desc):
     return (logs, summary, errors)
 
 
-ignored_warnings = (
-    '--psnr used with psy on: results will be invalid!',
-    '--ssim used with AQ off: results will be invalid!',
-    '--psnr used with AQ on: results will be invalid!',
-    '--tune psnr should be used if attempting to benchmark psnr!',
-    'Assembly not supported in this binary',
-    '!! HEVC Range Extension specifications are not finalized !!',
-    '!! This output bitstream may not be compliant with the final spec !!',
-    'Max TU size should be less than or equal to max CU size, setting max TU size = 16',
-    'No thread pool allocated, --wpp disabled',
-    'No thread pool allocated, --pme disabled',
-)
-
 def parsex265(tmpfolder, stdout, stderr):
     errors = ''
     check = os.path.join(tmpfolder, 'x265_check_failures.txt')
@@ -754,7 +755,7 @@ def parsex265(tmpfolder, stdout, stderr):
         elif line.startswith('x265 ['):
             if line[6:13] == 'warning':
                 warn = line[16:]
-                if warn not in ignored_warnings:
+                if warn not in ignored_x265_warnings:
                     print line
                     errors += lastprog + line + '\n'
                     lastprog = ''
