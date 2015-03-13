@@ -9,10 +9,6 @@
 # consistent across many machines, you must force a certain -FN so it is
 # not auto-detected.
 
-# multi-pass test cases. These will all run in the same temp folder so
-# later passes have access to files created by earlier passes
-big_buck_bunny_360p24.y4m,--preset medium --bitrate 1000 --pass 1 -F4,--preset medium --bitrate 1000 --pass 2 -F4
-
 BasketballDrive_1920x1080_50.y4m,--preset fast
 BasketballDrive_1920x1080_50.y4m,--preset faster
 BasketballDrive_1920x1080_50.y4m,--preset medium --ctu 16 --max-tu-size 8
