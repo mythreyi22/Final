@@ -501,7 +501,7 @@ def msbuild(buildfolder, generator, cmakeopts):
     else:
         target += 'Release'
 
-    msbuild = 'msbuild'
+    # use the newest MSBuild installed
     for f in (r'C:\Program Files (x86)\MSBuild\12.0\Bin\MSBuild.exe',
               r'C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe',
               r'C:\Windows\Microsoft.NET\Framework\v3.5\MSBuild.exe'):
