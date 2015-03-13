@@ -30,9 +30,9 @@ run_make  = True
 run_bench = True
 rebuild   = False
 save_results = True
-test_file = 'regression-tests.txt'
+test_file = None
 
-def setup(argv):
+def setup(argv, preferredlist):
     if not find_executable('hg'):
         raise Exception('Unable to find Mercurial executable (hg)')
     if not find_executable('cmake'):
@@ -46,6 +46,14 @@ def setup(argv):
 
     if my_tempfolder:
         tempfile.tempdir = my_tempfolder
+
+    listInRepo = os.path.join(my_x265_source, 'source', 'test', preferredlist)
+    if os.path.exists(listInRepo):
+        test_file = listInRepo
+    elif os.path.exists(preferredlist):
+        test_file = preferredlist
+    else:
+        raise Exception('Unable to find test list file ' + preferredlist)
 
     # do not write new golden outputs or write pass/fail files if revision
     # under test is not public
