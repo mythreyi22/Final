@@ -495,7 +495,7 @@ def msbuild(buildfolder, generator, cmakeopts):
 
     target = '/p:Configuration='
     if '-DCMAKE_BUILD_TYPE=Debug' in cmakeopts:
-        target += 'debug'
+        target += 'Debug'
     elif '-DCMAKE_BUILD_TYPE=RelWithDebInfo' in cmakeopts:
         target += 'RelWithDebInfo'
     else:
@@ -572,9 +572,9 @@ def testharness():
         print 'Running testbench for %s...'% key
 
         if 'Visual Studio' in generator:
-            if '-DCMAKE_BUILD_TYPE=Debug' in co:
-                target = 'debug'
-            elif '-DCMAKE_BUILD_TYPE=RelWithDebInfo' in co:
+            if 'debug' in co.split():
+                target = 'Debug'
+            elif 'reldeb' in co.split():
                 target = 'RelWithDebInfo'
             else:
                 target = 'Release'
@@ -637,9 +637,9 @@ def encodeharness(key, tmpfolder, sequence, commands, inextras, desc):
     seqfullpath = os.path.join(my_sequences, sequence)
 
     if 'Visual Studio' in generator:
-        if '-DCMAKE_BUILD_TYPE=Debug' in cmakeopts:
-            target = 'debug'
-        elif '-DCMAKE_BUILD_TYPE=RelWithDebInfo' in cmakeopts:
+        if 'debug' in cmakeopts.split():
+            target = 'Debug'
+        elif 'reldeb' in cmakeopts.split():
             target = 'RelWithDebInfo'
         else:
             target = 'Release'
