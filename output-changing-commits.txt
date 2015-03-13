@@ -8,6 +8,7 @@
 # of itself. If you always add new lines to the top, this should be
 # enforced implicitly.
 
+1bed2e325efc superfast/ultrafast changes + CRF fixes from previous few commits
 50d3bb223180 adaptive quant cost fixes
 cc5b9d4abddb lookahead uses full intra references
 d7bf99b426e9 fix to avoid false abr restarts
