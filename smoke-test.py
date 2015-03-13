@@ -36,6 +36,7 @@ try:
         for line in open(utils.test_file).readlines():
             if len(line) < 3 or line[0] == '#': continue
             seq, command = line.split(',', 1)
+            if ',' in command: continue # skip multipass tests
             cfg = command.split() + always
             log += utils.runtest(key, lastgood, rev, seq, cfg, extras, desc)
             print
