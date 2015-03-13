@@ -886,6 +886,7 @@ def _test(build, tmpfolder, lastgood, testrev, seq, cfg, extras, desc):
     # run the encoder, abort early if any errors encountered
     logs, sum, errors = encodeharness(build, tmpfolder, seq, cfg, extras, fulldesc)
     if errors:
+        print 'Encoder warnings or errors detected'
         return errors
 
     group = my_builds[build][1]
