@@ -47,13 +47,7 @@ def setup(argv, preferredlist):
     if my_tempfolder:
         tempfile.tempdir = my_tempfolder
 
-    listInRepo = os.path.join(my_x265_source, 'source', 'test', preferredlist)
-    if os.path.exists(listInRepo):
-        test_file = listInRepo
-    elif os.path.exists(preferredlist):
-        test_file = preferredlist
-    else:
-        raise Exception('Unable to find test list file ' + preferredlist)
+    test_file = preferredlist
 
     # do not write new golden outputs or write pass/fail files if revision
     # under test is not public
@@ -91,6 +85,13 @@ def setup(argv, preferredlist):
             print '\t   --no-bench        do not run test benches'
             print '\t   --rebuild         remove old build folders and rebuild'
             sys.exit(0)
+
+    listInRepo = os.path.join(my_x265_source, 'source', 'test', test_file)
+    if os.path.exists(listInRepo):
+        test_file = listInRepo
+    elif not os.path.exists(test_file):
+        raise Exception('Unable to find test list file ' + preferredlist)
+
 
 ignored_compiler_warnings = (
     'ld: warning: PIE disabled', # link warning on 32bit GCC builds on Mac
