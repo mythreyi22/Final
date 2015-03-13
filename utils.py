@@ -715,6 +715,7 @@ ignored_warnings = (
     '!! This output bitstream may not be compliant with the final spec !!',
     'Max TU size should be less than or equal to max CU size, setting max TU size = 16',
     'No thread pool allocated, --wpp disabled',
+    'No thread pool allocated, --pme disabled',
 )
 
 def parsex265(tmpfolder, stdout, stderr):
