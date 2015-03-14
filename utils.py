@@ -318,7 +318,7 @@ def parseY4MHeader(fname):
 
 def isancestor(testrev, ancestor):
     # hg log -r "descendants(1bed2e325efc) and 5ebd5d7c0a76"
-    cmds = ['hg', 'log', '-r', "descendants(%s) and %s" % (ancestor, testrev),
+    cmds = ['hg', 'log', '-r', "ancestors(%s) and %s" % (testrev, ancestor),
             '--template', '{node}']
     if Popen(cmds, stdout=PIPE, cwd=my_x265_source).communicate()[0]:
         return True
