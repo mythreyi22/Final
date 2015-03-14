@@ -340,10 +340,12 @@ def spotchecks(testrev):
         '--csv=test.csv',
         '--no-progress',
         '--log=none',
-        '--log=frame',
         '--log=debug',
         '--log=full',
     ]
+    # stats: introduce X265_LOG_FRAME for file level CSV logging without console logs
+    if isancestor(testrev, 'a5af4cf20660'):
+        spotchecks.append('--log=frame')
     # check if the revision under test is after the NUMA pools commit
     if isancestor(testrev, '62b8fe990df5'):
         spotchecks += ['--pools=1', '--pools=2']
