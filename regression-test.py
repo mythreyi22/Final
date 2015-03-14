@@ -20,28 +20,8 @@ if utils.run_make:
 
 always = ['--no-info', '--hash=1']
 
-# these options can be added to any test and should not affect outputs
-spotchecks = (
-    '--no-asm',
-    '--asm=SSE2',
-    '--asm=SSE3',
-    '--asm=SSSE3',
-    '--asm=SSE4',
-    '--asm=AVX',
-    '--pme',
-    '--recon=recon.yuv',
-    '--recon=recon.y4m',
-    '--csv=test.csv',
-    '--no-progress',
-    '--log=none',
-    '--log=frame',
-    '--log=debug',
-    '--log=full',
-    '--pools=1', # pools=0 disables pool features, would change outputs
-    '--pools=2',
-)
-
 rev = utils.hgversion()
+spotchecks = utils.spotchecks(rev)
 lastgood = utils.findlastgood(rev)
 print '\ntesting revision %s, validating against %s\n' % (rev, lastgood)
 

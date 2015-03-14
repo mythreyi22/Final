@@ -316,6 +316,33 @@ def parseY4MHeader(fname):
 
     return (width, height, fps, depth, csp)
 
+def spotchecks(testrev):
+    # these options can be added to any test and should not affect outputs
+    spotchecks = [
+        '--no-asm',
+        '--asm=SSE2',
+        '--asm=SSE3',
+        '--asm=SSSE3',
+        '--asm=SSE4',
+        '--asm=AVX',
+        '--pme',
+        '--recon=recon.yuv',
+        '--recon=recon.y4m',
+        '--csv=test.csv',
+        '--no-progress',
+        '--log=none',
+        '--log=frame',
+        '--log=debug',
+        '--log=full',
+    ]
+    # check if the revision under test is after the NUMA pools commit
+    cmds = ['hg', 'log', '-r', "62b8fe990df5::" + testrev,
+            '--template', '"{short(node)}"']
+    if Popen(cmds, stdout=PIPE, cwd=my_x265_source).communicate()[0]:
+        spotchecks += ['--pools=1', '--pools=2']
+    else:
+        spotchecks += ['--threads=2', '--threads=3']
+    return spotchecks
 
 def pastebin(content):
     sizelimit = 500 * 1024
