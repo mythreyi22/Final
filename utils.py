@@ -316,6 +316,15 @@ def parseY4MHeader(fname):
 
     return (width, height, fps, depth, csp)
 
+def isancestor(testrev, ancestor):
+    # hg log -r "descendants(1bed2e325efc) and 5ebd5d7c0a76"
+    cmds = ['hg', 'log', '-r', "descendants(%s) and %s" % (ancestor, testrev),
+            '--template', '{node}']
+    if Popen(cmds, stdout=PIPE, cwd=my_x265_source).communicate()[0]:
+        return True
+    else:
+        return False
+
 def spotchecks(testrev):
     # these options can be added to any test and should not affect outputs
     spotchecks = [
@@ -336,9 +345,7 @@ def spotchecks(testrev):
         '--log=full',
     ]
     # check if the revision under test is after the NUMA pools commit
-    cmds = ['hg', 'log', '-r', "62b8fe990df5::" + testrev,
-            '--template', '"{short(node)}"']
-    if Popen(cmds, stdout=PIPE, cwd=my_x265_source).communicate()[0]:
+    if isancestor(testrev, '62b8fe990df5'):
         spotchecks += ['--pools=1', '--pools=2']
     else:
         spotchecks += ['--threads=2', '--threads=3']
@@ -815,13 +822,11 @@ def findlastgood(testrev):
         return testrev
 
     if testrev.endswith('+'): testrev = testrev[:-1]
+
     for line in lines:
         if len(line) < 12 or line[0] == '#': continue
         rev = line[:12]
-        cmds = ['hg', 'log', '-r', "%s::%s" % (rev, testrev),
-                '--template', '"{short(node)}"']
-        out = Popen(cmds, stdout=PIPE, cwd=my_x265_source).communicate()[0]
-        if out:
+        if isancestor(testrev, rev):
             return rev
 
     return testrev
