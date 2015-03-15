@@ -1,5 +1,10 @@
 #!/usr/bin/env python
 
+# Copyright (C) 2015 Steve Borho <steve@borho.org>
+#
+# This software may be used and distributed according to the terms of the
+# GNU General Public License version 2 or any later version. See COPYING
+
 import os
 import random
 import sys
