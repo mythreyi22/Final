@@ -194,6 +194,8 @@ if os.name == 'nt':
             errors = ''.join(out[-10:])
         if proc.returncode == -11:
             errors += 'SIGSEGV\n'
+        elif proc.returncode == -6:
+            errors += 'SIGABRT\n'
         elif proc.returncode == -4:
             errors += 'SIGILL\n'
         elif proc.returncode:
@@ -252,6 +254,8 @@ else:
             errors = ''.join(out[-10:])
         if proc.returncode == -11:
             errors += 'SIGSEGV\n'
+        elif proc.returncode == -6:
+            errors += 'SIGABRT\n'
         elif proc.returncode == -4:
             errors += 'SIGILL\n'
         elif proc.returncode:
@@ -746,6 +750,8 @@ def encodeharness(key, tmpfolder, sequence, commands, inextras, desc):
         summary, errors = parsex265(tmpfolder, stdout, stderr)
         if p.returncode == -11:
            errors += 'x265 encountered SIGSEGV\n\n'
+        elif p.returncode == -6:
+            errors += 'x265 encountered SIGABRT (usually check failure)\n\n'
         elif p.returncode == -4:
            errors += 'x265 encountered SIGILL (usually -ftrapv)\n\n'
         elif p.returncode:
