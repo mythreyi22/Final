@@ -44,13 +44,14 @@ except ImportError, e:
     print '** `my_make_flags` not defined in conf.py, defaulting to []'
     my_make_flags = []
 
-run_make  = True
-run_bench = True
-rebuild   = False
-save_results = True
-only_string = None
-skip_string = None
-test_file = None
+run_make  = True     # run cmake and make/msbuild
+run_bench = True     # run test benches
+rebuild   = False    # delete build folders prior to build
+save_results = True  # allow new golden outputs or pass/fail files
+only_string = None   # filter tests - only those matching this string
+skip_string = None   # filter tests - all except those matching this string
+test_file = None     # filename or full path of file containing test cases
+testrev = None       # revision under test
 
 def setup(argv, preferredlist):
     if not find_executable('hg'):
@@ -63,20 +64,28 @@ def setup(argv, preferredlist):
         raise Exception('my_x265_source does not point to x265 source/ folder')
 
     global run_make, run_bench, rebuild, save_results, test_file, skip_string
-    global only_string
+    global only_string, testrev
 
     if my_tempfolder:
         tempfile.tempdir = my_tempfolder
 
-    test_file = preferredlist
+    testrev = hgversion()
+    if testrev.endswith('+'):
+        # we do not store golden outputs if uncommitted changes
+        save_results = False
+        testrev = testrev[:-1]
+    elif hggetphase(testrev) != 'public':
+        # we do not store golden outputs until a revision is public (pushed)
+        save_results = False
+    else:
+        save_results = True
 
-    # do not write new golden outputs or write pass/fail files if revision
-    # under test is not public
-    save_results = allowNewGoldenOutputs()
     if not save_results:
         print 'NOTE: Revision under test is not public or has uncommited changes.'
         print 'No new golden outputs will be generated during this run, neither'
         print 'will it create pass/fail files.\n'
+
+    test_file = preferredlist
 
     import getopt
     longopts = ['builds=', 'help', 'no-make', 'no-bench', 'only=', 'rebuild',
@@ -340,7 +349,7 @@ def parseY4MHeader(fname):
 
     return (width, height, fps, depth, csp)
 
-def isancestor(testrev, ancestor):
+def isancestor(ancestor):
     # hg log -r "descendants(1bed2e325efc) and 5ebd5d7c0a76"
     cmds = ['hg', 'log', '-r', 'ancestors(%s) and %s' % (testrev, ancestor),
             '--template', '"{node}"']
@@ -349,7 +358,7 @@ def isancestor(testrev, ancestor):
     else:
         return False
 
-def spotchecks(testrev):
+def spotchecks():
     # these options can be added to any test and should not affect outputs
     spotchecks = [
         '--no-asm',
@@ -368,10 +377,10 @@ def spotchecks(testrev):
         '--log=full',
     ]
     # stats: introduce X265_LOG_FRAME for file level CSV logging without console logs
-    if isancestor(testrev, 'a5af4cf20660'):
+    if isancestor('a5af4cf20660'):
         spotchecks.append('--log=frame')
     # check if the revision under test is after the NUMA pools commit
-    if isancestor(testrev, '62b8fe990df5'):
+    if isancestor('62b8fe990df5'):
         spotchecks += ['--pools=1', '--pools=2']
     else:
         spotchecks += ['--threads=2', '--threads=3']
@@ -460,17 +469,6 @@ def hggetbranch(rev):
     if err:
         raise Exception('Unable to determine revision phase: ' + err)
     return out
-
-
-def allowNewGoldenOutputs():
-    rev = hgversion()
-    if rev.endswith('+'):
-        # we do not store golden outputs if uncommitted changes
-        return False
-    if hggetphase(rev) != 'public':
-        # we do not store golden outputs until a revision is public (pushed)
-        return False
-    return True
 
 
 def cmake(generator, buildfolder, cmakeopts, **opts):
@@ -841,7 +839,7 @@ def parsex265(tmpfolder, stdout, stderr):
     return summary, errors
 
 
-def findlastgood(testrev):
+def findlastgood():
     '''
     output-changing-commits.txt must contain the hashes (12-bytes) of
     commits which change outputs. All commits which are ancestors of these
@@ -857,12 +855,10 @@ def findlastgood(testrev):
     except EnvironmentError:
         return testrev
 
-    if testrev.endswith('+'): testrev = testrev[:-1]
-
     for line in lines:
         if len(line) < 12 or line[0] == '#': continue
         rev = line[:12]
-        if isancestor(testrev, rev):
+        if isancestor(rev):
             return rev
 
     return testrev
@@ -886,11 +882,13 @@ def checkoutputs(key, seq, cfg, lastfname, sum, tmpdir, desc):
     return False
 
 
-def newgoldenoutputs(seq, cfg, lastfname, testrev, desc, sum, logs, tmpdir):
+def newgoldenoutputs(seq, cfg, lastfname, desc, sum, logs, tmpdir):
     '''
     A test was run and the outputs are good (match the last known good or if
     no last known good is available, these new results are taken
     '''
+    global save_results
+
     if not save_results:
         return
 
@@ -915,13 +913,14 @@ def newgoldenoutputs(seq, cfg, lastfname, testrev, desc, sum, logs, tmpdir):
         shutil.copy(os.path.join(tmpdir, 'bitstream.hevc'), lastgoodfolder)
         open(os.path.join(lastgoodfolder, 'summary.txt'), 'w').write(sum)
 
-    addpass(testhash, lastfname, testrev, desc, logs)
+    addpass(testhash, lastfname, desc, logs)
     print 'new golden outputs stored'
 
 
-def addpass(testhash, lastfname, testrev, desc, logs):
+def addpass(testhash, lastfname, desc, logs):
     if not save_results:
         return
+
     folder = os.path.join(my_goldens, testhash, lastfname, 'passed')
     if not os.path.isdir(folder):
         os.mkdir(folder)
@@ -930,9 +929,10 @@ def addpass(testhash, lastfname, testrev, desc, logs):
     open(os.path.join(folder, fname), 'w').write(desc + logs + '\n')
 
 
-def addfail(testhash, lastfname, testrev, desc, logs, errors):
+def addfail(testhash, lastfname, desc, logs, errors):
     if not save_results:
         return
+
     folder = os.path.join(my_goldens, testhash, lastfname, 'failed')
     if not os.path.isdir(folder):
         os.mkdir(folder)
@@ -965,7 +965,7 @@ def checkdecoder(tmpdir):
         return ''
 
 
-def _test(build, tmpfolder, lastgood, testrev, seq, cfg, extras, desc):
+def _test(build, tmpfolder, lastgood, seq, cfg, extras, desc):
     '''
     Run a test encode within the specified temp folder
     Check to see if golden outputs exist:
@@ -997,14 +997,14 @@ def _test(build, tmpfolder, lastgood, testrev, seq, cfg, extras, desc):
             return fulldesc + errors
         else:
             print 'Decoder validation ok:', sum
-            newgoldenoutputs(seq, cfg, lastfname, testrev, fulldesc, sum, logs, tmpfolder)
+            newgoldenoutputs(seq, cfg, lastfname, fulldesc, sum, logs, tmpfolder)
             return ''
     elif errors:
         fname = os.path.join(my_goldens, testhash, lastfname, 'summary.txt')
         lastsum = open(fname, 'r').read()
 
         decodeerr = checkdecoder(tmpfolder)
-        addfail(testhash, lastfname, testrev, fulldesc, logs, errors + decodeerr)
+        addfail(testhash, lastfname, fulldesc, logs, errors + decodeerr)
         if decodeerr:
             print 'OUTPUT CHANGE WITH DECODE ERRORS'
             return errors
@@ -1026,12 +1026,12 @@ def _test(build, tmpfolder, lastgood, testrev, seq, cfg, extras, desc):
             print 'OUTPUT CHANGE: <%s> to <%s>' % (lastsum, sum)
             return errors + decodeerr
     else:
-        addpass(testhash, lastfname, testrev, fulldesc, logs)
+        addpass(testhash, lastfname, fulldesc, logs)
         print 'PASS'
         return ''
 
 
-def runtest(key, lastgood, testrev, seq, cfg, extras, desc):
+def runtest(key, lastgood, seq, cfg, extras, desc):
     tmpfolder = tempfile.mkdtemp(prefix='x265-temp')
     try:
         command = ' '.join(cfg)
@@ -1043,12 +1043,12 @@ def runtest(key, lastgood, testrev, seq, cfg, extras, desc):
         print 'testing x265-%s %s %s' % (key, seq, command)
         print 'extras: %s ...' % ' '.join(extras),
         sys.stdout.flush()
-        return _test(key, tmpfolder, lastgood, testrev, seq, cfg, extras, desc)
+        return _test(key, tmpfolder, lastgood, seq, cfg, extras, desc)
     finally:
         shutil.rmtree(tmpfolder)
 
 
-def multipasstest(key, lastgood, testrev, seq, multipass, extras, desc):
+def multipasstest(key, lastgood, seq, multipass, extras, desc):
     # multipass is an array of command lines, each encode command line is run
     # in series (each given the same input sequence and 'extras' options and
     # within the same temp folder so multi-pass stats files and analysis load /
@@ -1066,7 +1066,7 @@ def multipasstest(key, lastgood, testrev, seq, multipass, extras, desc):
             print 'testing x265-%s %s %s' % (key, seq, command)
             print 'extras: %s ...' % ' '.join(extras),
             sys.stdout.flush()
-            e = _test(key, tmpfolder, lastgood, testrev, seq, cfg, extras, desc)
+            e = _test(key, tmpfolder, lastgood, seq, cfg, extras, desc)
             if e:
                 return e
         return ''

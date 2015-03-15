@@ -34,10 +34,9 @@ for line in open(utils.test_file).readlines():
 
 always = ['--no-info', '--hash=1']
 
-rev = utils.hgversion()
-spotchecks = utils.spotchecks(rev)
-lastgood = utils.findlastgood(rev)
-print '\ntesting revision %s, validating against %s\n' % (rev, lastgood)
+spotchecks = utils.spotchecks()
+lastgood = utils.findlastgood()
+print '\ntesting revision %s, validating against %s\n' % (utils.testrev, lastgood)
 
 # do not use debug builds for long-running tests (they are only intended
 # for smoke testing)
@@ -59,10 +58,10 @@ try:
         desc = utils.describeEnvironment(build)
         if ',' in cfg:
             multipass = [cmd.split() + always for cmd in command.split(',')]
-            log += utils.multipasstest(build, lastgood, rev, seq, multipass, extras, desc)
+            log += utils.multipasstest(build, lastgood, seq, multipass, extras, desc)
         else:
             cmdline = cfg[:] + always
-            log += utils.runtest(build, lastgood, rev, seq, cmdline, extras, desc)
+            log += utils.runtest(build, lastgood, seq, cmdline, extras, desc)
         print
 except KeyboardInterrupt:
     print 'Caught ctrl+c, exiting'
@@ -77,4 +76,4 @@ if log:
     print log
 else:
     print 'All quick tests passed for %s against %s on %s' % \
-           (rev, lastgood, my_machine_name)
+           (utils.testrev, lastgood, my_machine_name)

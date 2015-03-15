@@ -30,9 +30,8 @@ if utils.run_bench:
 always = ['-f50', '--hash=1', '--no-info']
 extras = ['--psnr', '--ssim']
 
-rev = utils.hgversion()
-lastgood = utils.findlastgood(rev)
-print 'testing revision %s, validating against %s\n' % (rev, lastgood)
+lastgood = utils.findlastgood()
+print 'testing revision %s, validating against %s\n' % (utils.testrev, lastgood)
 
 try:
     log = ''
@@ -43,7 +42,7 @@ try:
             seq, command = line.split(',', 1)
             if ',' in command: continue # skip multipass tests
             cfg = command.split() + always
-            log += utils.runtest(key, lastgood, rev, seq, cfg, extras, desc)
+            log += utils.runtest(key, lastgood, seq, cfg, extras, desc)
             print
 except KeyboardInterrupt:
     print 'Caught ctrl+c, exiting'
@@ -58,4 +57,4 @@ if log:
     print log
 else:
     print 'All smoke tests passed for %s against %s on %s' % \
-           (rev, lastgood, my_machine_name)
+           (utils.testrev, lastgood, my_machine_name)
