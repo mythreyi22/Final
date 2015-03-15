@@ -119,6 +119,7 @@ ignored_x265_warnings = (
     'No thread pool allocated, --wpp disabled',
     'No thread pool allocated, --pme disabled',
     'Support for interlaced video is experimental',
+    'y4m: down-shifting reconstructed pixels to 8 bits',
 )
 
 
