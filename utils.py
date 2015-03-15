@@ -19,6 +19,7 @@ try:
     from conf import my_machine_name, my_machine_desc, my_x265_source
     from conf import my_sequences, my_goldens, option_strings, my_hm_decoder
     from conf import my_pastebin_key, my_progress, my_tempfolder, my_builds
+    from conf import my_make_flags
 
     # support ~/repos/x265 syntax
     my_x265_source = os.path.expanduser(my_x265_source)
@@ -502,8 +503,8 @@ def gmake(buildfolder, **opts):
         cmds = ['mingw32-make']
     else:
         cmds = ['make']
-    if 'make-opts' in opts:
-        cmds.extend(opts['make-opts'])
+    if my_make_flags:
+        cmds.extend(my_make_flags)
 
     p = Popen(cmds, stdout=PIPE, stderr=PIPE, cwd=buildfolder)
     errors = async_poll_process(p, False)

@@ -22,6 +22,8 @@ my_tempfolder   = ''
 # to find 'Your Unique Developer API Key'
 my_pastebin_key = ''
 
+my_make_flags   = [] # example: ['-j', '8'] for 8-core build parallelism
+
 # add one entry here per build target that you would like to build and test
 my_builds = {
     # Examples:
@@ -34,7 +36,7 @@ my_builds = {
     #          {}),              # env-vars and other keyword arguments
     #
     #'gcc32' : ('gcc32/', 'gcc', 'Unix Makefiles', 'static', {'CFLAGS':'-m32'}),
-    #'gcc10' : ('gcc10/', 'gcc10', 'Unix Makefiles', '16bpp', {'make-opts': ['-j16']}),
+    #'gcc10' : ('gcc10/', 'gcc10', 'Unix Makefiles', '16bpp', {}),
     #'llvm'  : ('llvm/', 'gcc', 'Unix Makefiles', 'checked',
     #           {'CC':'clang', 'CXX':'clang++'}),
     #'vc11'  : ('vc11/', 'vc', 'Visual Studio 11 Win64', 'checked', {}),
@@ -54,7 +56,6 @@ my_builds = {
 #   mingw  - this path is inserted into PATH for cmake and encoder runs
 #            (You could have multiple MinGW compilers on your system,
 #             have none of them in the path, and have builds with each)
-#   make-opts - appended to make command lines (intended for parallel builds)
 
 # short-hand strings for CMAKE options, feel free to add more
 option_strings = {
