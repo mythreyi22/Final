@@ -773,13 +773,21 @@ def encodeharness(key, tmpfolder, sequence, commands, inextras, desc):
 
         summary, errors = parsex265(tmpfolder, stdout, stderr)
         if p.returncode == -11:
-           errors += 'x265 encountered SIGSEGV\n\n'
+            errors += 'x265 encountered SIGSEGV\n\n'
         elif p.returncode == -6:
             errors += 'x265 encountered SIGABRT (usually check failure)\n\n'
         elif p.returncode == -4:
-           errors += 'x265 encountered SIGILL (usually -ftrapv)\n\n'
+            errors += 'x265 encountered SIGILL (usually -ftrapv)\n\n'
+        elif p.returncode == 1:
+            errors += 'unable to parse command line (ret 1)\n\n'
+        elif p.returncode == 2:
+            errors += 'unable open encoder (ret 2)\n\n'
+        elif p.returncode == 3:
+            errors += 'unable open generate stream headers (ret 3)\n\n'
+        elif p.returncode == 4:
+            errors += 'encoder abort (ret 4)\n\n'
         elif p.returncode:
-           errors += 'x265 return code %d\n\n' % p.returncode
+            errors += 'x265 return code %d\n\n' % p.returncode
 
     if errors:
         prefix = '** encoder warning or error reported for %s:: ' % key
