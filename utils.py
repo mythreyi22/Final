@@ -1008,6 +1008,7 @@ def _test(build, tmpfolder, lastgood, testrev, seq, cfg, extras, desc):
         print 'PASS'
         return ''
 
+
 def runtest(key, lastgood, testrev, seq, cfg, extras, desc):
     tmpfolder = tempfile.mkdtemp(prefix='x265-temp')
     try:
@@ -1023,6 +1024,7 @@ def runtest(key, lastgood, testrev, seq, cfg, extras, desc):
         return _test(key, tmpfolder, lastgood, testrev, seq, cfg, extras, desc)
     finally:
         shutil.rmtree(tmpfolder)
+
 
 def multipasstest(key, lastgood, testrev, seq, multipass, extras, desc):
     # multipass is an array of command lines, each encode command line is run
