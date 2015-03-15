@@ -716,8 +716,6 @@ def encodeharness(key, tmpfolder, sequence, commands, inextras, desc):
                    '--input-depth=%s' % depth,
                    '--input-csp=i%s' % csp]
 
-    print 'Running x265-%s %s %s' % (key, sequence, ' '.join(commands))
-
     seqfullpath = os.path.join(my_sequences, sequence)
 
     if 'Visual Studio' in generator:
@@ -1009,19 +1007,23 @@ def _test(build, tmpfolder, lastgood, testrev, seq, cfg, extras, desc):
         print 'PASS'
         return ''
 
-def runtest(build, lastgood, testrev, seq, cfg, extras, desc):
+def runtest(key, lastgood, testrev, seq, cfg, extras, desc):
     tmpfolder = tempfile.mkdtemp(prefix='x265-temp')
     try:
-        if skip_string and skip_string in ' '.join(cfg):
-            print 'Skipping test', ' '.join(cfg)
+        command = ' '.join(cfg)
+        if skip_string and skip_string in command:
+            print 'Skipping test', command
             return ''
-        if only_string and only_string not in ' '.join(cfg):
+        if only_string and only_string not in command:
             return ''
-        return _test(build, tmpfolder, lastgood, testrev, seq, cfg, extras, desc)
+        print 'testing x265-%s %s %s' % (key, seq, command)
+        print 'extras: %s ...' % ' '.join(extras),
+        sys.stdout.flush()
+        return _test(key, tmpfolder, lastgood, testrev, seq, cfg, extras, desc)
     finally:
         shutil.rmtree(tmpfolder)
 
-def multipasstest(build, lastgood, testrev, seq, multipass, extras, desc):
+def multipasstest(key, lastgood, testrev, seq, multipass, extras, desc):
     # multipass is an array of command lines, each encode command line is run
     # in series (each given the same input sequence and 'extras' options and
     # within the same temp folder so multi-pass stats files and analysis load /
@@ -1030,12 +1032,18 @@ def multipasstest(build, lastgood, testrev, seq, multipass, extras, desc):
     try:
         log = ''
         for cfg in multipass:
-            if skip_string and skip_string in ' '.join(cfg):
-                print 'Skipping test', ' '.join(cfg)
+            command = ' '.join(cfg)
+            if skip_string and skip_string in command:
+                print 'Skipping test', command
                 return ''
-            if only_string and only_string not in ' '.join(cfg):
+            if only_string and only_string not in command:
                 return ''
-            log += _test(build, tmpfolder, lastgood, testrev, seq, cfg, extras, desc)
-        return log
+            print 'testing x265-%s %s %s' % (key, seq, command)
+            print 'extras: %s ...' % ' '.join(extras),
+            sys.stdout.flush()
+            e = _test(key, tmpfolder, lastgood, testrev, seq, cfg, extras, desc)
+            if e:
+                return e
+        return ''
     finally:
         shutil.rmtree(tmpfolder)
