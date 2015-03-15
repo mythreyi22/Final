@@ -38,12 +38,12 @@ my_builds = {
     #'gcc32' : ('gcc32/', 'gcc', 'Unix Makefiles', 'static', {'CFLAGS':'-m32'}),
     #'gcc10' : ('gcc10/', 'gcc10', 'Unix Makefiles', '16bpp', {}),
     #'llvm'  : ('llvm/', 'gcc', 'Unix Makefiles', 'checked',
-    #           {'CC':'clang', 'CXX':'clang++'}),
+    #           {'CC' : 'clang', 'CXX' : 'clang++'}),
     #'vc11'  : ('vc11/', 'vc', 'Visual Studio 11 Win64', 'checked', {}),
     #'vc11D' : ('vc11D/', 'vc', 'Visual Studio 11 Win64', 'debug crt noasm ppa', {}),
     #'win32' : ('vc11x86/', 'vc', 'Visual Studio 11', 'static ppa', {}),
     #'mingw' : ('mingw/', 'gcc', 'MinGW Makefiles', 'tests',
-    #           {'mingw':r'C:\mcw\msys\mingw64\bin'}),
+    #           {'PATH' : r'C:\mingw64\bin'}),
 }
 
 # Many builds of x265 will produce the same outputs given the same input
@@ -53,9 +53,8 @@ my_builds = {
 # Supported keyword arguments:
 #   CFLAGS - directly assigned to CMAKE CFLAG args (intended for -m32)
 #   CC,CXX - are set in the environment for cmake for selecting compilers
-#   mingw  - this path is inserted into PATH for cmake and encoder runs
-#            (You could have multiple MinGW compilers on your system,
-#             have none of them in the path, and have builds with each)
+#   PATH   - this path is inserted into PATH for cmake, build and encoder runs
+#            intended for MinGW/bin folder
 
 # short-hand strings for CMAKE options, feel free to add more
 option_strings = {

@@ -27,6 +27,13 @@ try:
     my_goldens = os.path.expanduser(my_goldens)
     my_hm_decoder = os.path.expanduser(my_hm_decoder)
     my_tempfolder = os.path.expanduser(my_tempfolder)
+
+    # backward compatibility check
+    for key in my_builds:
+        opts = my_builds[key][4]
+        if 'mingw' in opts:
+            print '** `mingw` keyword for MinGW path is deprecated, use PATH'
+            opts['PATH'] = opts['mingw']
 except ImportError, e:
     print e
     print 'Copy conf.py.example to conf.py and edit the file as necessary'
@@ -489,22 +496,32 @@ def cmake(generator, buildfolder, cmakeopts, **opts):
             env['CC'] = opts['CC']
         if 'CXX' in opts:
             env['CXX'] = opts['CXX']
-    if 'mingw' in opts:
-        env['PATH'] += os.pathsep + opts['mingw']
+
+    # note that it is not enough to insert the path into the subprocess
+    # environment; it must be in the system PATH in case the compiler
+    # spawns subprocesses of its own that take the system PATH (cough, mingw)
+    origpath = os.environ['PATH']
+    if 'PATH' in opts:
+        os.environ['PATH'] += os.pathsep + opts['PATH']
 
     proc = Popen(cmds, stdout=PIPE, stderr=PIPE, cwd=buildfolder, env=env)
-    return proc.communicate()
+    out, err = proc.communicate()
+    os.environ['PATH'] = origpath
+
+    return out, err
 
 
-def gmake(buildfolder, **opts):
-    origpath = os.environ['PATH']
-    if 'mingw' in opts:
-        os.environ['PATH'] += os.pathsep + opts['mingw']
+def gmake(buildfolder, generator, **opts):
+    if 'MinGW' in generator:
         cmds = ['mingw32-make']
     else:
         cmds = ['make']
     if my_make_flags:
         cmds.extend(my_make_flags)
+
+    origpath = os.environ['PATH']
+    if 'PATH' in opts:
+        os.environ['PATH'] += os.pathsep + opts['PATH']
 
     p = Popen(cmds, stdout=PIPE, stderr=PIPE, cwd=buildfolder)
     errors = async_poll_process(p, False)
@@ -631,7 +648,7 @@ def buildall():
             prefix = '** cmake errors reported for %s:: ' % key
             errors = cout + cerr
         elif 'Makefiles' in generator:
-            errors = gmake(buildfolder, **opts)
+            errors = gmake(buildfolder, generator, **opts)
             prefix = '** make warnings or errors reported for %s:: ' % key
         elif 'Visual Studio' in generator:
             errors = msbuild(buildfolder, generator, cmakeopts)
@@ -672,8 +689,8 @@ def testharness():
             err = 'testbench <%s> not built' % bench
         else:
             origpath = os.environ['PATH']
-            if 'mingw' in opts:
-                os.environ['PATH'] += os.pathsep + opts['mingw']
+            if 'PATH' in opts:
+                os.environ['PATH'] += os.pathsep + opts['PATH']
             p = Popen([bench], stdout=PIPE, stderr=PIPE)
             err = async_poll_process(p, False)
             os.environ['PATH'] = origpath
@@ -742,8 +759,8 @@ def encodeharness(key, tmpfolder, sequence, commands, inextras, desc):
         errors = 'sequence <%s> not found\n\n' % seqfullpath
     else:
         origpath = os.environ['PATH']
-        if 'mingw' in opts:
-            os.environ['PATH'] += os.pathsep + opts['mingw']
+        if 'PATH' in opts:
+            os.environ['PATH'] += os.pathsep + opts['PATH']
         p = Popen(cmds, cwd=tmpfolder, stdout=PIPE, stderr=PIPE)
         stdout, stderr = p.communicate()
         os.environ['PATH'] = origpath
