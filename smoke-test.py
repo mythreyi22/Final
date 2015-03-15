@@ -30,9 +30,6 @@ if utils.run_bench:
 always = ['-f50', '--hash=1', '--no-info']
 extras = ['--psnr', '--ssim']
 
-lastgood = utils.findlastgood()
-print 'testing revision %s, validating against %s\n' % (utils.testrev, lastgood)
-
 try:
     log = ''
     for key in my_builds:
@@ -42,7 +39,7 @@ try:
             seq, command = line.split(',', 1)
             if ',' in command: continue # skip multipass tests
             cfg = command.split() + always
-            log += utils.runtest(key, lastgood, seq, cfg, extras, desc)
+            log += utils.runtest(key, seq, cfg, extras, desc)
             print
 except KeyboardInterrupt:
     print 'Caught ctrl+c, exiting'
@@ -52,9 +49,7 @@ print '\n\n'
 if log:
     print 'Revision under test:'
     print utils.hgsummary()
-    print 'Last known good revision:'
-    print utils.hgrevisioninfo(lastgood)
     print log
 else:
     print 'All smoke tests passed for %s against %s on %s' % \
-           (utils.testrev, lastgood, my_machine_name)
+           (utils.testrev, utils.lastgood, my_machine_name)

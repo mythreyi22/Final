@@ -52,6 +52,7 @@ only_string = None   # filter tests - only those matching this string
 skip_string = None   # filter tests - all except those matching this string
 test_file = None     # filename or full path of file containing test cases
 testrev = None       # revision under test
+lastgood = None
 
 def setup(argv, preferredlist):
     if not find_executable('hg'):
@@ -64,7 +65,7 @@ def setup(argv, preferredlist):
         raise Exception('my_x265_source does not point to x265 source/ folder')
 
     global run_make, run_bench, rebuild, save_results, test_file, skip_string
-    global only_string, testrev
+    global only_string, testrev, lastgood
 
     if my_tempfolder:
         tempfile.tempdir = my_tempfolder
@@ -79,6 +80,9 @@ def setup(argv, preferredlist):
         save_results = False
     else:
         save_results = True
+
+    lastgood = findlastgood()
+    print 'testing revision %s, validating against %s\n' % (testrev, lastgood)
 
     if not save_results:
         print 'NOTE: Revision under test is not public or has uncommited changes.'
@@ -973,7 +977,7 @@ def checkdecoder(tmpdir):
         return ''
 
 
-def _test(build, tmpfolder, lastgood, seq, cfg, extras, desc):
+def _test(build, tmpfolder, seq, cfg, extras, desc):
     '''
     Run a test encode within the specified temp folder
     Check to see if golden outputs exist:
@@ -1039,7 +1043,7 @@ def _test(build, tmpfolder, lastgood, seq, cfg, extras, desc):
         return ''
 
 
-def runtest(key, lastgood, seq, cfg, extras, desc):
+def runtest(key, seq, cfg, extras, desc):
     tmpfolder = tempfile.mkdtemp(prefix='x265-temp')
     try:
         command = ' '.join(cfg)
@@ -1051,12 +1055,12 @@ def runtest(key, lastgood, seq, cfg, extras, desc):
         print 'testing x265-%s %s %s' % (key, seq, command)
         print 'extras: %s ...' % ' '.join(extras),
         sys.stdout.flush()
-        return _test(key, tmpfolder, lastgood, seq, cfg, extras, desc)
+        return _test(key, tmpfolder, seq, cfg, extras, desc)
     finally:
         shutil.rmtree(tmpfolder)
 
 
-def multipasstest(key, lastgood, seq, multipass, extras, desc):
+def multipasstest(key, seq, multipass, extras, desc):
     # multipass is an array of command lines, each encode command line is run
     # in series (each given the same input sequence and 'extras' options and
     # within the same temp folder so multi-pass stats files and analysis load /
@@ -1074,7 +1078,7 @@ def multipasstest(key, lastgood, seq, multipass, extras, desc):
             print 'testing x265-%s %s %s' % (key, seq, command)
             print 'extras: %s ...' % ' '.join(extras),
             sys.stdout.flush()
-            e = _test(key, tmpfolder, lastgood, seq, cfg, extras, desc)
+            e = _test(key, tmpfolder, seq, cfg, extras, desc)
             if e:
                 return e
         return ''

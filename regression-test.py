@@ -26,8 +26,6 @@ if utils.run_make:
 always = ['--no-info', '--hash=1']
 
 spotchecks = utils.spotchecks()
-lastgood = utils.findlastgood()
-print '\ntesting revision %s, validating against %s\n' % (utils.testrev, lastgood)
 
 # do not use debug builds for long-running tests (they are only intended
 # for smoke testing)
@@ -53,10 +51,10 @@ try:
             extras = ['--psnr', '--ssim', random.choice(spotchecks)]
             if ',' in command:
                 multipass = [cmd.split() + always for cmd in command.split(',')]
-                log += utils.multipasstest(build, lastgood, seq, multipass, extras, desc)
+                log += utils.multipasstest(build, seq, multipass, extras, desc)
             else:
                 cmdline = command.split() + always
-                log += utils.runtest(build, lastgood, seq, cmdline, extras, desc)
+                log += utils.runtest(build, seq, cmdline, extras, desc)
             print
 except KeyboardInterrupt:
     print 'Caught ctrl+c, exiting'
@@ -66,9 +64,7 @@ print '\n\n'
 if log:
     print 'Revision under test:'
     print utils.hgsummary()
-    print 'Last known good revision:'
-    print utils.hgrevisioninfo(lastgood)
     print log
 else:
     print 'All quick tests passed for %s against %s on %s' % \
-           (utils.testrev, lastgood, my_machine_name)
+           (utils.testrev, utils.lastgood, my_machine_name)
