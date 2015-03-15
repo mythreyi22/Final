@@ -19,7 +19,6 @@ try:
     from conf import my_machine_name, my_machine_desc, my_x265_source
     from conf import my_sequences, my_goldens, option_strings, my_hm_decoder
     from conf import my_pastebin_key, my_progress, my_tempfolder, my_builds
-    from conf import my_make_flags
 
     # support ~/repos/x265 syntax
     my_x265_source = os.path.expanduser(my_x265_source)
@@ -38,6 +37,12 @@ except ImportError, e:
     print e
     print 'Copy conf.py.example to conf.py and edit the file as necessary'
     sys.exit(1)
+
+try:
+    from conf import my_make_flags
+except ImportError, e:
+    print '** `my_make_flags` not defined in conf.py, defaulting to []'
+    my_make_flags = []
 
 run_make  = True
 run_bench = True
