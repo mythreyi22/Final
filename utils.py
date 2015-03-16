@@ -884,11 +884,15 @@ def findchangeancestors():
     return ancestors or [testrev]
 
 
-def checkoutputs(key, seq, cfg, lastfname, sum, tmpdir, desc):
+def checkoutputs(key, seq, cfg, sum, tmpdir, desc):
+    group = my_builds[key][1]
+    revdate = hgrevisiondate(changers[0])
+    lastfname = '%s-%s-%s' % (revdate, group, changers[0])
+
     testhash = testcasehash(seq, cfg)
     testfolder = os.path.join(my_goldens, testhash, lastfname)
     if not os.path.isdir(testfolder):
-        return None
+        return lastfname, None
     golden = os.path.join(testfolder, 'bitstream.hevc')
     test = os.path.join(tmpdir, 'bitstream.hevc')
     if not filecmp.cmp(golden, test):
@@ -898,8 +902,8 @@ def checkoutputs(key, seq, cfg, lastfname, sum, tmpdir, desc):
         res += desc
         res += 'PREV: %s\n' % oldsum
         res += ' NEW: %s\n\n' % sum
-        return res
-    return False
+        return lastfname, res
+    return lastfname, False
 
 
 def newgoldenoutputs(seq, cfg, lastfname, desc, sum, logs, tmpdir):
@@ -907,8 +911,6 @@ def newgoldenoutputs(seq, cfg, lastfname, desc, sum, logs, tmpdir):
     A test was run and the outputs are good (match the last known good or if
     no last known good is available, these new results are taken
     '''
-    global save_results
-
     if not save_results:
         return
 
@@ -1002,13 +1004,10 @@ def _test(build, tmpfolder, seq, cfg, extras, desc):
         print 'Encoder warnings or errors detected'
         return errors
 
-    group = my_builds[build][1]
-    revdate = hgrevisiondate(changers[0])
-    lastfname = '%s-%s-%s' % (revdate, group, changers[0])
     testhash = testcasehash(seq, cfg)
 
     # check against last known good outputs
-    errors = checkoutputs(build, seq, cfg, lastfname, sum, tmpfolder, fulldesc)
+    lastfname, errors = checkoutputs(build, seq, cfg, sum, tmpfolder, fulldesc)
     if errors is None:
         print 'No golden outputs for this test case, validating with decoder'
         errors = checkdecoder(tmpfolder)
