@@ -82,7 +82,10 @@ def setup(argv, preferredlist):
         save_results = True
 
     lastgood = findlastgood()
-    print 'testing revision %s, validating against %s\n' % (testrev, lastgood)
+    print 'Revision under test:'
+    print hgrevisioninfo(testrev)
+    print 'Most recent output changing commit:'
+    print hgrevisioninfo(lastgood)
 
     if not save_results:
         print 'NOTE: Revision under test is not public or has uncommited changes.'
