@@ -32,12 +32,20 @@ extras = ['--psnr', '--ssim']
 
 try:
     log = ''
+    missing = set()
     for key in my_builds:
         desc = utils.describeEnvironment(key)
         for line in open(utils.test_file).readlines():
             if len(line) < 3 or line[0] == '#': continue
             seq, command = line.split(',', 1)
-            if ',' in command: continue # skip multipass tests
+            if not os.path.exists(os.path.join(my_sequences, seq)):
+                if seq not in missing:
+                    print 'Ignoring missing sequence', seq
+                    missing.add(seq)
+                continue
+            if ',' in command:
+                print 'Ignoring multipass test', command
+                continue
             cfg = command.split() + always
             log += utils.runtest(key, seq, cfg, extras, desc)
             print
