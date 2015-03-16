@@ -71,5 +71,4 @@ if log:
     print utils.hgsummary()
     print log
 else:
-    print 'All quick tests passed for %s on %s' % \
-           (utils.testrev, my_machine_name)
+    print 'All tests passed for %s on %s' % (utils.testrev, my_machine_name)
