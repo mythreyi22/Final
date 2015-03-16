@@ -17,16 +17,6 @@ utils.setup(sys.argv, 'regression-tests.txt')
 
 from conf import my_builds, my_machine_name, my_sequences
 
-if utils.run_make:
-    errors = utils.buildall()
-    if errors:
-        print '\n\n' + errors
-        sys.exit(1)
-
-always = ['--no-info', '--hash=1']
-
-spotchecks = utils.spotchecks()
-
 # do not use debug builds for long-running tests (they are only intended
 # for smoke testing)
 debugs = [key for key in my_builds if 'debug' in my_builds[key][3]]
@@ -34,6 +24,15 @@ if debugs:
     print 'Discarding debug builds <%s>\n' % ' '.join(debugs)
     for k in debugs:
         del my_builds[k]
+
+if utils.run_make:
+    errors = utils.buildall()
+    if errors:
+        print '\n\n' + errors
+        sys.exit(1)
+
+always = ['--no-info', '--hash=1']
+spotchecks = utils.spotchecks()
 
 try:
     log = ''

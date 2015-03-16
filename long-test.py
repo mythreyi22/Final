@@ -17,25 +17,6 @@ utils.setup(sys.argv, 'regression-tests.txt')
 
 from conf import my_builds, my_machine_name, my_sequences
 
-if utils.run_make:
-    errors = utils.buildall()
-    if errors:
-        print '\n\n' + errors
-        sys.exit(1)
-
-sequences, configs = {}, {} # use dictionaries to prune dups
-for line in open(utils.test_file).readlines():
-    if len(line) < 3 or line[0] == '#': continue
-    seq, command = line.split(',', 1)
-    if os.path.exists(os.path.join(my_sequences, seq)):
-        sequences[seq] = 1
-    if '--vbv' not in command:
-        configs[command] = 1
-
-always = ['--no-info', '--hash=1']
-
-spotchecks = utils.spotchecks()
-
 # do not use debug builds for long-running tests (they are only intended
 # for smoke testing)
 debugs = [key for key in my_builds if 'debug' in my_builds[key][3]]
@@ -44,13 +25,34 @@ if debugs:
     for k in debugs:
         del my_builds[k]
 
+if utils.run_make:
+    errors = utils.buildall()
+    if errors:
+        print '\n\n' + errors
+        sys.exit(1)
+
+sequences, configs = set(), set()
+for line in open(utils.test_file).readlines():
+    if len(line) < 3 or line[0] == '#': continue
+    seq, command = line.split(',', 1)
+    if os.path.exists(os.path.join(my_sequences, seq)):
+        sequences.add(seq)
+    if '--vbv' not in command:
+        configs.add(command)
+# convert sets to lists for random.choice()
+sequences = list(sequences)
+configs = list(configs)
+
+always = ['--no-info', '--hash=1']
+spotchecks = utils.spotchecks()
+
 print 'Running 1000 test encodes, press CTRL+C to abort (maybe twice)\n'
 
 try:
     log = ''
     for x in xrange(1000):
-        seq = random.choice(sequences.keys())
-        cfg = random.choice(configs.keys())
+        seq = random.choice(sequences)
+        cfg = random.choice(configs)
         extras = ['--psnr', '--ssim', random.choice(spotchecks)]
         build = random.choice(my_builds.keys())
         desc = utils.describeEnvironment(build)
