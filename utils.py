@@ -1076,7 +1076,7 @@ def _test(build, tmpfolder, seq, cfg, extras, desc):
         addfail(testhash, lastfname, fulldesc, logs, errors + decodeerr)
         if decodeerr:
             print 'OUTPUT CHANGE WITH DECODE ERRORS'
-            return errors
+            return errors + decodeerr
         elif '--vbv-bufsize' in cfg:
             # VBV encodes are non-deterministic, check that golden output
             # bitrate is within 1% of new bitrate. Extract bitrate from summary
