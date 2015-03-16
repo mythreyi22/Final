@@ -14,7 +14,7 @@ import utils
 # setup will call sys.exit() if it determines the tests are unable to continue
 utils.setup(sys.argv, 'smoke-tests.txt')
 
-from conf import my_builds, my_machine_name
+from conf import my_builds, my_machine_name, my_sequences
 
 if utils.run_make:
     errors = utils.buildall()
