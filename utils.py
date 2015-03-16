@@ -886,24 +886,74 @@ def findchangeancestors():
 
 def checkoutputs(key, seq, cfg, sum, tmpdir, desc):
     group = my_builds[key][1]
-    revdate = hgrevisiondate(changers[0])
-    lastfname = '%s-%s-%s' % (revdate, group, changers[0])
-
     testhash = testcasehash(seq, cfg)
-    testfolder = os.path.join(my_goldens, testhash, lastfname)
-    if not os.path.isdir(testfolder):
+
+    opencommits = [] # changing commits without 'no-change' or testfolder
+
+    # walk list of ancestor commits which changed outputs until we find the
+    # most recent output bitstream we are expected to match
+    for commit in changers:
+        nc = 'no-change-%s-%s.txt' % (group, commit)
+        nochange = os.path.join(my_goldens, testhash, nc)
+        if os.path.exists(nochange):
+            # this commit claims to match outputs of a previous commit
+            commit = open(nochange, 'r').read()
+            revdate = hgrevisiondate(commit)
+            lastfname = '%s-%s-%s' % (revdate, group, commit)
+            testfolder = os.path.join(my_goldens, testhash, lastfname)
+            break
+
+        revdate = hgrevisiondate(commit)
+        lastfname = '%s-%s-%s' % (revdate, group, commit)
+        testfolder = os.path.join(my_goldens, testhash, lastfname)
+        if os.path.isdir(testfolder):
+            # this commit has known-good outputs
+            break
+
+        opencommits.append(commit)
+    else:
+        # no previously saved known good
+        commit = changers[0]
+        revdate = hgrevisiondate(commit)
+        lastfname = '%s-%s-%s' % (revdate, group, commit)
+        # caller will create a new testfolder with this name if the current
+        # encode outputs pass validations
+        print 'no golden outputs for this test case,',
         return lastfname, None
+
     golden = os.path.join(testfolder, 'bitstream.hevc')
     test = os.path.join(tmpdir, 'bitstream.hevc')
-    if not filecmp.cmp(golden, test):
-        oldsum = open(os.path.join(testfolder, 'summary.txt'), 'r').read()
-        res = '%s: %s output does not match last known good for group %s\n' % \
-               (testhash, key, my_builds[key][1])
-        res += desc
-        res += 'PREV: %s\n' % oldsum
-        res += ' NEW: %s\n\n' % sum
-        return lastfname, res
-    return lastfname, False
+
+    if filecmp.cmp(golden, test):
+        # outputs matched last-known good, record no-change status for all
+        # output changing commits which were not previously accounted for
+        for oc in opencommits:
+            nc = 'no-change-%s-%s.txt' % (group, oc)
+            nochange = os.path.join(my_goldens, testhash, nc)
+            open(nochange, 'w').write(commit)
+            print 'not changed by %s,' % oc,
+        return lastfname, False
+
+    if opencommits:
+        # outputs do not match last good, but there have been one or more output
+        # changing commits since that commit. The most recent changing commit
+        # will be given credit for the output change.
+        commit = opencommits[0]
+        revdate = hgrevisiondate(commit)
+        lastfname = '%s-%s-%s' % (revdate, group, commit)
+        print 'new outputs for this test case,',
+        return lastfname, None
+
+    # outputs did not match, and were expected to match, considered an error
+    oldsum = open(os.path.join(testfolder, 'summary.txt'), 'r').read()
+    res = '%s: %s output does not match last known good for group %s\n' % \
+            (testhash, key, group)
+    res += desc
+    res += 'Previous last known good revision\n'
+    res += hgrevisioninfo(commit) + '\n'
+    res += 'PREV: %s\n' % oldsum
+    res += ' NEW: %s\n\n' % sum
+    return lastfname, res
 
 
 def newgoldenoutputs(seq, cfg, lastfname, desc, sum, logs, tmpdir):
@@ -1009,7 +1059,7 @@ def _test(build, tmpfolder, seq, cfg, extras, desc):
     # check against last known good outputs
     lastfname, errors = checkoutputs(build, seq, cfg, sum, tmpfolder, fulldesc)
     if errors is None:
-        print 'No golden outputs for this test case, validating with decoder'
+        print 'validating with decoder'
         errors = checkdecoder(tmpfolder)
         if errors:
             print 'Decoder validation failed'
