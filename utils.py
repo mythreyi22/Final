@@ -52,7 +52,8 @@ only_string = None   # filter tests - only those matching this string
 skip_string = None   # filter tests - all except those matching this string
 test_file = None     # filename or full path of file containing test cases
 testrev = None       # revision under test
-lastgood = None
+changers = None      # list of all output changing commits which are ancestors
+                     # of the revision under test
 
 def setup(argv, preferredlist):
     if not find_executable('hg'):
@@ -65,7 +66,7 @@ def setup(argv, preferredlist):
         raise Exception('my_x265_source does not point to x265 source/ folder')
 
     global run_make, run_bench, rebuild, save_results, test_file, skip_string
-    global only_string, testrev, lastgood
+    global only_string, testrev, changers
 
     if my_tempfolder:
         tempfile.tempdir = my_tempfolder
@@ -81,11 +82,11 @@ def setup(argv, preferredlist):
     else:
         save_results = True
 
-    lastgood = findlastgood()
+    changers = findchangeancestors()
     print 'Revision under test:'
     print hgrevisioninfo(testrev)
     print 'Most recent output changing commit:'
-    print hgrevisioninfo(lastgood)
+    print hgrevisioninfo(changers[0])
 
     if not save_results:
         print 'NOTE: Revision under test is not public or has uncommited changes.'
@@ -854,7 +855,7 @@ def parsex265(tmpfolder, stdout, stderr):
     return summary, errors
 
 
-def findlastgood():
+def findchangeancestors():
     '''
     output-changing-commits.txt must contain the hashes (12-bytes) of
     commits which change outputs. All commits which are ancestors of these
@@ -864,19 +865,23 @@ def findlastgood():
 
     Lines starting with a hash are considered comments, text after the 12 byte
     hash are ignored and can be used to describe the commit
+
+    Returns a list of all output changing commits which are ancestors of the
+    current revision under test.
     '''
     try:
         lines = open("output-changing-commits.txt").readlines()
     except EnvironmentError:
-        return testrev
+        return [testrev]
 
+    ancestors = []
     for line in lines:
         if len(line) < 12 or line[0] == '#': continue
         rev = line[:12]
         if isancestor(rev):
-            return rev
+            ancestors.append(rev)
 
-    return testrev
+    return ancestors or [testrev]
 
 
 def checkoutputs(key, seq, cfg, lastfname, sum, tmpdir, desc):
@@ -998,8 +1003,8 @@ def _test(build, tmpfolder, seq, cfg, extras, desc):
         return errors
 
     group = my_builds[build][1]
-    revdate = hgrevisiondate(lastgood)
-    lastfname = '%s-%s-%s' % (revdate, group, lastgood)
+    revdate = hgrevisiondate(changers[0])
+    lastfname = '%s-%s-%s' % (revdate, group, changers[0])
     testhash = testcasehash(seq, cfg)
 
     # check against last known good outputs

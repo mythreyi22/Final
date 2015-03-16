@@ -51,5 +51,5 @@ if log:
     print utils.hgsummary()
     print log
 else:
-    print 'All smoke tests passed for %s against %s on %s' % \
-           (utils.testrev, utils.lastgood, my_machine_name)
+    print 'All smoke tests passed for %s on %s' % \
+           (utils.testrev, my_machine_name)
