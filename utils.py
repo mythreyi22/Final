@@ -3,6 +3,7 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version. See COPYING
 
+import atexit
 import datetime
 import filecmp
 import md5
@@ -44,6 +45,71 @@ except ImportError, e:
     print '** `my_make_flags` not defined in conf.py, defaulting to []'
     my_make_flags = []
 
+class Logger():
+    def __init__(self, testfile):
+        nowdate = str(datetime.date.fromtimestamp(time.time()))[2:]
+        testname = os.path.splitext(os.path.basename(testfile))[0]
+        logfname = 'log-%s-%s.txt' % (nowdate, testname)
+        print 'Logging test results to %s\n' % logfname
+        self.errors = 0
+        self.logfp = open(logfname, 'w')
+        self.header  = 'system   : %s\n' % my_machine_name
+        self.header += 'hardware : %s\n' % my_machine_desc
+        self.header += 'version  : %s\n' % hgversion()
+        self.logfp.write(self.header + '\n')
+        self.logfp.write('Running %s\n\n' % testfile)
+        self.logfp.flush()
+
+    def setbuild(self, key):
+        '''configure current build info'''
+        _, _, generator, co, opts = my_builds[key]
+        self.build  = 'cur build: %s\n' % key
+        self.build += 'generator: %s\n' % generator
+        self.build += 'options  : %s %s\n' % (co, str(opts))
+        self.logfp.write(self.build + '\n')
+        self.logfp.flush()
+
+    def logrevs(self, lastchange):
+        '''configure current revision info'''
+        self.write('Revision under test:')
+        self.write(hgrevisioninfo(testrev))
+        self.write('Most recent output changing commit:')
+        self.write(hgrevisioninfo(lastchange))
+
+    def write(self, *args):
+        '''print text to stdout and maybe write to file'''
+        print ' '.join(args)
+
+    def writeerr(self, *args):
+        '''cmake, make, or testbench errors'''
+        # TODO: wrapper for pastebin
+        self.logfp.write(' '.join(args) + '\n')
+        self.logfp.flush()
+        self.errors += 1
+
+    def settest(self, seq, cfg, extras, hash):
+        '''configure current test case'''
+        self.test  = 'command: %s %s\n' % (seq, ' '.join(cfg))
+        self.test += '   hash: %s\n' % hash
+        self.test += ' extras: ' + ' '.join(extras) + '\n\n'
+
+    def testfail(self, *args):
+        '''encoder test failures'''
+        # TODO: wrapper for pastebin
+        self.logfp.write('**\n' + self.test)
+        self.logfp.write(' '.join(args) + '\n**\n')
+        self.logfp.flush()
+        self.errors += 1
+
+    def close(self):
+        if not self.errors:
+            msg = '\nAll tests passed for %s on %s' % (testrev, my_machine_name)
+            print msg
+            self.logfp.write(msg)
+        self.logfp.close()
+        # TODO: could generate email here
+
+
 run_make  = True     # run cmake and make/msbuild
 run_bench = True     # run test benches
 rebuild   = False    # delete build folders prior to build
@@ -54,6 +120,7 @@ test_file = None     # filename or full path of file containing test cases
 testrev = None       # revision under test
 changers = None      # list of all output changing commits which are ancestors
                      # of the revision under test
+logger = None
 
 def setup(argv, preferredlist):
     if not find_executable('hg'):
@@ -66,32 +133,10 @@ def setup(argv, preferredlist):
         raise Exception('my_x265_source does not point to x265 source/ folder')
 
     global run_make, run_bench, rebuild, save_results, test_file, skip_string
-    global only_string, testrev, changers
+    global only_string
 
     if my_tempfolder:
         tempfile.tempdir = my_tempfolder
-
-    testrev = hgversion()
-    if testrev.endswith('+'):
-        # we do not store golden outputs if uncommitted changes
-        save_results = False
-        testrev = testrev[:-1]
-    elif hggetphase(testrev) != 'public':
-        # we do not store golden outputs until a revision is public (pushed)
-        save_results = False
-    else:
-        save_results = True
-
-    changers = findchangeancestors()
-    print 'Revision under test:'
-    print hgrevisioninfo(testrev)
-    print 'Most recent output changing commit:'
-    print hgrevisioninfo(changers[0])
-
-    if not save_results:
-        print 'NOTE: Revision under test is not public or has uncommited changes.'
-        print 'No new golden outputs will be generated during this run, neither'
-        print 'will it create pass/fail files.\n'
 
     test_file = preferredlist
 
@@ -135,7 +180,33 @@ def setup(argv, preferredlist):
     if os.path.exists(listInRepo):
         test_file = listInRepo
     elif not os.path.exists(test_file):
-        raise Exception('Unable to find test list file ' + preferredlist)
+        raise Exception('Unable to find test list file ' + test_file)
+
+    global logger, testrev, changers
+    logger = Logger(test_file)
+
+    def closelog():
+        logger.close()
+    atexit.register(closelog)
+
+    testrev = hgversion()
+    if testrev.endswith('+'):
+        # we do not store golden outputs if uncommitted changes
+        save_results = False
+        testrev = testrev[:-1]
+    elif hggetphase(testrev) != 'public':
+        # we do not store golden outputs until a revision is public (pushed)
+        save_results = False
+    else:
+        save_results = True
+
+    if not save_results:
+        logger.write('NOTE: Revision under test is not public or has uncommited changes.')
+        logger.write('No new golden outputs will be generated during this run, neither')
+        logger.write('will it create pass/fail files.\n')
+
+    changers = findchangeancestors()
+    logger.logrevs(changers[0])
 
 
 ignored_compiler_warnings = (
@@ -633,19 +704,11 @@ def msbuild(buildfolder, generator, cmakeopts):
     return async_poll_process(p, False)
 
 
-def describeEnvironment(key):
-    _, _, generator, co, opts = my_builds[key]
-    desc  = 'system   : %s\n' % my_machine_name
-    desc += 'hardware : %s\n' % my_machine_desc
-    desc += 'generator: %s\n' % generator
-    desc += 'options  : %s %s\n' % (co, str(opts))
-    desc += 'version  : %s\n\n' % hgversion()
-    return desc
-
-
 def buildall():
+    if not run_make:
+        return
     for key in my_builds:
-        print 'building %s...'% key
+        logger.write('building %s...'% key)
 
         buildfolder, _, generator, co, opts = my_builds[key]
 
@@ -654,7 +717,7 @@ def buildall():
             if o in option_strings:
                 cmakeopts.append(option_strings[o])
             else:
-                print 'Unknown cmake option', o
+                logger.write('Unknown cmake option', o)
 
         cout, cerr = cmake(generator, buildfolder, cmakeopts, **opts)
         if cerr:
@@ -670,21 +733,19 @@ def buildall():
             raise NotImplemented()
 
         if errors:
-            # cmake output is always small, pastebin the whole thing
-            desc = describeEnvironment(key)
-            return prefix + pastebin(desc + errors)
-
-    return None
+            logger.writeerr(prefix + errors)
 
 
 def testharness():
+    if not run_bench:
+        return
     for key in my_builds:
         buildfolder, _, generator, co, opts = my_builds[key]
 
         if 'tests' not in co.split():
             continue
 
-        print 'Running testbench for %s...'% key
+        logger.write('Running testbench for %s...'% key)
 
         if 'Visual Studio' in generator:
             if 'debug' in co.split():
@@ -709,10 +770,8 @@ def testharness():
             os.environ['PATH'] = origpath
 
         if err:
-            desc = describeEnvironment(key)
             prefix = '** testbench failure reported for %s:: ' % key
-            return prefix + pastebin(desc + err)
-    return None
+            logger.writeerr(prefix + err)
 
 
 def testcasehash(sequence, commands):
@@ -722,7 +781,7 @@ def testcasehash(sequence, commands):
     return m.hexdigest()[:12]
 
 
-def encodeharness(key, tmpfolder, sequence, commands, inextras, desc):
+def encodeharness(key, tmpfolder, sequence, commands, inextras):
     '''
     Perform a single test encode within a tempfolder
      * key      is the shortname for the build to use, ex: 'gcc'
@@ -730,7 +789,6 @@ def encodeharness(key, tmpfolder, sequence, commands, inextras, desc):
      * sequence is the YUV or Y4M filename with no path
      * commands is a list [] of params which influence outputs (hashed)
      * inextras is a list [] of params which do not influence outputs
-     * desc     is a description of the test environment
     returns tuple of (logs, summary, error)
        logs    - stderr and stdout in paste-friendly format (encode log)
        summary - bitrate, psnr, ssim
@@ -799,9 +857,6 @@ def encodeharness(key, tmpfolder, sequence, commands, inextras, desc):
         elif p.returncode:
             errors += 'x265 return code %d\n\n' % p.returncode
 
-    if errors:
-        prefix = '** encoder warning or error reported for %s:: ' % key
-        errors = prefix + pastebin(desc + errors)
     return (logs, summary, errors)
 
 
@@ -886,7 +941,7 @@ def findchangeancestors():
     return ancestors or [testrev]
 
 
-def checkoutputs(key, seq, cfg, sum, tmpdir, desc):
+def checkoutputs(key, seq, cfg, sum, tmpdir):
     group = my_builds[key][1]
     testhash = testcasehash(seq, cfg)
 
@@ -948,9 +1003,7 @@ def checkoutputs(key, seq, cfg, sum, tmpdir, desc):
 
     # outputs did not match, and were expected to match, considered an error
     oldsum = open(os.path.join(testfolder, 'summary.txt'), 'r').read()
-    res = '%s: %s output does not match last known good for group %s\n' % \
-            (testhash, key, group)
-    res += desc
+    res = '%s output does not match last good for group %s\n' % (key, group)
     res += 'Previous last known good revision\n'
     res += hgrevisioninfo(commit) + '\n'
     res += 'PREV: %s\n' % oldsum
@@ -958,7 +1011,7 @@ def checkoutputs(key, seq, cfg, sum, tmpdir, desc):
     return lastfname, res
 
 
-def newgoldenoutputs(seq, cfg, lastfname, desc, sum, logs, tmpdir):
+def newgoldenoutputs(seq, cfg, lastfname, sum, logs, tmpdir):
     '''
     A test was run and the outputs are good (match the last known good or if
     no last known good is available, these new results are taken
@@ -987,11 +1040,11 @@ def newgoldenoutputs(seq, cfg, lastfname, desc, sum, logs, tmpdir):
         shutil.copy(os.path.join(tmpdir, 'bitstream.hevc'), lastgoodfolder)
         open(os.path.join(lastgoodfolder, 'summary.txt'), 'w').write(sum)
 
-    addpass(testhash, lastfname, desc, logs)
+    addpass(testhash, lastfname, logs)
     print 'new golden outputs stored'
 
 
-def addpass(testhash, lastfname, desc, logs):
+def addpass(testhash, lastfname, logs):
     if not save_results:
         return
 
@@ -1000,10 +1053,10 @@ def addpass(testhash, lastfname, desc, logs):
         os.mkdir(folder)
     nowdate = str(datetime.date.fromtimestamp(time.time()))[2:]
     fname = '%s-%s-%s.txt' % (nowdate, testrev, my_machine_name)
-    open(os.path.join(folder, fname), 'w').write(desc + logs + '\n')
+    open(os.path.join(folder, fname), 'w').write(logger.test + logs + '\n')
 
 
-def addfail(testhash, lastfname, desc, logs, errors):
+def addfail(testhash, lastfname, logs, errors):
     if not save_results:
         return
 
@@ -1012,7 +1065,7 @@ def addfail(testhash, lastfname, desc, logs, errors):
         os.mkdir(folder)
     nowdate = str(datetime.date.fromtimestamp(time.time()))[2:]
     fname = '%s-%s-%s.txt' % (nowdate, testrev, my_machine_name)
-    open(os.path.join(folder, fname), 'w').write(desc + errors + logs + '\n')
+    open(os.path.join(folder, fname), 'w').write(logger.test + errors + logs + '\n')
 
 
 def checkdecoder(tmpdir):
@@ -1039,107 +1092,109 @@ def checkdecoder(tmpdir):
         return ''
 
 
-def _test(build, tmpfolder, seq, cfg, extras, desc):
+def _test(build, tmpfolder, seq, cfg, extras):
     '''
     Run a test encode within the specified temp folder
     Check to see if golden outputs exist:
         If they exist, verify bit-exactness or report divergence
         If not, validate new bitstream with decoder then save
     '''
-    fulldesc = desc
-    fulldesc += 'command: %s %s\n' % (seq, ' '.join(cfg))
-    fulldesc += ' extras: ' + ' '.join(extras) + '\n\n'
+    testhash = testcasehash(seq, cfg)
+    logger.settest(seq, cfg, extras, testhash)
 
     # run the encoder, abort early if any errors encountered
-    logs, sum, errors = encodeharness(build, tmpfolder, seq, cfg, extras, fulldesc)
+    logs, sum, errors = encodeharness(build, tmpfolder, seq, cfg, extras)
     if errors:
-        print 'Encoder warnings or errors detected'
-        return errors
-
-    testhash = testcasehash(seq, cfg)
+        prefix = 'encoder warning or error reported\n'
+        logger.write('Encoder warnings or errors detected')
+        logger.testfail(prefix + logs + errors)
+        return
 
     # check against last known good outputs
-    lastfname, errors = checkoutputs(build, seq, cfg, sum, tmpfolder, fulldesc)
+    lastfname, errors = checkoutputs(build, seq, cfg, sum, tmpfolder)
     if errors is None:
-        print 'validating with decoder'
-        errors = checkdecoder(tmpfolder)
-        if errors:
-            print 'Decoder validation failed'
-            return fulldesc + errors
+        logger.write('validating with decoder')
+        decodeerr = checkdecoder(tmpfolder)
+        if decodeerr:
+            logger.write('Decoder validation failed')
+            logger.testfail(logs + decodeerr)
         else:
-            print 'Decoder validation ok:', sum
-            newgoldenoutputs(seq, cfg, lastfname, fulldesc, sum, logs, tmpfolder)
-            return ''
+            logger.write('Decoder validation ok:', sum)
+            newgoldenoutputs(seq, cfg, lastfname, sum, logs, tmpfolder)
     elif errors:
         fname = os.path.join(my_goldens, testhash, lastfname, 'summary.txt')
         lastsum = open(fname, 'r').read()
 
         decodeerr = checkdecoder(tmpfolder)
-        addfail(testhash, lastfname, fulldesc, logs, errors + decodeerr)
         if decodeerr:
-            print 'OUTPUT CHANGE WITH DECODE ERRORS'
-            return errors + decodeerr
+            logger.write('OUTPUT CHANGE WITH DECODE ERRORS')
+            logger.testfail(logs + errors + decodeerr)
         elif '--vbv-bufsize' in cfg:
             # VBV encodes are non-deterministic, check that golden output
-            # bitrate is within 1% of new bitrate. Extract bitrate from summary
-            # example summary: bitrate: 121.95, SSIM: 20.747, PSNR: 53.359
+            # bitrate is within 1% of new bitrate. Example summary:
+            # 'bitrate: 121.95, SSIM: 20.747, PSNR: 53.359'
             lastbitrate = float(lastsum.split(',')[0].split(' ')[1])
             newbitrate = float(sum.split(',')[0].split(' ')[1])
             diff = abs(lastbitrate - newbitrate) / lastbitrate
-            print 'VBV OUTPUT CHANGED BY %.2f%%' % (diff * 100)
+            diffmsg = 'VBV OUTPUT CHANGED BY %.2f%%' % (diff * 100)
+            logger.write(diffmsg)
             if diff > 0.01:
-                errors += 'VBV bitrate changed by %.2f%%\n' % (diff * 100)
-                return errors
+                addfail(testhash, lastfname, logs, errors + diffmsg)
+                logger.testfail(logs + errors + diffmsg)
             else:
-                # this is considered a passing test
-                return ''
+                pass
         else:
-            print 'OUTPUT CHANGE: <%s> to <%s>' % (lastsum, sum)
-            return errors + decodeerr
+            addfail(testhash, lastfname, logs, errors)
+            logger.write('OUTPUT CHANGE: <%s> to <%s>' % (lastsum, sum))
+            logger.testfail(logs + errors)
     else:
-        addpass(testhash, lastfname, fulldesc, logs)
-        print 'PASS'
-        return ''
+        addpass(testhash, lastfname, logs)
+        logger.write('PASS')
 
 
-def runtest(key, seq, cfg, extras, desc):
+def runtest(key, seq, cfg, extras):
+    command = ' '.join(cfg)
+    if skip_string and skip_string in command:
+        logger.write('Skipping test', command)
+        return
+
+    if only_string and only_string not in command:
+        return
+
     tmpfolder = tempfile.mkdtemp(prefix='x265-temp')
     try:
-        command = ' '.join(cfg)
-        if skip_string and skip_string in command:
-            print 'Skipping test', command
-            return ''
-        if only_string and only_string not in command:
-            return ''
-        print 'testing x265-%s %s %s' % (key, seq, command)
+        logger.write('testing x265-%s %s %s' % (key, seq, command))
         print 'extras: %s ...' % ' '.join(extras),
         sys.stdout.flush()
-        return _test(key, tmpfolder, seq, cfg, extras, desc)
+        _test(key, tmpfolder, seq, cfg, extras)
+        logger.write('')
     finally:
         shutil.rmtree(tmpfolder)
 
 
-def multipasstest(key, seq, multipass, extras, desc):
+def multipasstest(key, seq, multipass, extras):
     # multipass is an array of command lines, each encode command line is run
     # in series (each given the same input sequence and 'extras' options and
     # within the same temp folder so multi-pass stats files and analysis load /
     # save files will be left unharmed between calls
+
+    if skip_string:
+        if [True for cfg in multipass if skip_string in ' '.join(cfg)]:
+            logger.write('Skipping test', command)
+            return
+
+    if only_string:
+        if [True for cfg in multipass if only_string not in ' '.join(cfg)]:
+            return
+
     tmpfolder = tempfile.mkdtemp(prefix='x265-temp')
     try:
-        log = ''
         for cfg in multipass:
             command = ' '.join(cfg)
-            if skip_string and skip_string in command:
-                print 'Skipping test', command
-                return ''
-            if only_string and only_string not in command:
-                return ''
-            print 'testing x265-%s %s %s' % (key, seq, command)
+            logger.write('testing x265-%s %s %s' % (key, seq, command))
             print 'extras: %s ...' % ' '.join(extras),
             sys.stdout.flush()
-            e = _test(key, tmpfolder, seq, cfg, extras, desc)
-            if e:
-                return e
-        return ''
+            _test(key, tmpfolder, seq, cfg, extras)
+        logger.write('')
     finally:
         shutil.rmtree(tmpfolder)

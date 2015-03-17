@@ -8,28 +8,23 @@
 import os
 import random
 import sys
-import shutil
 
 import utils
 
 # setup will call sys.exit() if it determines the tests are unable to continue
 utils.setup(sys.argv, 'regression-tests.txt')
 
-from conf import my_builds, my_machine_name, my_sequences
+from conf import my_builds, my_sequences
+from utils import logger
 
-# do not use debug builds for long-running tests (they are only intended
-# for smoke testing)
+# do not use debug builds for long-running tests
 debugs = [key for key in my_builds if 'debug' in my_builds[key][3]]
-if debugs:
-    print 'Discarding debug builds <%s>\n' % ' '.join(debugs)
-    for k in debugs:
-        del my_builds[k]
+for k in debugs:
+    del my_builds[k]
 
-if utils.run_make:
-    errors = utils.buildall()
-    if errors:
-        print '\n\n' + errors
-        sys.exit(1)
+utils.buildall()
+if logger.errors:
+    sys.exit(1)
 
 sequences, configs = set(), set()
 for line in open(utils.test_file).readlines():
@@ -49,28 +44,17 @@ spotchecks = utils.spotchecks()
 print 'Running 1000 test encodes, press CTRL+C to abort (maybe twice)\n'
 
 try:
-    log = ''
     for x in xrange(1000):
         seq = random.choice(sequences)
         cfg = random.choice(configs)
         extras = ['--psnr', '--ssim', random.choice(spotchecks)]
         build = random.choice(my_builds.keys())
-        desc = utils.describeEnvironment(build)
+        logger.setbuild(build)
         if ',' in cfg:
             multipass = [cmd.split() + always for cmd in command.split(',')]
-            log += utils.multipasstest(build, seq, multipass, extras, desc)
+            utils.multipasstest(build, seq, multipass, extras)
         else:
             cmdline = cfg[:] + always
-            log += utils.runtest(build, seq, cmdline, extras, desc)
-        print
+            utils.runtest(build, seq, cmdline, extras)
 except KeyboardInterrupt:
-    print 'Caught ctrl+c, exiting'
-
-# summarize results (could be an email)
-print '\n\n'
-if log:
-    print 'Revision under test:'
-    print utils.hgsummary()
-    print log
-else:
-    print 'All tests passed for %s on %s' % (utils.testrev, my_machine_name)
+    print 'Caught CTRL+C, exiting'
