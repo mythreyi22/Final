@@ -49,10 +49,10 @@ class Logger():
     def __init__(self, testfile):
         nowdate = str(datetime.date.fromtimestamp(time.time()))[2:]
         testname = os.path.splitext(os.path.basename(testfile))[0]
-        logfname = 'log-%s-%s.txt' % (nowdate, testname)
-        print 'Logging test results to %s\n' % logfname
+        self.logfname = 'log-%s-%s.txt' % (nowdate, testname)
+        print 'Logging test results to %s\n' % self.logfname
         self.errors = 0
-        self.logfp = open(logfname, 'w')
+        self.logfp = open(self.logfname, 'w')
         self.header  = 'system   : %s\n' % my_machine_name
         self.header += 'hardware : %s\n' % my_machine_desc
         self.header += 'version  : %s\n' % hgversion()
@@ -106,6 +106,8 @@ class Logger():
             msg = '\nAll tests passed for %s on %s' % (testrev, my_machine_name)
             print msg
             self.logfp.write(msg)
+        else:
+            print 'Errors written to %s' % self.logfname
         self.logfp.close()
         # TODO: could generate email here
 
