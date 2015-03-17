@@ -366,6 +366,7 @@ def isancestor(ancestor):
     else:
         return False
 
+
 def spotchecks():
     # these options can be added to any test and should not affect outputs
     spotchecks = [
@@ -389,10 +390,11 @@ def spotchecks():
         spotchecks.append('--log=frame')
     # check if the revision under test is after the NUMA pools commit
     if isancestor('62b8fe990df5'):
-        spotchecks += ['--pools=1', '--pools=2']
+        spotchecks.append('--pools=3')
     else:
-        spotchecks += ['--threads=2', '--threads=3']
+        spotchecks.append('--threads=3')
     return spotchecks
+
 
 def pastebin(content):
     sizelimit = 500 * 1024
