@@ -1109,7 +1109,7 @@ def _test(build, tmpfolder, seq, cfg, extras):
     if errors:
         prefix = 'encoder warning or error reported'
         logger.write(prefix)
-        logger.testfail('\n'.join(prefix, logs, errors))
+        logger.testfail('\n'.join([prefix, logs, errors]))
         return
 
     # check against last known good outputs - lastfname is the folder
@@ -1122,7 +1122,7 @@ def _test(build, tmpfolder, seq, cfg, extras):
         decodeerr = checkdecoder(tmpfolder)
         if decodeerr:
             logger.write('Decoder validation failed')
-            logger.testfail('\n'.join(logs, decodeerr))
+            logger.testfail('\n'.join([logs, decodeerr]))
         else:
             logger.write('Decoder validation ok:', sum)
             newgoldenoutputs(seq, cfg, lastfname, sum, logs, tmpfolder)
@@ -1134,7 +1134,7 @@ def _test(build, tmpfolder, seq, cfg, extras):
         decodeerr = checkdecoder(tmpfolder)
         if decodeerr:
             logger.write('OUTPUT CHANGE WITH DECODE ERRORS')
-            logger.testfail('\n'.join(logs, errors, decodeerr))
+            logger.testfail('\n'.join([logs, errors, decodeerr]))
         elif '--vbv-bufsize' in cfg:
             # VBV encodes are non-deterministic, check that golden output
             # bitrate is within 1% of new bitrate. Example summary:
@@ -1146,13 +1146,13 @@ def _test(build, tmpfolder, seq, cfg, extras):
             logger.write(diffmsg)
             if diff > 0.01:
                 addfail(testhash, lastfname, logs, errors + diffmsg)
-                logger.testfail('\n'.join(logs, errors, diffmsg))
+                logger.testfail('\n'.join([logs, errors, diffmsg]))
             else:
                 pass
         else:
             addfail(testhash, lastfname, logs, errors)
             logger.write('OUTPUT CHANGE: <%s> to <%s>' % (lastsum, sum))
-            logger.testfail('\n'.join(logs, errors))
+            logger.testfail('\n'.join([logs, errors]))
     else:
         # outputs matched golden outputs
         addpass(testhash, lastfname, logs)
