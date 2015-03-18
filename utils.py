@@ -939,7 +939,7 @@ def parsex265(tmpfolder, stdout, stderr):
              (line.startswith('x265 [warning]:') and \
               line[16:-ls] not in ignored_x265_warnings):
             if lastprog:
-                errors += lastprog.replace('\r', '\n')
+                errors += lastprog.replace('\r', os.linesep)
                 lastprog = None
             errors += line
             logger.write(line[:-1])
@@ -1047,7 +1047,7 @@ def newgoldenoutputs(seq, cfg, lastfname, sum, logs, tmpdir):
         open(os.path.join(lastgoodfolder, 'summary.txt'), 'w').write(sum)
 
     addpass(testhash, lastfname, logs)
-    print 'new golden outputs stored'
+    logger.write('new golden outputs stored')
 
 
 def addpass(testhash, lastfname, logs):
