@@ -910,9 +910,10 @@ def parsex265(tmpfolder, stdout, stderr):
 
     # parse summary from last line of stdout
     ssim, psnr, bitrate = 'N/A', 'N/A', 'N/A'
-    if stdout:
-        lines = stdout.splitlines()
-        words = lines[-1].split()
+    for line in stdout.splitlines():
+        if 'encoded' not in line or 'fps' not in line:
+            continue
+        words = line.split()
         if 'fps),' in words:
             index = words.index('fps),')
             bitrate = words[index + 1]
@@ -923,6 +924,8 @@ def parsex265(tmpfolder, stdout, stderr):
             index = words.index('PSNR:')
             psnr = words[index + 1]
             if psnr.endswith(','): psnr = psnr[:-1]
+        if bitrate:
+            break
     summary = 'bitrate: %s, SSIM: %s, PSNR: %s' % (bitrate, ssim, psnr)
 
     # check for warnings and errors in x265 logs, report together with most
@@ -933,6 +936,7 @@ def parsex265(tmpfolder, stdout, stderr):
             lastprog = line
         elif line.startswith('x265 [warning]:'):
             warn = line[16:-1]
+            print warn
             if warn in ignored_x265_warnings:
                 continue
             if lastprog:
