@@ -838,9 +838,9 @@ def encodeharness(key, tmpfolder, sequence, commands, inextras):
         stdout, stderr = p.communicate()
         os.environ['PATH'] = origpath
 
-        # prune progress reports from stderr
-        logs = [l for l in stderr.splitlines(True) if not l.endswith('\r')]
-        logs = ''.join(logs) + stdout
+        logs = 'Full encoder logs without progress reports:\n'
+        logs += ''.join([l for l in stderr.splitlines(True) if not l.endswith('\r')])
+        logs += stdout
 
         summary, errors = parsex265(tmpfolder, stdout, stderr)
         if p.returncode == -11:
@@ -1111,7 +1111,7 @@ def _test(build, tmpfolder, seq, cfg, extras):
     if errors:
         prefix = 'encoder warning or error reported'
         logger.write(prefix)
-        logger.testfail('\n'.join([prefix, logs, errors]))
+        logger.testfail('\n'.join([prefix, errors, logs]))
         return
 
     # check against last known good outputs - lastfname is the folder
@@ -1136,7 +1136,7 @@ def _test(build, tmpfolder, seq, cfg, extras):
         decodeerr = checkdecoder(tmpfolder)
         if decodeerr:
             logger.write('OUTPUT CHANGE WITH DECODE ERRORS')
-            logger.testfail('\n'.join([logs, errors, decodeerr]))
+            logger.testfail('\n'.join([errors, decodeerr, logs]))
         elif '--vbv-bufsize' in cfg:
             # VBV encodes are non-deterministic, check that golden output
             # bitrate is within 1% of new bitrate. Example summary:
@@ -1148,13 +1148,13 @@ def _test(build, tmpfolder, seq, cfg, extras):
             logger.write(diffmsg)
             if diff > 0.01:
                 addfail(testhash, lastfname, logs, errors + diffmsg)
-                logger.testfail('\n'.join([logs, errors, diffmsg]))
+                logger.testfail('\n'.join([errors, diffmsg, logs]))
             else:
                 pass
         else:
             addfail(testhash, lastfname, logs, errors)
             logger.write('OUTPUT CHANGE: <%s> to <%s>' % (lastsum, sum))
-            logger.testfail('\n'.join([logs, errors]))
+            logger.testfail('\n'.join([errors, logs]))
     else:
         # outputs matched golden outputs
         addpass(testhash, lastfname, logs)
