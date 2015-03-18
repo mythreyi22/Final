@@ -824,7 +824,7 @@ def encodeharness(key, tmpfolder, sequence, commands, inextras):
     returns tuple of (logs, summary, error)
        logs    - stderr and stdout in paste-friendly format (encode log)
        summary - bitrate, psnr, ssim
-       error   - full description of encoder warnings and errors and test env
+       error   - full description of encoder warnings and errors
     '''
 
     buildfolder, _, generator, cmakeopts, opts = my_builds[key]
@@ -855,10 +855,10 @@ def encodeharness(key, tmpfolder, sequence, commands, inextras):
 
     logs, errors, summary = '', '', ''
     if not os.path.isfile(x265):
-        print 'x265 executable not found'
+        logger.write('x265 executable not found')
         errors = 'x265 <%s> cli not compiled\n\n' % x265
     elif not os.path.isfile(seqfullpath):
-        print 'Sequence not found'
+        logger.write('Sequence not found')
         errors = 'sequence <%s> not found\n\n' % seqfullpath
     else:
         origpath = os.environ['PATH']
@@ -894,10 +894,14 @@ def encodeharness(key, tmpfolder, sequence, commands, inextras):
 
 
 def parsex265(tmpfolder, stdout, stderr):
+    '''parse warnings and errors from stderr, summary from stdout, and look
+       for leak and check failure files in the temp folder'''
+
     errors = ''
     check = os.path.join(tmpfolder, 'x265_check_failures.txt')
     if os.path.exists(check):
         errors += '** check failures reported:\n' + open(check, 'r').read()
+
     leaks = os.path.join(tmpfolder, 'x265_leaks.txt')
     if os.path.exists(leaks):
         contents = open(leaks, 'r').read()
