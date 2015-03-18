@@ -430,14 +430,12 @@ def parseY4MHeader(fname):
 
     return (width, height, fps, depth, csp)
 
-def isancestor(ancestor):
-    # hg log -r "descendants(1bed2e325efc) and 5ebd5d7c0a76"
-    cmds = ['hg', 'log', '-r', 'ancestors(%s) and %s' % (testrev, ancestor),
-            '--template', '"{node}"']
-    if Popen(cmds, stdout=PIPE, cwd=my_x265_source).communicate()[0]:
-        return True
-    else:
-        return False
+
+def testcasehash(sequence, commands):
+    m = md5.new()
+    m.update(sequence)
+    m.update(' '.join(commands))
+    return m.hexdigest()[:12]
 
 
 def spotchecks():
@@ -552,6 +550,45 @@ def hggetbranch(rev):
     if err:
         raise Exception('Unable to determine revision phase: ' + err)
     return out
+
+
+def isancestor(ancestor):
+    # hg log -r "descendants(1bed2e325efc) and 5ebd5d7c0a76"
+    cmds = ['hg', 'log', '-r', 'ancestors(%s) and %s' % (testrev, ancestor),
+            '--template', '"{node}"']
+    if Popen(cmds, stdout=PIPE, cwd=my_x265_source).communicate()[0]:
+        return True
+    else:
+        return False
+
+
+def findchangeancestors():
+    '''
+    output-changing-commits.txt must contain the hashes (12-bytes) of
+    commits which change outputs. All commits which are ancestors of these
+    commits should match outputs (unless they are also listed). New output
+    changing commits must be added on top so they are found before any of
+    their ancestor commits.
+
+    Lines starting with a hash are considered comments, text after the 12 byte
+    hash are ignored and can be used to describe the commit
+
+    Returns a list of all output changing commits which are ancestors of the
+    current revision under test.
+    '''
+    try:
+        lines = open("output-changing-commits.txt").readlines()
+    except EnvironmentError:
+        return [testrev]
+
+    ancestors = []
+    for line in lines:
+        if len(line) < 12 or line[0] == '#': continue
+        rev = line[:12]
+        if isancestor(rev):
+            ancestors.append(rev)
+
+    return ancestors or [testrev]
 
 
 def cmake(generator, buildfolder, cmakeopts, **opts):
@@ -776,13 +813,6 @@ def testharness():
             logger.writeerr(prefix + err)
 
 
-def testcasehash(sequence, commands):
-    m = md5.new()
-    m.update(sequence)
-    m.update(' '.join(commands))
-    return m.hexdigest()[:12]
-
-
 def encodeharness(key, tmpfolder, sequence, commands, inextras):
     '''
     Perform a single test encode within a tempfolder
@@ -914,35 +944,6 @@ def parsex265(tmpfolder, stdout, stderr):
             errors += line
 
     return summary, errors
-
-
-def findchangeancestors():
-    '''
-    output-changing-commits.txt must contain the hashes (12-bytes) of
-    commits which change outputs. All commits which are ancestors of these
-    commits should match outputs (unless they are also listed). New output
-    changing commits must be added on top so they are found before any of
-    their ancestor commits.
-
-    Lines starting with a hash are considered comments, text after the 12 byte
-    hash are ignored and can be used to describe the commit
-
-    Returns a list of all output changing commits which are ancestors of the
-    current revision under test.
-    '''
-    try:
-        lines = open("output-changing-commits.txt").readlines()
-    except EnvironmentError:
-        return [testrev]
-
-    ancestors = []
-    for line in lines:
-        if len(line) < 12 or line[0] == '#': continue
-        rev = line[:12]
-        if isancestor(rev):
-            ancestors.append(rev)
-
-    return ancestors or [testrev]
 
 
 def checkoutputs(key, seq, cfg, sum, tmpdir):
