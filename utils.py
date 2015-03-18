@@ -645,6 +645,7 @@ def cmake(generator, buildfolder, cmakeopts, **opts):
     origpath = os.environ['PATH']
     if 'PATH' in opts:
         os.environ['PATH'] += os.pathsep + opts['PATH']
+        env['PATH'] += os.pathsep + opts['PATH']
 
     proc = Popen(cmds, stdout=PIPE, stderr=PIPE, cwd=buildfolder, env=env)
     out, err = proc.communicate()
