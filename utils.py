@@ -1169,12 +1169,16 @@ def _test(build, tmpfolder, seq, cfg, extras):
 
 def runtest(key, seq, cfg, extras):
     command = ' '.join(cfg)
-    if skip_string and skip_string in command:
-        logger.write('Skipping test', command)
-        return
+    if skip_string:
+        testhash = testcasehash(seq, cfg)
+        if [True for f in (seq, command, testhash) if skip_string in f]:
+            logger.write('Skipping test', command)
+            return
 
-    if only_string and only_string not in command:
-        return
+    if only_string:
+        testhash = testcasehash(seq, cfg)
+        if not [True for f in (seq, command, testhash) if only_string in f]:
+            return
 
     tmpfolder = tempfile.mkdtemp(prefix='x265-temp')
     try:
