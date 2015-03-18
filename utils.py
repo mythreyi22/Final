@@ -891,26 +891,27 @@ def parsex265(tmpfolder, stdout, stderr):
             if psnr.endswith(','): psnr = psnr[:-1]
     summary = 'bitrate: %s, SSIM: %s, PSNR: %s' % (bitrate, ssim, psnr)
 
-    # check for warnings in x265 logs
-    lastprog = ''
-    for line in stderr.splitlines():
-        if line.startswith(('yuv  [', 'y4m  [')):
-            pass
-        elif line.startswith('x265 ['):
-            if line[6:13] == 'warning':
-                warn = line[16:]
-                if warn not in ignored_x265_warnings:
-                    print line
-                    errors += lastprog + line + '\n'
-                    lastprog = ''
-            elif line[6:11] == 'error':
-                errors += lastprog + line
-                lastprog = ''
-        elif line.startswith('[') and line.endswith('\r'):
+    # check for warnings and errors in x265 logs, report together with most
+    # recent progress report if there was any
+    lastprog = None
+    for line in stderr.splitlines(True):
+        if line.endswith('\r'):
             lastprog = line
-
-    if errors:
-        errors += '\n\nFull encoder log:\n' + stderr + stdout + '\n'
+        elif line.startswith('x265 [warning]:'):
+            warn = line[16:-1]
+            if warn in ignored_x265_warnings:
+                continue
+            if lastprog:
+                errors += lastprog.replace('\r', '\n')
+                lastprog = None
+            logger.write(line[:-1])
+            errors += line
+        elif line.startswith('x265 [error]:'):
+            if lastprog:
+                errors += lastprog.replace('\r', '\n')
+                lastprog = None
+            logger.write(line[:-1])
+            errors += line
 
     return summary, errors
 
