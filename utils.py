@@ -590,7 +590,7 @@ def findchangeancestors():
         try:
             print 'failed'
             print 'WARNING: using local copy of output-changing-commits.txt'
-            print '         it may not be up to date'
+            print '         it may not be up to date\n'
             lines = open("output-changing-commits.txt").readlines()
         except EnvironmentError:
             return [testrev]
