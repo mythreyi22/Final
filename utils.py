@@ -1154,7 +1154,7 @@ def _test(build, tmpfolder, seq, cfg, extras):
             logger.write(diffmsg)
             if diff > 0.01:
                 addfail(testhash, lastfname, logs, errors + diffmsg)
-                logger.testfail('\n'.join([errors, diffmsg, logs]))
+                logger.testfail('\n'.join([diffmsg, errors, logs]))
             else:
                 pass
         else:
