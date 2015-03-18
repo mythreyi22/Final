@@ -838,8 +838,9 @@ def encodeharness(key, tmpfolder, sequence, commands, inextras):
         stdout, stderr = p.communicate()
         os.environ['PATH'] = origpath
 
-        logs = stderr + stdout
-        logs = logs.replace('\r', '\n')
+        # prune progress reports from stderr
+        logs = [l for l in stderr.splitlines(True) if not l.endswith('\r')]
+        logs = ''.join(logs) + stdout
 
         summary, errors = parsex265(tmpfolder, stdout, stderr)
         if p.returncode == -11:
