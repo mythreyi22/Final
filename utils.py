@@ -1107,30 +1107,34 @@ def _test(build, tmpfolder, seq, cfg, extras):
     # run the encoder, abort early if any errors encountered
     logs, sum, errors = encodeharness(build, tmpfolder, seq, cfg, extras)
     if errors:
-        prefix = 'encoder warning or error reported\n'
-        logger.write('Encoder warnings or errors detected')
-        logger.testfail(prefix + logs + errors)
+        prefix = 'encoder warning or error reported'
+        logger.write(prefix)
+        logger.testfail('\n'.join(prefix, logs, errors))
         return
 
-    # check against last known good outputs
+    # check against last known good outputs - lastfname is the folder
+    # containing the last known good outputs (or for the new ones to be
+    # created)
     lastfname, errors = checkoutputs(build, seq, cfg, sum, tmpfolder)
     if errors is None:
+        # no golden outputs for this test yet
         logger.write('validating with decoder')
         decodeerr = checkdecoder(tmpfolder)
         if decodeerr:
             logger.write('Decoder validation failed')
-            logger.testfail(logs + decodeerr)
+            logger.testfail('\n'.join(logs, decodeerr))
         else:
             logger.write('Decoder validation ok:', sum)
             newgoldenoutputs(seq, cfg, lastfname, sum, logs, tmpfolder)
     elif errors:
+        # outputs did not match golden outputs
         fname = os.path.join(my_goldens, testhash, lastfname, 'summary.txt')
         lastsum = open(fname, 'r').read()
 
         decodeerr = checkdecoder(tmpfolder)
         if decodeerr:
             logger.write('OUTPUT CHANGE WITH DECODE ERRORS')
-            logger.testfail(logs + errors + decodeerr)
+            logger.testfail('\n'.join(logs, errors, decodeerr))
         elif '--vbv-bufsize' in cfg:
             # VBV encodes are non-deterministic, check that golden output
             # bitrate is within 1% of new bitrate. Example summary:
@@ -1142,14 +1146,15 @@ def _test(build, tmpfolder, seq, cfg, extras):
             logger.write(diffmsg)
             if diff > 0.01:
                 addfail(testhash, lastfname, logs, errors + diffmsg)
-                logger.testfail(logs + errors + diffmsg)
+                logger.testfail('\n'.join(logs, errors, diffmsg))
             else:
                 pass
         else:
             addfail(testhash, lastfname, logs, errors)
             logger.write('OUTPUT CHANGE: <%s> to <%s>' % (lastsum, sum))
-            logger.testfail(logs + errors)
+            logger.testfail('\n'.join(logs, errors))
     else:
+        # outputs matched golden outputs
         addpass(testhash, lastfname, logs)
         logger.write('PASS')
 
