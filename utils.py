@@ -931,25 +931,18 @@ def parsex265(tmpfolder, stdout, stderr):
     # check for warnings and errors in x265 logs, report together with most
     # recent progress report if there was any
     lastprog = None
+    ls = len(os.linesep) # 2 on Windows, 1 on POSIX
     for line in stderr.splitlines(True):
         if line.endswith('\r'):
             lastprog = line
-        elif line.startswith('x265 [warning]:'):
-            warn = line[16:-1]
-            print warn
-            if warn in ignored_x265_warnings:
-                continue
+        elif line.startswith('x265 [error]:') or \
+             (line.startswith('x265 [warning]:') and \
+              line[16:-ls] not in ignored_x265_warnings):
             if lastprog:
                 errors += lastprog.replace('\r', '\n')
                 lastprog = None
-            logger.write(line[:-1])
             errors += line
-        elif line.startswith('x265 [error]:'):
-            if lastprog:
-                errors += lastprog.replace('\r', '\n')
-                lastprog = None
             logger.write(line[:-1])
-            errors += line
 
     return summary, errors
 
