@@ -7,8 +7,14 @@
 # simple, a commit must appear *above* any commits which are ancestors
 # of itself. If you always add new lines to the top, this should be
 # enforced implicitly.
+#
+# if a phrase is listed in braces at the start of the description, then
+# only test cases which match the string(s) within the braces are
+# allowed to update their golden outputs to this commit
 
-1bed2e325efc superfast/ultrafast changes + CRF fixes from previous few commits
+69b2f0d9ebbe [scaling-list] fix bug in forward-quant with scaling list
+572b8f2dc414 [temporal-layers] fix open-gop bug with temporal layers
+1bed2e325efc [superfast,ultrafast] changes + CRF fixes from previous few commits
 50d3bb223180 adaptive quant cost fixes
 cc5b9d4abddb lookahead uses full intra references
 d7bf99b426e9 fix to avoid false abr restarts

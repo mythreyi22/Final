@@ -126,6 +126,7 @@ test_file = None     # filename or full path of file containing test cases
 testrev = None       # revision under test
 changers = None      # list of all output changing commits which are ancestors
                      # of the revision under test
+changefilter = {}
 logger = None
 
 def setup(argv, preferredlist):
@@ -594,12 +595,17 @@ def findchangeancestors():
         except EnvironmentError:
             return [testrev]
 
+    global changefilter
     ancestors = []
     for line in lines:
         if len(line) < 12 or line[0] == '#': continue
         rev = line[:12]
         if isancestor(rev):
             ancestors.append(rev)
+            comment = line[13:]
+            if comment.startswith('[') and ']' in comment:
+                contents = comment[1:].split(']', 1)[0]
+                changefilter[rev] = contents.split(',')
 
     return ancestors or [testrev]
 
@@ -1010,14 +1016,35 @@ def checkoutputs(key, seq, cfg, sum, tmpdir):
             print 'not changed by %s,' % oc,
         return lastfname, False
 
-    if opencommits:
-        # outputs do not match last good, but there have been one or more output
-        # changing commits since that commit. The most recent changing commit
-        # will be given credit for the output change.
-        commit = opencommits[0]
-        revdate = hgrevisiondate(commit)
-        lastfname = '%s-%s-%s' % (revdate, group, commit)
-        print 'new outputs for this test case,',
+    command = ' '.join(cfg)
+
+    if '--vbv' in command:
+        # outputs did not match but this is a VBV test case and only a changing
+        # commit which declares vbv changes can make new golden outputs
+        for oc in opencommits:
+            if oc in changefilter:
+                if 'vbv' in changefilter[oc]:
+                    revdate = hgrevisiondate(oc)
+                    lastfname = '%s-%s-%s' % (revdate, group, oc)
+                    return lastfname, None
+        return lastfname, 'VBV output change'
+
+    # outputs do not match last good, check for a changing commit that might
+    # take credit for this test case being changed
+    unfiltered = None
+    for oc in opencommits:
+        if oc in changefilter:
+            if [True for m in changefilter[oc] if m in command]:
+                print 'commit %s takes credit for this change' % oc
+                revdate = hgrevisiondate(oc)
+                lastfname = '%s-%s-%s' % (revdate, group, oc)
+                return lastfname, None
+        elif not unfiltered:
+            unfiltered = oc
+    if unfiltered:
+        print 'unfiltered commit %s takes credit for this change' % oc
+        revdate = hgrevisiondate(unfiltered)
+        lastfname = '%s-%s-%s' % (revdate, group, unfiltered)
         return lastfname, None
 
     # outputs did not match, and were expected to match, considered an error
@@ -1030,13 +1057,20 @@ def checkoutputs(key, seq, cfg, sum, tmpdir):
     return lastfname, res
 
 
+
 def newgoldenoutputs(seq, cfg, lastfname, sum, logs, tmpdir):
     '''
     A test was run and the outputs are good (match the last known good or if
     no last known good is available, these new results are taken
     '''
     if not save_results:
-        return
+        command = ' '.join(cfg)
+        commit = lastfname.split('-')[-1]
+        strings = changefilter.get(commit)
+        if strings and [True for s in strings if s in command]:
+            print 'allowing new golden outputs because of change filter'
+        else:
+            return
 
     testhash = testcasehash(seq, cfg)
 
