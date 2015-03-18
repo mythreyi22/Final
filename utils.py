@@ -581,9 +581,18 @@ def findchangeancestors():
     current revision under test.
     '''
     try:
-        lines = open("output-changing-commits.txt").readlines()
+        import urllib
+        print 'Downloading most recent list of output changing commits...',
+        lines = urllib.urlopen('https://bitbucket.org/sborho/test-harness/raw/tip/output-changing-commits.txt').readlines()
+        print 'done\n'
     except EnvironmentError:
-        return [testrev]
+        try:
+            print 'failed'
+            print 'WARNING: using local copy of output-changing-commits.txt'
+            print '         it may not be up to date'
+            lines = open("output-changing-commits.txt").readlines()
+        except EnvironmentError:
+            return [testrev]
 
     ancestors = []
     for line in lines:
