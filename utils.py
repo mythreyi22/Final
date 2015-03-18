@@ -52,7 +52,7 @@ class Logger():
         self.logfname = 'log-%s-%s.txt' % (nowdate, testname)
         print 'Logging test results to %s\n' % self.logfname
         self.errors = 0
-        self.logfp = open(self.logfname, 'w')
+        self.logfp = open(self.logfname, 'wb')
         self.header  = 'system   : %s\n' % my_machine_name
         self.header += 'hardware : %s\n' % my_machine_desc
         self.header += 'version  : %s\n' % hgversion()
@@ -80,10 +80,12 @@ class Logger():
         '''print text to stdout and maybe write to file'''
         print ' '.join(args)
 
-    def writeerr(self, *args):
+    def writeerr(self, message):
         '''cmake, make, or testbench errors'''
         # TODO: wrapper for pastebin
-        self.logfp.write(' '.join(args) + '\n')
+        if os.linesep == '\r\n':
+            message = message.replace(os.linesep, '\n')
+        self.logfp.write(message + '\n')
         self.logfp.flush()
         self.errors += 1
 
@@ -93,11 +95,13 @@ class Logger():
         self.test += '   hash: %s\n' % hash
         self.test += ' extras: ' + ' '.join(extras) + '\n\n'
 
-    def testfail(self, *args):
+    def testfail(self, message):
         '''encoder test failures'''
         # TODO: wrapper for pastebin
-        self.logfp.write('**\n' + self.test)
-        self.logfp.write(' '.join(args) + '\n**\n')
+        if os.linesep == '\r\n':
+            message = message.replace(os.linesep, '\n')
+        self.logfp.write('**\n\n' + self.test)
+        self.logfp.write(message + '\n')
         self.logfp.flush()
         self.errors += 1
 
@@ -1009,9 +1013,9 @@ def checkoutputs(key, seq, cfg, sum, tmpdir):
 
     # outputs did not match, and were expected to match, considered an error
     oldsum = open(os.path.join(testfolder, 'summary.txt'), 'r').read()
-    res = '%s output does not match last good for group %s\n' % (key, group)
+    res = '%s output does not match last good for group %s\n\n' % (key, group)
     res += 'Previous last known good revision\n'
-    res += hgrevisioninfo(commit) + '\n'
+    res += hgrevisioninfo(commit).replace(os.linesep, '\n') + '\n'
     res += 'PREV: %s\n' % oldsum
     res += ' NEW: %s\n\n' % sum
     return lastfname, res
