@@ -28,8 +28,8 @@ if logger.errors:
 
 sequences, configs = set(), set()
 for line in open(utils.test_file).readlines():
+    line = line.strip()
     if len(line) < 3 or line[0] == '#': continue
-    line.strip()
     seq, command = line.split(',', 1)
     if os.path.exists(os.path.join(my_sequences, seq)):
         sequences.add(seq)
