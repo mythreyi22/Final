@@ -562,10 +562,10 @@ def isancestor(ancestor):
     # hg log -r "descendants(1bed2e325efc) and 5ebd5d7c0a76"
     cmds = ['hg', 'log', '-r', 'ancestors(%s) and %s' % (testrev, ancestor),
             '--template', '"{node}"']
-    if Popen(cmds, stdout=PIPE, cwd=my_x265_source).communicate()[0]:
-        return True
-    else:
-        return False
+    out, err = Popen(cmds, stdout=PIPE, stderr=PIPE, cwd=my_x265_source).communicate()
+    if err and 'unknown revision' not in err:
+        raise Exception('Unable to determine ancestry: ' + err)
+    return bool(out)
 
 
 def findchangeancestors():
