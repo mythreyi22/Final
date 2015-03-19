@@ -36,6 +36,7 @@ try:
             if len(line) < 3 or line[0] == '#':
                 continue
 
+            line.strip()
             seq, command = line.split(',', 1)
 
             if not os.path.exists(os.path.join(my_sequences, seq)):
