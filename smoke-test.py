@@ -24,7 +24,7 @@ utils.testharness()
 if logger.errors:
     sys.exit(1)
 
-always = ['-f50', '--hash=1', '--no-info']
+always = ' -f50 --hash=1 --no-info' # must begin with a space
 extras = ['--psnr', '--ssim']
 missing = set()
 
@@ -48,7 +48,6 @@ try:
                 logger.write('Ignoring multipass test', command)
                 continue
 
-            cfg = command.split() + always
-            utils.runtest(key, seq, cfg, extras)
+            utils.runtest(key, seq, command + always, extras)
 except KeyboardInterrupt:
     print 'Caught CTRL+C, exiting'

@@ -27,13 +27,13 @@ utils.buildall()
 if logger.errors:
     sys.exit(1)
 
-always = ['--no-info', '--hash=1']
+always = ' --no-info --hash=1' # must begin with a space
 spotchecks = utils.spotchecks()
 missing = set()
 
 try:
     for build in my_builds:
-        logger.setbuild(key)
+        logger.setbuild(build)
 
         for line in open(utils.test_file).readlines():
             if len(line) < 3 or line[0] == '#':
@@ -43,18 +43,16 @@ try:
 
             if not os.path.exists(os.path.join(my_sequences, seq)):
                 if seq not in missing:
-                    print 'Ignoring missing sequence', seq
+                    print 'Ignoring missing sequence %s\n' % seq
                     missing.add(seq)
                 continue
 
             extras = ['--psnr', '--ssim', random.choice(spotchecks)]
 
             if ',' in command:
-                multipass = [cmd.split() + always for cmd in command.split(',')]
-                utils.multipasstest(build, seq, multipass, extras)
+                utils.multipasstest(build, seq, command.split(','), always, extras)
             else:
-                cmdline = command.split() + always
-                utils.runtest(build, seq, cmdline, extras)
+                utils.runtest(build, seq, command + always, extras)
 
 except KeyboardInterrupt:
     print 'Caught CTRL+C, exiting'

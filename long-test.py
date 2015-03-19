@@ -38,7 +38,7 @@ for line in open(utils.test_file).readlines():
 sequences = list(sequences)
 configs = list(configs)
 
-always = ['--no-info', '--hash=1']
+always = ' --no-info --hash=1' # must begin with a space
 spotchecks = utils.spotchecks()
 
 print 'Running 1000 test encodes, press CTRL+C to abort (maybe twice)\n'
@@ -51,10 +51,8 @@ try:
         build = random.choice(my_builds.keys())
         logger.setbuild(build)
         if ',' in cfg:
-            multipass = [cmd.split() + always for cmd in command.split(',')]
-            utils.multipasstest(build, seq, multipass, extras)
+            utils.multipasstest(build, seq, cfg.split(','), always, extras)
         else:
-            cmdline = cfg[:] + always
-            utils.runtest(build, seq, cmdline, extras)
+            utils.runtest(build, seq, cfg + always, extras)
 except KeyboardInterrupt:
     print 'Caught CTRL+C, exiting'

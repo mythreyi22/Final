@@ -9,6 +9,7 @@ import filecmp
 import md5
 import os
 import shutil
+import shlex
 import sys
 import tempfile
 import time
@@ -89,9 +90,9 @@ class Logger():
         self.logfp.flush()
         self.errors += 1
 
-    def settest(self, seq, cfg, extras, hash):
+    def settest(self, seq, command, extras, hash):
         '''configure current test case'''
-        self.test  = 'command: %s %s\n' % (seq, ' '.join(cfg))
+        self.test  = 'command: %s %s\n' % (seq, command)
         self.test += '   hash: %s\n' % hash
         self.test += ' extras: ' + ' '.join(extras) + '\n\n'
 
@@ -436,10 +437,10 @@ def parseY4MHeader(fname):
     return (width, height, fps, depth, csp)
 
 
-def testcasehash(sequence, commands):
+def testcasehash(sequence, command):
     m = md5.new()
     m.update(sequence)
-    m.update(' '.join(commands))
+    m.update(command)
     return m.hexdigest()[:12]
 
 
@@ -833,13 +834,13 @@ def testharness():
             logger.writeerr(prefix + err)
 
 
-def encodeharness(key, tmpfolder, sequence, commands, inextras):
+def encodeharness(key, tmpfolder, sequence, command, inextras):
     '''
     Perform a single test encode within a tempfolder
      * key      is the shortname for the build to use, ex: 'gcc'
      * tmpfolder is a temporary folder in which the test will run
      * sequence is the YUV or Y4M filename with no path
-     * commands is a list [] of params which influence outputs (hashed)
+     * command is a string of params which influence outputs (hashed)
      * inextras is a list [] of params which do not influence outputs
     returns tuple of (logs, summary, error)
        logs    - stderr and stdout in paste-friendly format (encode log)
@@ -871,7 +872,9 @@ def encodeharness(key, tmpfolder, sequence, commands, inextras):
         x265 = os.path.abspath(os.path.join(buildfolder, 'x265'))
     if os.name == 'nt': x265 += '.exe'
 
-    cmds = [x265, seqfullpath, 'bitstream.hevc'] + commands + extras
+    cmds = [x265, seqfullpath, 'bitstream.hevc']
+    cmds.extend(shlex.split(command))
+    cmds.extend(extras)
 
     logs, errors, summary = '', '', ''
     if not os.path.isfile(x265):
@@ -967,9 +970,9 @@ def parsex265(tmpfolder, stdout, stderr):
     return summary, errors
 
 
-def checkoutputs(key, seq, cfg, sum, tmpdir):
+def checkoutputs(key, seq, command, sum, tmpdir):
     group = my_builds[key][1]
-    testhash = testcasehash(seq, cfg)
+    testhash = testcasehash(seq, command)
 
     opencommits = [] # changing commits without 'no-change' or testfolder
 
@@ -1017,8 +1020,6 @@ def checkoutputs(key, seq, cfg, sum, tmpdir):
             print 'not changed by %s,' % oc,
         return lastfname, False
 
-    command = ' '.join(cfg)
-
     if '--vbv' in command:
         # outputs did not match but this is a VBV test case and only a changing
         # commit which declares vbv changes can make new golden outputs
@@ -1059,13 +1060,12 @@ def checkoutputs(key, seq, cfg, sum, tmpdir):
 
 
 
-def newgoldenoutputs(seq, cfg, lastfname, sum, logs, tmpdir):
+def newgoldenoutputs(seq, command, lastfname, sum, logs, tmpdir):
     '''
     A test was run and the outputs are good (match the last known good or if
     no last known good is available, these new results are taken
     '''
     if not save_results:
-        command = ' '.join(cfg)
         commit = lastfname.split('-')[-1]
         strings = changefilter.get(commit)
         if strings and [True for s in strings if s in command]:
@@ -1073,7 +1073,7 @@ def newgoldenoutputs(seq, cfg, lastfname, sum, logs, tmpdir):
         else:
             return
 
-    testhash = testcasehash(seq, cfg)
+    testhash = testcasehash(seq, command)
 
     # create golden folder if necessary
     if not os.path.isdir(my_goldens):
@@ -1084,7 +1084,7 @@ def newgoldenoutputs(seq, cfg, lastfname, sum, logs, tmpdir):
     if not os.path.isdir(testfolder):
         os.mkdir(testfolder)
         fp = open(os.path.join(testfolder, 'hashed-command-line.txt'), 'w')
-        fp.write('%s %s\n' % (seq, ' '.join(cfg)))
+        fp.write('%s %s\n' % (seq, command))
         fp.close()
 
     # create a new golden output folder if necessary
@@ -1146,18 +1146,18 @@ def checkdecoder(tmpdir):
         return ''
 
 
-def _test(build, tmpfolder, seq, cfg, extras):
+def _test(build, tmpfolder, seq, command, extras):
     '''
     Run a test encode within the specified temp folder
     Check to see if golden outputs exist:
         If they exist, verify bit-exactness or report divergence
         If not, validate new bitstream with decoder then save
     '''
-    testhash = testcasehash(seq, cfg)
-    logger.settest(seq, cfg, extras, testhash)
+    testhash = testcasehash(seq, command)
+    logger.settest(seq, command, extras, testhash)
 
     # run the encoder, abort early if any errors encountered
-    logs, sum, errors = encodeharness(build, tmpfolder, seq, cfg, extras)
+    logs, sum, errors = encodeharness(build, tmpfolder, seq, command, extras)
     if errors:
         prefix = 'encoder warning or error reported'
         logger.write(prefix)
@@ -1167,7 +1167,7 @@ def _test(build, tmpfolder, seq, cfg, extras):
     # check against last known good outputs - lastfname is the folder
     # containing the last known good outputs (or for the new ones to be
     # created)
-    lastfname, errors = checkoutputs(build, seq, cfg, sum, tmpfolder)
+    lastfname, errors = checkoutputs(build, seq, command, sum, tmpfolder)
     if errors is None:
         # no golden outputs for this test yet
         logger.write('validating with decoder')
@@ -1177,7 +1177,7 @@ def _test(build, tmpfolder, seq, cfg, extras):
             logger.testfail('\n'.join([logs, decodeerr]))
         else:
             logger.write('Decoder validation ok:', sum)
-            newgoldenoutputs(seq, cfg, lastfname, sum, logs, tmpfolder)
+            newgoldenoutputs(seq, command, lastfname, sum, logs, tmpfolder)
     elif errors:
         # outputs did not match golden outputs
         fname = os.path.join(my_goldens, testhash, lastfname, 'summary.txt')
@@ -1187,7 +1187,7 @@ def _test(build, tmpfolder, seq, cfg, extras):
         if decodeerr:
             logger.write('OUTPUT CHANGE WITH DECODE ERRORS')
             logger.testfail('\n'.join([errors, decodeerr, logs]))
-        elif '--vbv-bufsize' in cfg:
+        elif '--vbv-bufsize' in command:
             # VBV encodes are non-deterministic, check that golden output
             # bitrate is within 1% of new bitrate. Example summary:
             # 'bitrate: 121.95, SSIM: 20.747, PSNR: 53.359'
@@ -1211,16 +1211,15 @@ def _test(build, tmpfolder, seq, cfg, extras):
         logger.write('PASS')
 
 
-def runtest(key, seq, cfg, extras):
-    command = ' '.join(cfg)
+def runtest(key, seq, command, extras):
     if skip_string:
-        testhash = testcasehash(seq, cfg)
+        testhash = testcasehash(seq, command)
         if [True for f in (seq, command, testhash) if skip_string in f]:
             logger.write('Skipping test', command)
             return
 
     if only_string:
-        testhash = testcasehash(seq, cfg)
+        testhash = testcasehash(seq, command)
         if not [True for f in (seq, command, testhash) if only_string in f]:
             return
 
@@ -1229,35 +1228,35 @@ def runtest(key, seq, cfg, extras):
         logger.write('testing x265-%s %s %s' % (key, seq, command))
         print 'extras: %s ...' % ' '.join(extras),
         sys.stdout.flush()
-        _test(key, tmpfolder, seq, cfg, extras)
+        _test(key, tmpfolder, seq, command, extras)
         logger.write('')
     finally:
         shutil.rmtree(tmpfolder)
 
 
-def multipasstest(key, seq, multipass, extras):
+def multipasstest(key, seq, multipass, always, extras):
     # multipass is an array of command lines, each encode command line is run
     # in series (each given the same input sequence and 'extras' options and
     # within the same temp folder so multi-pass stats files and analysis load /
     # save files will be left unharmed between calls
 
     if skip_string:
-        if [True for cfg in multipass if skip_string in ' '.join(cfg)]:
+        if [True for command in multipass if skip_string in command]:
             logger.write('Skipping test', command)
             return
 
     if only_string:
-        if [True for cfg in multipass if only_string not in ' '.join(cfg)]:
+        if [True for command in multipass if only_string not in command]:
             return
 
     tmpfolder = tempfile.mkdtemp(prefix='x265-temp')
     try:
-        for cfg in multipass:
-            command = ' '.join(cfg)
+        for cmd in multipass:
+            command = cmd + always
             logger.write('testing x265-%s %s %s' % (key, seq, command))
             print 'extras: %s ...' % ' '.join(extras),
             sys.stdout.flush()
-            _test(key, tmpfolder, seq, cfg, extras)
+            _test(key, tmpfolder, seq, command, extras)
         logger.write('')
     finally:
         shutil.rmtree(tmpfolder)
