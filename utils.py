@@ -1107,7 +1107,10 @@ def addpass(testhash, lastfname, logs):
         os.mkdir(folder)
     nowdate = str(datetime.date.fromtimestamp(time.time()))[2:]
     fname = '%s-%s-%s.txt' % (nowdate, testrev, my_machine_name)
-    open(os.path.join(folder, fname), 'w').write(logger.test + logs + '\n')
+    message = logger.header + logger.build + logger.test + logs
+    if os.linesep == '\r\n':
+        message = message.replace(os.linesep, '\n')
+    open(os.path.join(folder, fname), 'wb').write(message)
 
 
 def addfail(testhash, lastfname, logs, errors):
@@ -1119,7 +1122,10 @@ def addfail(testhash, lastfname, logs, errors):
         os.mkdir(folder)
     nowdate = str(datetime.date.fromtimestamp(time.time()))[2:]
     fname = '%s-%s-%s.txt' % (nowdate, testrev, my_machine_name)
-    open(os.path.join(folder, fname), 'w').write(logger.test + errors + logs + '\n')
+    message = logger.header + logger.build + logger.test + errors + logs
+    if os.linesep == '\r\n':
+        message = message.replace(os.linesep, '\n')
+    open(os.path.join(folder, fname), 'wb').write(message)
 
 
 def checkdecoder(tmpdir):
