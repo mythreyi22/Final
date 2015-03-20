@@ -77,6 +77,9 @@ class Logger():
         self.write('Most recent output changing commit:')
         self.write(hgrevisioninfo(lastchange))
 
+    def read(self):
+        return open(self.logfname, 'r').read()
+
     def write(self, *args):
         '''print text to stdout and maybe write to file'''
         print ' '.join(args)
