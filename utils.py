@@ -205,7 +205,7 @@ def setup(argv, preferredlist):
             sys.exit(0)
 
     listInRepo = os.path.join(my_x265_source, 'test', test_file)
-    if os.path.exists(listInRepo):
+    if os.sep not in test_file and os.path.exists(listInRepo):
         test_file = listInRepo
     elif not os.path.exists(test_file):
         raise Exception('Unable to find test list file ' + test_file)
