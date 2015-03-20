@@ -99,11 +99,13 @@ class Logger():
         self.test += '   hash: %s\n' % hash
         self.test += ' extras: ' + ' '.join(extras) + '\n\n'
 
-    def testfail(self, message):
+    def testfail(self, prefix, errors, logs):
         '''encoder test failures'''
         # TODO: wrapper for pastebin
+        message = '\n'.join([prefix, errors, logs])
         if os.linesep == '\r\n':
             message = message.replace(os.linesep, '\n')
+        self.write(prefix)
         self.logfp.write('**\n\n' + self.test)
         self.logfp.write(message + '\n')
         self.logfp.flush()
@@ -1168,9 +1170,7 @@ def _test(build, tmpfolder, seq, command, extras):
     # run the encoder, abort early if any errors encountered
     logs, sum, errors = encodeharness(build, tmpfolder, seq, command, extras)
     if errors:
-        prefix = 'encoder warning or error reported'
-        logger.write(prefix)
-        logger.testfail('\n'.join([prefix, errors, logs]))
+        logger.testfail('encoder warning or error reported', errors, logs)
         return
 
     # check against last known good outputs - lastfname is the folder
@@ -1182,8 +1182,7 @@ def _test(build, tmpfolder, seq, command, extras):
         logger.write('validating with decoder')
         decodeerr = checkdecoder(tmpfolder)
         if decodeerr:
-            logger.write('Decoder validation failed')
-            logger.testfail('\n'.join([logs, decodeerr]))
+            logger.testfail('Decoder validation failed', decodeerr, logs)
         else:
             logger.write('Decoder validation ok:', sum)
             newgoldenoutputs(seq, command, lastfname, sum, logs, tmpfolder)
@@ -1194,8 +1193,8 @@ def _test(build, tmpfolder, seq, command, extras):
 
         decodeerr = checkdecoder(tmpfolder)
         if decodeerr:
-            logger.write('OUTPUT CHANGE WITH DECODE ERRORS')
-            logger.testfail('\n'.join([errors, decodeerr, logs]))
+            prefix = 'OUTPUT CHANGE WITH DECODE ERRORS'
+            logger.testfail(prefix, errors + decodeerr, logs)
         elif '--vbv-bufsize' in command:
             # VBV encodes are non-deterministic, check that golden output
             # bitrate is within 1% of new bitrate. Example summary:
@@ -1209,16 +1208,15 @@ def _test(build, tmpfolder, seq, command, extras):
                 diffmsg = 'Unable to parse bitrates for %s:\n<%s>\n<%s>' % \
                            (testhash, lastsum, sum)
                 diff = 1
-            logger.write(diffmsg)
             if diff > 0.01:
                 addfail(testhash, lastfname, logs, errors + diffmsg)
-                logger.testfail('\n'.join([diffmsg, errors, logs]))
+                logger.testfail(diffmsg, errors, logs)
             else:
-                pass
+                logger.write(diffmsg)
         else:
+            prefix = 'OUTPUT CHANGE: <%s> to <%s>' % (lastsum, sum)
             addfail(testhash, lastfname, logs, errors)
-            logger.write('OUTPUT CHANGE: <%s> to <%s>' % (lastsum, sum))
-            logger.testfail('\n'.join([errors, logs]))
+            logger.testfail(prefix, errors, logs)
     else:
         # outputs matched golden outputs
         addpass(testhash, lastfname, logs)
