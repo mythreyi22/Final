@@ -48,9 +48,9 @@ except ImportError, e:
 
 class Logger():
     def __init__(self, testfile):
-        nowdate = str(datetime.date.fromtimestamp(time.time()))[2:]
+        nowdate = datetime.datetime.now().strftime('log-%y%m%d%H%M')
         testname = os.path.splitext(os.path.basename(testfile))[0]
-        self.logfname = 'log-%s-%s.txt' % (nowdate, testname)
+        self.logfname = '%s-%s.txt' % (nowdate, testname)
         print 'Logging test results to %s\n' % self.logfname
         self.errors = 0
         self.newoutputs = {}
