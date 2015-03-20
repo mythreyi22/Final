@@ -766,7 +766,18 @@ def msbuild(buildfolder, generator, cmakeopts):
 
     p = Popen([msbuild, '/clp:disableconsolecolor', target, 'x265.sln'],
               stdout=PIPE, stderr=PIPE, cwd=buildfolder, env=env)
-    return async_poll_process(p, False)
+    out, err = async_poll_process(p, True)
+    if not err:
+        warnings = []
+        for line in out.splitlines(True):
+            if 'MSBUILD : warning MSB' in line: # vc9 is a mess
+                continue
+            if 'warning' in line:
+                warnings.append(line.strip())
+                logger.write(line.strip())
+        if warnings:
+            err = '\n'.join(warnings)
+    return err
 
 
 def buildall():
@@ -786,19 +797,19 @@ def buildall():
 
         cout, cerr = cmake(generator, buildfolder, cmakeopts, **opts)
         if cerr:
-            prefix = '** cmake errors reported for %s:: ' % key
+            prefix = 'cmake errors reported for %s:: ' % key
             errors = cout + cerr
         elif 'Makefiles' in generator:
             errors = gmake(buildfolder, generator, **opts)
-            prefix = '** make warnings or errors reported for %s:: ' % key
+            prefix = 'make warnings or errors reported for %s:: ' % key
         elif 'Visual Studio' in generator:
             errors = msbuild(buildfolder, generator, cmakeopts)
-            prefix = '** msbuild warnings or errors reported for %s:: ' % key
+            prefix = 'msbuild warnings or errors reported for %s:: ' % key
         else:
             raise NotImplemented()
 
         if errors:
-            logger.writeerr(prefix + errors)
+            logger.writeerr(prefix + '\n' + errors + '\n')
 
 
 def testharness():
