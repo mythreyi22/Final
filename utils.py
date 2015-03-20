@@ -53,6 +53,7 @@ class Logger():
         self.logfname = 'log-%s-%s.txt' % (nowdate, testname)
         print 'Logging test results to %s\n' % self.logfname
         self.errors = 0
+        self.newoutputs = {}
         self.logfp = open(self.logfname, 'wb')
         self.header  = 'system   : %s\n' % my_machine_name
         self.header += 'hardware : %s\n' % my_machine_desc
@@ -84,6 +85,16 @@ class Logger():
         '''print text to stdout and maybe write to file'''
         print ' '.join(args)
 
+    def newgolden(self, commit):
+        self.write('new golden outputs stored, credited to %s' % commit)
+        self.logfp.write(self.test)
+        self.logfp.write('Output change credited to <%s>\n' % commit)
+        self.logfp.flush()
+        if commit in self.newoutputs:
+            self.newoutputs[commit] += 1
+        else:
+            self.newoutputs[commit] = 1
+
     def writeerr(self, message):
         '''cmake, make, or testbench errors'''
         # TODO: wrapper for pastebin
@@ -112,12 +123,16 @@ class Logger():
         self.errors += 1
 
     def close(self):
-        if not self.errors:
+        for co, count in self.newoutputs.iteritems():
+            msg = '%d test case output changes credited to %s\n' % (count, co)
+            print msg
+            self.logfp.write(msg)
+        if self.errors:
+            print 'Errors written to %s' % self.logfname
+        else:
             msg = '\nAll tests passed for %s on %s' % (testrev, my_machine_name)
             print msg
             self.logfp.write(msg)
-        else:
-            print 'Errors written to %s' % self.logfname
         self.logfp.close()
         # TODO: could generate email here
 
@@ -1111,7 +1126,7 @@ def newgoldenoutputs(seq, command, lastfname, sum, logs, tmpdir):
         open(os.path.join(lastgoodfolder, 'summary.txt'), 'w').write(sum)
 
     addpass(testhash, lastfname, logs)
-    logger.write('new golden outputs stored')
+    logger.newgolden(commit)
 
 
 def addpass(testhash, lastfname, logs):
