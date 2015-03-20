@@ -1197,10 +1197,15 @@ def _test(build, tmpfolder, seq, command, extras):
             # VBV encodes are non-deterministic, check that golden output
             # bitrate is within 1% of new bitrate. Example summary:
             # 'bitrate: 121.95, SSIM: 20.747, PSNR: 53.359'
-            lastbitrate = float(lastsum.split(',')[0].split(' ')[1])
-            newbitrate = float(sum.split(',')[0].split(' ')[1])
-            diff = abs(lastbitrate - newbitrate) / lastbitrate
-            diffmsg = 'VBV OUTPUT CHANGED BY %.2f%%' % (diff * 100)
+            try:
+                lastbitrate = float(lastsum.split(',')[0].split(' ')[1])
+                newbitrate = float(sum.split(',')[0].split(' ')[1])
+                diff = abs(lastbitrate - newbitrate) / lastbitrate
+                diffmsg = 'VBV OUTPUT CHANGED BY %.2f%%' % (diff * 100)
+            except (IndexError, ValueError), e:
+                diffmsg = 'Unable to parse bitrates for %s:\n<%s>\n<%s>' % \
+                           (testhash, lastsum, sum)
+                diff = 1
             logger.write(diffmsg)
             if diff > 0.01:
                 addfail(testhash, lastfname, logs, errors + diffmsg)
