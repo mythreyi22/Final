@@ -35,7 +35,7 @@ my_builds = {
     #          'static checked', # short-hand cmake options (see below)
     #          {}),              # env-vars and other keyword arguments
     #
-    #'gcc32' : ('gcc32/', 'gcc', 'Unix Makefiles', 'static', {'CFLAGS':'-m32'}),
+    #'gcc32' : ('gcc32/', 'gcc32', 'Unix Makefiles', 'static', {'CFLAGS':'-m32'}),
     #'gcc10' : ('gcc10/', 'gcc10', 'Unix Makefiles', '16bpp', {}),
     #'llvm'  : ('llvm/', 'gcc', 'Unix Makefiles', 'checked',
     #           {'CC' : 'clang', 'CXX' : 'clang++'}),
