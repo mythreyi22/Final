@@ -588,6 +588,26 @@ def isancestor(ancestor):
     return bool(out)
 
 
+def getcommits():
+    fname = 'output-changing-commits.txt'
+
+    out = Popen(['hg', 'status', fname], stdout=PIPE).communicate()[0]
+    if 'M' in out:
+        print 'local %s is modified, disabling download' % fname
+        return open(fname).readlines()
+
+    try:
+        print 'Downloading most recent list of output changing commits...',
+        l = urllib.urlopen('https://bitbucket.org/sborho/test-harness/raw/tip/' + \
+                          fname).readlines()
+        print 'done\n'
+        return l
+    except EnvironmentError:
+        print 'failed\nWARNING: using local copy of', fname
+        print '         it may not be up to date\n'
+        return open(fname).readlines()
+
+
 def findchangeancestors():
     '''
     output-changing-commits.txt must contain the hashes (12-bytes) of
@@ -602,19 +622,7 @@ def findchangeancestors():
     Returns a list of all output changing commits which are ancestors of the
     current revision under test.
     '''
-    try:
-        import urllib
-        print 'Downloading most recent list of output changing commits...',
-        lines = urllib.urlopen('https://bitbucket.org/sborho/test-harness/raw/tip/output-changing-commits.txt').readlines()
-        print 'done\n'
-    except EnvironmentError:
-        try:
-            print 'failed'
-            print 'WARNING: using local copy of output-changing-commits.txt'
-            print '         it may not be up to date\n'
-            lines = open("output-changing-commits.txt").readlines()
-        except EnvironmentError:
-            return [testrev]
+    lines = getcommits()
 
     global changefilter
     ancestors = []
