@@ -1057,6 +1057,15 @@ def checkoutputs(key, seq, command, sum, tmpdir):
             nochange = os.path.join(my_goldens, testhash, nc)
             open(nochange, 'w').write(commit)
             print 'not changed by %s,' % oc,
+
+        # if the test run which created the golden outputs used a --log=none
+        # spot-check or something similar, the summary will have some unknowns
+        # in it. Replace it with the current summary if it is complete
+        fname = os.path.join(my_goldens, testhash, lastfname, 'summary.txt')
+        lastsum = open(fname, 'r').read()
+        if 'N/A' in lastsum and 'N/A' not in sum:
+            print 'correcting golden output summary',
+            open(fname, 'w').write(sum)
         return lastfname, False
 
     if '--vbv' in command:
@@ -1258,15 +1267,6 @@ def _test(build, tmpfolder, seq, command, extras):
         # outputs matched golden outputs
         addpass(testhash, lastfname, logs)
         logger.write('PASS')
-
-        # if the test run which created the golden outputs used a --log=none
-        # spot-check or something similar, the summary will have some unknowns
-        # in it. Replace it with the current summary if it is valid
-        fname = os.path.join(my_goldens, testhash, lastfname, 'summary.txt')
-        lastsum = open(fname, 'r').read()
-        if 'N/A' in lastsum and 'N/A' not in sum:
-            logger.write('Correcting golden output summary')
-            open(fname, 'w').write(sum)
 
 
 def runtest(key, seq, command, extras):
