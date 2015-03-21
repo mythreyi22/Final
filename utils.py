@@ -1104,9 +1104,9 @@ def newgoldenoutputs(seq, command, lastfname, sum, logs, tmpdir):
     A test was run and the outputs are good (match the last known good or if
     no last known good is available, these new results are taken
     '''
+    commit = lastfname.split('-')[-1]
     if not save_results:
         # only save results if the testrev is a keyword change commit
-        commit = lastfname.split('-')[-1]
         strings = changefilter.get(commit)
         if commit != testrev:
             return
