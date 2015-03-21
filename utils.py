@@ -1105,10 +1105,13 @@ def newgoldenoutputs(seq, command, lastfname, sum, logs, tmpdir):
     no last known good is available, these new results are taken
     '''
     if not save_results:
+        # only save results if the testrev is a keyword change commit
         commit = lastfname.split('-')[-1]
         strings = changefilter.get(commit)
-        if strings and [True for s in strings if s in command]:
-            print 'allowing new golden outputs because of change filter'
+        if commit != testrev:
+            return
+        elif strings and [True for s in strings if s in command]:
+            print 'allowing new golden outputs because of change keyword filter'
         else:
             return
 
