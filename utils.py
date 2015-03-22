@@ -88,7 +88,7 @@ class Logger():
     def newgolden(self, commit):
         self.write('new golden outputs stored, credited to %s' % commit)
         self.logfp.write(self.test)
-        self.logfp.write('Output change credited to <%s>\n' % commit)
+        self.logfp.write('new outputs credited to <%s>\n\n' % commit)
         self.logfp.flush()
         if commit in self.newoutputs:
             self.newoutputs[commit] += 1
