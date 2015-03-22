@@ -1077,7 +1077,7 @@ def checkoutputs(key, seq, command, sum, tmpdir):
                     revdate = hgrevisiondate(oc)
                     lastfname = '%s-%s-%s' % (revdate, group, oc)
                     return lastfname, None
-        return lastfname, 'VBV output change'
+        return lastfname, ''
 
     # outputs do not match last good, check for a changing commit that might
     # take credit for this test case being changed
