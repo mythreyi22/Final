@@ -1277,6 +1277,7 @@ def _test(build, tmpfolder, seq, command, extras):
             else:
                 logger.write(diffmsg)
         else:
+            logger.write('FAIL')
             prefix = 'OUTPUT CHANGE: <%s> to <%s>' % (lastsum, sum)
             if save_changed:
                 hashfname = savebadstream(tmpfolder)
