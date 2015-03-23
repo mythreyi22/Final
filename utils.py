@@ -141,6 +141,7 @@ run_make  = True     # run cmake and make/msbuild
 run_bench = True     # run test benches
 rebuild   = False    # delete build folders prior to build
 save_results = True  # allow new golden outputs or pass/fail files
+save_changed = False # save output bitstreams with valid changes
 only_string = None   # filter tests - only those matching this string
 skip_string = None   # filter tests - all except those matching this string
 test_file = None     # filename or full path of file containing test cases
@@ -170,7 +171,7 @@ def setup(argv, preferredlist):
 
     import getopt
     longopts = ['builds=', 'help', 'no-make', 'no-bench', 'only=', 'rebuild',
-                'skip=', 'tests=']
+                'save-changed', 'skip=', 'tests=']
     optlist, args = getopt.getopt(argv[1:], 'hb:t:', longopts)
     for opt, val in optlist:
         # restrict the list of target builds to just those specified by -b
@@ -186,6 +187,8 @@ def setup(argv, preferredlist):
             only_string = val
         elif opt in ('-t', '--tests'):
             test_file = val
+        elif opt == '--save-changed':
+            save_changed = True
         elif opt == '--no-make':
             run_make = False
         elif opt == '--no-bench':
@@ -199,6 +202,7 @@ def setup(argv, preferredlist):
             print '\t-t/--tests <fname>   location of text file with test cases'
             print '\t   --skip <string>   skip test cases matching string'
             print '\t   --only <string>   only test cases matching string'
+            print '\t   --save-changed    save bitstreams with changed outputs'
             print '\t   --no-make         do not compile sources'
             print '\t   --no-bench        do not run test benches'
             print '\t   --rebuild         remove old build folders and rebuild'
@@ -1268,8 +1272,9 @@ def _test(build, tmpfolder, seq, command, extras):
                 logger.write(diffmsg)
         else:
             prefix = 'OUTPUT CHANGE: <%s> to <%s>' % (lastsum, sum)
-            hashfname = savebadstream(tmpfolder)
-            prefix += '\nThis bitstream was saved to %s\n' % hashfname
+            if save_changed:
+                hashfname = savebadstream(tmpfolder)
+                prefix += '\nThis bitstream was saved to %s\n' % hashfname
             addfail(testhash, lastfname, logs, errors)
             logger.testfail(prefix, errors, logs)
     else:

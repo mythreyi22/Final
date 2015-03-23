@@ -125,6 +125,7 @@ description of those arguments, like this::
 		-t/--tests <fname>   location of text file with test cases
 		--skip <string>      skip test cases matching string
 		--only <string>      only test cases matching string
+        --save-changed       save all bitstreams with changed outputs
 		--no-make            do not compile sources
 		--no-bench           do not run test benches
 		--rebuild            remove old build folders and rebuild
@@ -135,6 +136,7 @@ Examples:
 * only run regression tests with reasonable speed: `./regression-tests.py --skip slow`
 * use a user-defined test list file: `./regression-tests.py --tests my-test-list.txt`
 * re-run a smoke-test, focusing on one failure: `./smoke-test.py --no-make --no-bench --only nr-intra`
+* if debugging non-determinism: `./regression-tests.py --save-changed`
 
 By default, smoke-tests.py will use the list of tests checked into the
 Mercurial x265 repository as source/test/smoke-tests.txt, and the other
