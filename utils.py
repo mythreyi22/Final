@@ -930,9 +930,12 @@ def encodeharness(key, tmpfolder, sequence, command, inextras):
         stdout, stderr = p.communicate()
         os.environ['PATH'] = origpath
 
-        logs = 'Full encoder logs without progress reports:\n'
-        logs += ''.join([l for l in stderr.splitlines(True) if not l.endswith('\r')])
-        logs += stdout
+        # prune progress reports
+        el = [l for l in stderr.splitlines(True) if not l.endswith('\r')]
+        # prune debug and full level log messages
+        el = [l for l in el if not l.startswith(('x265 [debug]:', 'x265 [full]:'))]
+        logs = 'Full encoder logs without progress reports or debug/full logs:\n'
+        logs += ''.join(el) + stdout
 
         summary, errors = parsex265(tmpfolder, stdout, stderr)
         if p.returncode == -11:
@@ -996,6 +999,8 @@ def parsex265(tmpfolder, stdout, stderr):
     ls = len(os.linesep) # 2 on Windows, 1 on POSIX
     for line in stderr.splitlines(True):
         if line.endswith('\r'):
+            lastprog = line
+        elif line.startswith(('x265 [debug]:', 'x265 [full]:')):
             lastprog = line
         elif line.startswith('x265 [error]:') or \
              (line.startswith('x265 [warning]:') and \
