@@ -17,6 +17,21 @@ import urllib
 from subprocess import Popen, PIPE
 from distutils.spawn import find_executable
 
+run_make  = True     # run cmake and make/msbuild
+run_bench = True     # run test benches
+rebuild   = False    # delete build folders prior to build
+save_results = True  # allow new golden outputs or pass/fail files
+save_changed = False # save output bitstreams with valid changes
+only_string = None   # filter tests - only those matching this string
+skip_string = None   # filter tests - all except those matching this string
+test_file = None     # filename or full path of file containing test cases
+testrev = None       # revision under test
+changers = None      # list of all output changing commits which are ancestors
+                     # of the revision under test
+changefilter = {}
+vbv_tolerance = .015 # fraction of bitrate difference allowed (1.5%)
+logger = None
+
 try:
     from conf import my_machine_name, my_machine_desc, my_x265_source
     from conf import my_sequences, my_goldens, option_strings, my_hm_decoder
@@ -136,20 +151,6 @@ class Logger():
         self.logfp.close()
         # TODO: could generate email here
 
-
-run_make  = True     # run cmake and make/msbuild
-run_bench = True     # run test benches
-rebuild   = False    # delete build folders prior to build
-save_results = True  # allow new golden outputs or pass/fail files
-save_changed = False # save output bitstreams with valid changes
-only_string = None   # filter tests - only those matching this string
-skip_string = None   # filter tests - all except those matching this string
-test_file = None     # filename or full path of file containing test cases
-testrev = None       # revision under test
-changers = None      # list of all output changing commits which are ancestors
-                     # of the revision under test
-changefilter = {}
-logger = None
 
 def setup(argv, preferredlist):
     if not find_executable('hg'):
@@ -1270,8 +1271,8 @@ def _test(build, tmpfolder, seq, command, extras):
             except (IndexError, ValueError), e:
                 diffmsg = 'Unable to parse bitrates for %s:\n<%s>\n<%s>' % \
                            (testhash, lastsum, sum)
-                diff = 1
-            if diff > 0.01:
+                diff = vbv_tolerance + 1
+            if diff > vbv_tolerance:
                 addfail(testhash, lastfname, logs, errors + diffmsg)
                 logger.testfail(diffmsg, errors, logs)
             else:
