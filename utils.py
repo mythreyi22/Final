@@ -1187,18 +1187,24 @@ def addfail(testhash, lastfname, logs, errors):
         message = message.replace(os.linesep, '\n')
     open(os.path.join(folder, fname), 'wb').write(message)
 
+
+def hashbitstream(tmpdir):
+    badfn = os.path.join(tmpdir, 'bitstream.hevc')
+    m = md5.new()
+    m.update(open(badfn, 'rb').read())
+    return m.hexdigest()
+
+
 def savebadstream(tmpdir):
     badbitstreamfolder = os.path.join(my_goldens, 'bad-streams')
     if not os.path.exists(badbitstreamfolder):
         os.mkdir(badbitstreamfolder)
 
-    badfn = os.path.join(tmpdir, 'bitstream.hevc')
-    m = md5.new()
-    m.update(open(badfn, 'rb').read())
-    hashname = m.hexdigest()
+    hashname = hashbitstream(tmpdir)
     hashfname = os.path.join(badbitstreamfolder, hashname + '.hevc')
     shutil.copy(badfn, hashfname)
     return hashfname
+
 
 def checkdecoder(tmpdir):
     cmds = [my_hm_decoder, '-b', 'bitstream.hevc']
@@ -1274,7 +1280,9 @@ def _test(build, tmpfolder, seq, command, extras):
             prefix = 'OUTPUT CHANGE: <%s> to <%s>' % (lastsum, sum)
             if save_changed:
                 hashfname = savebadstream(tmpfolder)
-                prefix += '\nThis bitstream was saved to %s\n' % hashfname
+                prefix += '\nThis bitstream was saved to %s' % hashfname
+            else:
+                prefix += '\nbitstream hash was %s' % hashbitstream(tmpfolder)
             addfail(testhash, lastfname, logs, errors)
             logger.testfail(prefix, errors, logs)
     else:
