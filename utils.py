@@ -1064,7 +1064,7 @@ def checkoutputs(key, seq, command, sum, tmpdir):
         fname = os.path.join(my_goldens, testhash, lastfname, 'summary.txt')
         lastsum = open(fname, 'r').read()
         if 'N/A' in lastsum and 'N/A' not in sum:
-            print 'correcting golden output summary',
+            print 'correcting golden output summary,',
             open(fname, 'w').write(sum)
         return lastfname, False
 
