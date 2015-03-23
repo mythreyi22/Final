@@ -1178,6 +1178,18 @@ def addfail(testhash, lastfname, logs, errors):
         message = message.replace(os.linesep, '\n')
     open(os.path.join(folder, fname), 'wb').write(message)
 
+def savebadstream(tmpdir):
+    badbitstreamfolder = os.path.join(my_goldens, 'bad-streams')
+    if not os.path.exists(badbitstreamfolder):
+        os.mkdir(badbitstreamfolder)
+
+    badfn = os.path.join(tmpdir, 'bitstream.hevc')
+    m = md5.new()
+    m.update(open(badfn, 'rb').read())
+    hashname = m.hexdigest()
+    hashfname = os.path.join(badbitstreamfolder, hashname + '.hevc')
+    shutil.copy(badfn, hashfname)
+    return hashfname
 
 def checkdecoder(tmpdir):
     cmds = [my_hm_decoder, '-b', 'bitstream.hevc']
@@ -1185,20 +1197,8 @@ def checkdecoder(tmpdir):
     stdout, errors = async_poll_process(proc, True)
     hashErrors = [l for l in stdout.splitlines() if '***ERROR***' in l]
     if hashErrors or errors:
-        # Any stream which causes decode errors is saved into
-        # goldens/bad-streams under an MD5 hash of its contents
-        badbitstreamfolder = os.path.join(my_goldens, 'bad-streams')
-        if not os.path.exists(badbitstreamfolder):
-            os.mkdir(badbitstreamfolder)
-        badfn = os.path.join(tmpdir, 'bitstream.hevc')
-        m = md5.new()
-        m.update(open(badfn, 'rb').read())
-        hashname = m.hexdigest()
-        hashfname = os.path.join(badbitstreamfolder, hashname + '.hevc')
-        shutil.copy(badfn, hashfname)
         return 'Validation failed with %s\n\n' % my_hm_decoder + \
-               '\n'.join(hashErrors) + '\n' + errors + '\n' + \
-               'This bitstream was saved to %s\n' % hashfname
+               '\n'.join([hashErrors, errors])
     else:
         return ''
 
@@ -1228,6 +1228,8 @@ def _test(build, tmpfolder, seq, command, extras):
         logger.write('validating with decoder')
         decodeerr = checkdecoder(tmpfolder)
         if decodeerr:
+            hashfname = savebadstream(tmpdir)
+            decodeerr += '\nThis bitstream was saved to %s' % hashfname
             logger.testfail('Decoder validation failed', decodeerr, logs)
         else:
             logger.write('Decoder validation ok:', sum)
@@ -1261,6 +1263,8 @@ def _test(build, tmpfolder, seq, command, extras):
                 logger.write(diffmsg)
         else:
             prefix = 'OUTPUT CHANGE: <%s> to <%s>' % (lastsum, sum)
+            hashfname = savebadstream(tmpfolder)
+            prefix += '\nThis bitstream was saved to %s\n' % hashfname
             addfail(testhash, lastfname, logs, errors)
             logger.testfail(prefix, errors, logs)
     else:
