@@ -12,6 +12,10 @@
 # only test cases which match the string(s) within the braces are
 # allowed to update their golden outputs to this commit
 
+7b66c36ed9ef [pmode] ignore bidir mode if not B-slice
+8140ff542b4e [cu-lossless] init cu-lossless mode cost
+5083cf49a99e merge non-determinism fix to default
+f6a15e605973 fix non-deterministic behavior in merge CUs (last stable change)
 69b2f0d9ebbe [scaling-list] fix bug in forward-quant with scaling list
 572b8f2dc414 [temporal-layers] fix open-gop bug with temporal layers
 1bed2e325efc [superfast,ultrafast] changes + CRF fixes from previous few commits
@@ -20,7 +24,7 @@ cc5b9d4abddb lookahead uses full intra references
 d7bf99b426e9 fix to avoid false abr restarts
 44368ba91acd fix non-determinism issue in slice type decisions
 9a6849146225 merge bref fixes into default
-359daecfbb47 fix the BRef cost estimates in vbv lookahead (last change on stable)
+359daecfbb47 fix the BRef cost estimates in vbv lookahead
 0c23bfd6b0d4 NUMA pools and slicetype batching / coop slices
 6adc0fe54354 merge psy-rd default of 0.3 to default
 d4f52d3270b6 lower psy-rd default to 0.3
