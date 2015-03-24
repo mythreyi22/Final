@@ -31,6 +31,8 @@ for line in open(utils.test_file).readlines():
     line = line.strip()
     if len(line) < 3 or line[0] == '#': continue
     seq, command = line.split(',', 1)
+    seq = seq.strip()
+    command = command.strip()
     if os.path.exists(os.path.join(my_sequences, seq)):
         sequences.add(seq)
     if '--vbv' not in command:

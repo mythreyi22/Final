@@ -38,6 +38,8 @@ try:
                 continue
 
             seq, command = line.split(',', 1)
+            seq = seq.strip()
+            command = command.strip()
 
             if not os.path.exists(os.path.join(my_sequences, seq)):
                 if seq not in missing:

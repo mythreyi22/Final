@@ -1334,7 +1334,7 @@ def multipasstest(key, seq, multipass, always, extras):
     tmpfolder = tempfile.mkdtemp(prefix='x265-temp')
     try:
         for cmd in multipass:
-            command = cmd + always
+            command = cmd.strip() + always
             logger.write('testing x265-%s %s %s' % (key, seq, command))
             print 'extras: %s ...' % ' '.join(extras),
             sys.stdout.flush()
