@@ -163,7 +163,7 @@ def setup(argv, preferredlist):
         raise Exception('my_x265_source does not point to x265 source/ folder')
 
     global run_make, run_bench, rebuild, save_results, test_file, skip_string
-    global only_string
+    global only_string, save_changed
 
     if my_tempfolder:
         tempfile.tempdir = my_tempfolder
@@ -1189,8 +1189,7 @@ def addfail(testhash, lastfname, logs, errors):
     open(os.path.join(folder, fname), 'wb').write(message)
 
 
-def hashbitstream(tmpdir):
-    badfn = os.path.join(tmpdir, 'bitstream.hevc')
+def hashbitstream(badfn):
     m = md5.new()
     m.update(open(badfn, 'rb').read())
     return m.hexdigest()
@@ -1201,7 +1200,8 @@ def savebadstream(tmpdir):
     if not os.path.exists(badbitstreamfolder):
         os.mkdir(badbitstreamfolder)
 
-    hashname = hashbitstream(tmpdir)
+    badfn = os.path.join(tmpdir, 'bitstream.hevc')
+    hashname = hashbitstream(badfn)
     hashfname = os.path.join(badbitstreamfolder, hashname + '.hevc')
     shutil.copy(badfn, hashfname)
     return hashfname
@@ -1284,7 +1284,8 @@ def _test(build, tmpfolder, seq, command, extras):
                 hashfname = savebadstream(tmpfolder)
                 prefix += '\nThis bitstream was saved to %s' % hashfname
             else:
-                prefix += '\nbitstream hash was %s' % hashbitstream(tmpfolder)
+                badfn = os.path.join(tmpfolder, 'bitstream.hevc')
+                prefix += '\nbitstream hash was %s' % hashbitstream(badfn)
             addfail(testhash, lastfname, logs, errors)
             logger.testfail(prefix, errors, logs)
     else:
