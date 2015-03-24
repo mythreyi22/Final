@@ -1102,7 +1102,7 @@ def checkoutputs(key, seq, command, sum, tmpdir):
         elif not unfiltered:
             unfiltered = oc
     if unfiltered:
-        print 'unfiltered commit %s takes credit for this change' % oc
+        print 'unfiltered commit %s takes credit for this change' % unfiltered
         revdate = hgrevisiondate(unfiltered)
         lastfname = '%s-%s-%s' % (revdate, group, unfiltered)
         return lastfname, None
