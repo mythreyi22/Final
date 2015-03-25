@@ -188,27 +188,27 @@ class Logger():
         self.logfp.close()
 
     def email_results(self):
-        if my_email_from and my_email_to and my_smtp_pwd:
-            msg = MIMEText(open(self.logfname, 'r').read())
-            msg['To'] = my_email_to
-            msg['From'] = my_email_from
-            if self.errors > 0:
-                msg['Subject'] = self.testname.replace("-"," ")+" failures - "+ hggetbranch(testrev)
-            else:
-                msg['Subject'] = self.testname.replace("-"," ")+" successful - "+ hggetbranch(testrev)
-            
-            session = smtplib.SMTP('smtp.gmail.com', 587)
-            try:
-                session.ehlo()
-                session.starttls()
-                session.ehlo()
-                session.login(my_email_from, my_smtp_pwd)
-                session.sendmail(my_email_from, my_email_to, msg.as_string())
-            except Exception as e:
-                print('Unable to send email', e)
-            finally:
-                session.quit()
+        if not (my_email_from and my_email_to and my_smtp_pwd):
+            return
 
+        msg = MIMEText(open(self.logfname, 'r').read())
+        msg['To'] = my_email_to
+        msg['From'] = my_email_from
+        testname = self.testname.split('-')
+        status = self.errors and 'failures' or 'successful'
+        msg['Subject'] = ' '.join(testname + [status, '-', hggetbranch(testrev)])
+
+        session = smtplib.SMTP('smtp.gmail.com', 587)
+        try:
+            session.ehlo()
+            session.starttls()
+            session.ehlo()
+            session.login(my_email_from, my_smtp_pwd)
+            session.sendmail(my_email_from, my_email_to, msg.as_string())
+        except Exception as e:
+            print('Unable to send email', e)
+        finally:
+            session.quit()
 
 
 def setup(argv, preferredlist):
