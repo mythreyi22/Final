@@ -165,13 +165,18 @@ class Logger():
 
     def testfail(self, prefix, errors, logs):
         '''encoder test failures'''
-        # TODO: wrapper for pastebin
-        message = '\n'.join([prefix, errors, logs])
-        if os.linesep == '\r\n':
-            message = message.replace(os.linesep, '\n')
-        self.write(prefix)
-        self.logfp.write('**\n\n' + self.test)
-        self.logfp.write(message + '\n')
+        if my_pastebin_key:
+            url = pastebin('\n'.join([self.header, self.build, self.test,
+                                      prefix, error, logs]))
+            self.write(prefix + url)
+            self.logfp.write('\n'.join(['**', self.test, prefix, url]))
+        else:
+            message = '\n'.join([prefix, errors, logs])
+            if os.linesep == '\r\n':
+                message = message.replace(os.linesep, '\n')
+            self.write(prefix)
+            self.logfp.write('**\n\n' + self.test)
+            self.logfp.write(message + '\n')
         self.logfp.flush()
         self.errors += 1
 
@@ -583,9 +588,7 @@ def spotchecks():
 def pastebin(content):
     sizelimit = 500 * 1024
 
-    if not my_pastebin_key:
-        return 'No pastebin key configured. Contents:\n' + content
-    elif len(content) >= sizelimit:
+    if len(content) >= sizelimit:
         content = content[:sizelimit - 30] + '\n\ntruncated to paste limit'
 
     pastebin_vars = {
