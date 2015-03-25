@@ -26,31 +26,18 @@ if logger.errors:
 
 always = ' -f50 --hash=1 --no-info' # must begin with a space
 extras = ['--psnr', '--ssim']
-missing = set()
+
+tests = utils.parsetestfile()
 
 try:
+    logger.settestcount(len(my_builds.keys()) * len(tests))
     for key in my_builds:
         logger.setbuild(key)
 
-        for line in open(utils.test_file).readlines():
-            line = line.strip()
-            if len(line) < 3 or line[0] == '#':
-                continue
-
-            seq, command = line.split(',', 1)
-            seq = seq.strip()
-            command = command.strip()
-
-            if not os.path.exists(os.path.join(my_sequences, seq)):
-                if seq not in missing:
-                    logger.write('Ignoring missing sequence', seq)
-                    missing.add(seq)
-                continue
-
+        for (seq, command) in tests:
             if ',' in command:
                 logger.write('Ignoring multipass test', command)
                 continue
-
             utils.runtest(key, seq, command + always, extras)
 except KeyboardInterrupt:
     print 'Caught CTRL+C, exiting'

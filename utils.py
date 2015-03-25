@@ -70,6 +70,7 @@ class Logger():
         print 'Logging test results to %s\n' % self.logfname
         self.errors = 0
         self.testcount = 0
+        self.totaltests = 0
         self.newoutputs = {}
         self.logfp = open(self.logfname, 'wb')
         self.header  = 'system   : %s\n' % my_machine_name
@@ -127,7 +128,11 @@ class Logger():
         self.test += '   hash: %s\n' % hash
         self.test += ' extras: ' + ' '.join(extras) + '\n\n'
         self.testcount += 1
-        self.settitle(' '.join(['[%d/N]' % self.testcount, seq, command]))
+        nofn = '[%d/%d]' % (self.testcount, self.totaltests)
+        self.settitle(' '.join([nofn, seq, command]))
+
+    def settestcount(self, count):
+        self.totaltests = count
 
     def settitle(self, str):
         '''set console title'''
@@ -483,6 +488,28 @@ def parseY4MHeader(fname):
             print 'unknown Y4M header word'
 
     return (width, height, fps, depth, csp)
+
+
+def parsetestfile():
+    global test_file
+    missing = set()
+    tests = []
+    for line in open(test_file).readlines():
+        line = line.strip()
+        if len(line) < 3 or line[0] == '#':
+            continue
+
+        seq, command = line.split(',', 1)
+        seq = seq.strip()
+        command = command.strip()
+
+        if not os.path.exists(os.path.join(my_sequences, seq)):
+            if seq not in missing:
+                logger.write('Ignoring missing sequence', seq)
+                missing.add(seq)
+            continue
+        tests.append((seq, command))
+    return tests
 
 
 def testcasehash(sequence, command):
