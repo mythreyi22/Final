@@ -167,7 +167,7 @@ class Logger():
         '''encoder test failures'''
         if my_pastebin_key:
             url = pastebin('\n'.join([self.header, self.build, self.test,
-                                      prefix, error, logs]))
+                                      prefix, errors, logs]))
             self.write(prefix + url)
             self.logfp.write('\n'.join(['**', self.test, prefix, url]))
         else:
