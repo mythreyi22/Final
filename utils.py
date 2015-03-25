@@ -93,8 +93,8 @@ class Logger():
         '''configure current revision info'''
         self.write('Revision under test:')
         self.write(hgrevisioninfo(testrev))
-        self.write('Most recent output changing commit:')
-        self.write(hgrevisioninfo(lastchange))
+        #self.write('Most recent output changing commit:')
+        #self.write(hgrevisioninfo(lastchange))
 
     def read(self):
         return open(self.logfname, 'r').read()
