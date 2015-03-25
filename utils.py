@@ -130,6 +130,7 @@ class Logger():
         self.testcount += 1
         nofn = '[%d/%d]' % (self.testcount, self.totaltests)
         self.settitle(' '.join([nofn, seq, command]))
+        print nofn,
 
     def settestcount(self, count):
         self.totaltests = count

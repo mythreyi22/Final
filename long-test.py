@@ -26,20 +26,10 @@ utils.buildall()
 if logger.errors:
     sys.exit(1)
 
-sequences, configs = set(), set()
-for line in open(utils.test_file).readlines():
-    line = line.strip()
-    if len(line) < 3 or line[0] == '#': continue
-    seq, command = line.split(',', 1)
-    seq = seq.strip()
-    command = command.strip()
-    if os.path.exists(os.path.join(my_sequences, seq)):
-        sequences.add(seq)
-    if '--vbv' not in command:
-        configs.add(command)
-# convert sets to lists for random.choice()
-sequences = list(sequences)
-configs = list(configs)
+tests = utils.parsetestfile()
+
+configs = [cmd for seq, cmd in tests if '--vbv' not in cmd]
+sequences = list(set([seq for seq, cmd in tests]))
 
 always = ' --no-info --hash=1' # must begin with a space
 spotchecks = utils.spotchecks()
@@ -47,6 +37,7 @@ spotchecks = utils.spotchecks()
 print 'Running 1000 test encodes, press CTRL+C to abort (maybe twice)\n'
 
 try:
+    logger.settestcount(1000)
     for x in xrange(1000):
         seq = random.choice(sequences)
         cfg = random.choice(configs)

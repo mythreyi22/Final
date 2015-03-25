@@ -29,29 +29,16 @@ if logger.errors:
 
 always = ' --no-info --hash=1' # must begin with a space
 spotchecks = utils.spotchecks()
-missing = set()
+
+tests = utils.parsetestfile()
 
 try:
+    logger.settestcount(len(my_builds.keys()) * len(tests))
+
     for build in my_builds:
         logger.setbuild(build)
-
-        for line in open(utils.test_file).readlines():
-            line = line.strip()
-            if len(line) < 3 or line[0] == '#':
-                continue
-
-            seq, command = line.split(',', 1)
-            seq = seq.strip()
-            command = command.strip()
-
-            if not os.path.exists(os.path.join(my_sequences, seq)):
-                if seq not in missing:
-                    print 'Ignoring missing sequence %s\n' % seq
-                    missing.add(seq)
-                continue
-
+        for seq, command in tests:
             extras = ['--psnr', '--ssim', random.choice(spotchecks)]
-
             if ',' in command:
                 utils.multipasstest(build, seq, command.split(','), always, extras)
             else:
