@@ -65,7 +65,8 @@ except ImportError, e:
     my_make_flags = []
 
 try:
-    from conf import my_email_from, my_email_to, my_smtp_pwd
+    from conf import my_email_from, my_email_to, my_smtp_pwd, my_smtp_host
+    from conf import my_smtp_port
 except ImportError, e:
     print '** `my_email_*` not defined in conf.py, defaulting to None'
     my_email_from, my_email_to, my_smtp_pwd = None, None, None
@@ -198,7 +199,7 @@ class Logger():
         status = self.errors and 'failures' or 'successful'
         msg['Subject'] = ' '.join(testname + [status, '-', hggetbranch(testrev)])
 
-        session = smtplib.SMTP('smtp.gmail.com', 587)
+        session = smtplib.SMTP(my_smtp_host, my_smtp_port)
         try:
             session.ehlo()
             session.starttls()
