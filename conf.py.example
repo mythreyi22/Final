@@ -8,6 +8,9 @@ my_sequences    = r'\\bigdata\sequences'
 my_goldens      = r'\\bigdata\golden'
 my_hm_decoder   = r'C:\projects\hm\bin\TAppDecoderStatic'
 my_progress     = True # do you want to see build / encode status on console?
+my_email_from   = ''
+my_email_to     = ''
+my_smtp_pwd     = ''
 
 # note that on POSIX systems you can use '~/' to signify your home dir
 

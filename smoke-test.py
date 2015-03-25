@@ -41,3 +41,6 @@ try:
             utils.runtest(key, seq, command + always, extras)
 except KeyboardInterrupt:
     print 'Caught CTRL+C, exiting'
+
+# send results to mail
+logger.email_results()

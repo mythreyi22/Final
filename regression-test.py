@@ -46,3 +46,6 @@ try:
 
 except KeyboardInterrupt:
     print 'Caught CTRL+C, exiting'
+
+# send results to mail
+logger.email_results()

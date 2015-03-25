@@ -17,6 +17,8 @@ import time
 import urllib
 from subprocess import Popen, PIPE
 from distutils.spawn import find_executable
+from email.mime.text import MIMEText
+import smtplib
 
 run_make  = True     # run cmake and make/msbuild
 run_bench = True     # run test benches
@@ -37,6 +39,7 @@ try:
     from conf import my_machine_name, my_machine_desc, my_x265_source
     from conf import my_sequences, my_goldens, option_strings, my_hm_decoder
     from conf import my_pastebin_key, my_progress, my_tempfolder, my_builds
+    from conf import my_email_from, my_email_to, my_smtp_pwd
 
     # support ~/repos/x265 syntax
     my_x265_source = os.path.expanduser(my_x265_source)
@@ -65,8 +68,8 @@ except ImportError, e:
 class Logger():
     def __init__(self, testfile):
         nowdate = datetime.datetime.now().strftime('log-%y%m%d%H%M')
-        testname = os.path.splitext(os.path.basename(testfile))[0]
-        self.logfname = '%s-%s.txt' % (nowdate, testname)
+        self.testname = os.path.splitext(os.path.basename(testfile))[0]
+        self.logfname = '%s-%s.txt' % (nowdate, self.testname)
         print 'Logging test results to %s\n' % self.logfname
         self.errors = 0
         self.testcount = 0
@@ -178,7 +181,29 @@ class Logger():
             print msg
             self.logfp.write(msg)
         self.logfp.close()
-        # TODO: could generate email here
+
+    def email_results(self):
+        if my_email_from and my_email_to and my_smtp_pwd:
+            msg = MIMEText(open(self.logfname, 'r').read())
+            msg['To'] = my_email_to
+            msg['From'] = my_email_from
+            if self.errors > 0:
+                msg['Subject'] = self.testname.replace("-"," ")+" failures - "+ hggetbranch(testrev)
+            else:
+                msg['Subject'] = self.testname.replace("-"," ")+" successful - "+ hggetbranch(testrev)
+            
+            session = smtplib.SMTP('smtp.gmail.com', 587)
+            try:
+                session.ehlo()
+                session.starttls()
+                session.ehlo()
+                session.login(my_email_from, my_smtp_pwd)
+                session.sendmail(my_email_from, my_email_to, msg.as_string())
+            except Exception as e:
+                print('Unable to send email', e)
+            finally:
+                session.quit()
+
 
 
 def setup(argv, preferredlist):
