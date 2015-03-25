@@ -39,8 +39,9 @@ try:
                 logger.write('Ignoring multipass test', command)
                 continue
             utils.runtest(key, seq, command + always, extras)
+
+    # send results to mail
+    logger.email_results()
+
 except KeyboardInterrupt:
     print 'Caught CTRL+C, exiting'
-
-# send results to mail
-logger.email_results()

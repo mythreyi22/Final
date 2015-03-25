@@ -48,8 +48,9 @@ try:
             utils.multipasstest(build, seq, cfg.split(','), always, extras)
         else:
             utils.runtest(build, seq, cfg + always, extras)
+
+    # send results to mail
+    logger.email_results()
+
 except KeyboardInterrupt:
     print 'Caught CTRL+C, exiting'
-
-# send results to mail
-logger.email_results()
