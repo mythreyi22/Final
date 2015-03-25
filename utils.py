@@ -39,7 +39,6 @@ try:
     from conf import my_machine_name, my_machine_desc, my_x265_source
     from conf import my_sequences, my_goldens, option_strings, my_hm_decoder
     from conf import my_pastebin_key, my_progress, my_tempfolder, my_builds
-    from conf import my_email_from, my_email_to, my_smtp_pwd
 
     # support ~/repos/x265 syntax
     my_x265_source = os.path.expanduser(my_x265_source)
@@ -64,6 +63,12 @@ try:
 except ImportError, e:
     print '** `my_make_flags` not defined in conf.py, defaulting to []'
     my_make_flags = []
+
+try:
+    from conf import my_email_from, my_email_to, my_smtp_pwd
+except ImportError, e:
+    print '** `my_email_*` not defined in conf.py, defaulting to None'
+    my_email_from, my_email_to, my_smtp_pwd = None, None, None
 
 class Logger():
     def __init__(self, testfile):
