@@ -8,6 +8,7 @@ import datetime
 import filecmp
 import md5
 import os
+import platform
 import shutil
 import shlex
 import sys
@@ -68,6 +69,7 @@ class Logger():
         self.logfname = '%s-%s.txt' % (nowdate, testname)
         print 'Logging test results to %s\n' % self.logfname
         self.errors = 0
+        self.testcount = 0
         self.newoutputs = {}
         self.logfp = open(self.logfname, 'wb')
         self.header  = 'system   : %s\n' % my_machine_name
@@ -124,6 +126,27 @@ class Logger():
         self.test  = 'command: %s %s\n' % (seq, command)
         self.test += '   hash: %s\n' % hash
         self.test += ' extras: ' + ' '.join(extras) + '\n\n'
+        self.testcount += 1
+        self.settitle(' '.join(['[%d/N]' % self.testcount, seq, command]))
+
+    def settitle(self, str):
+        '''set console title'''
+        title = '%s: %s' % (platform.node(), str)
+        if os.name == 'nt':
+            try:
+                import ctypes
+                ctypes.windll.kernel32.SetConsoleTitleA(title)
+                return
+            except ImportError:
+                pass
+            try:
+                import win32console
+                win32console.SetConsoleTitle(title)
+                return
+            except ImportError:
+                pass
+        elif 'xterm' in os.getenv('TERM'):
+            sys.stdout.write("\x1b]2;%s\x07" % title)
 
     def testfail(self, prefix, errors, logs):
         '''encoder test failures'''
@@ -646,6 +669,7 @@ def findchangeancestors():
 
 def cmake(generator, buildfolder, cmakeopts, **opts):
     # buildfolder is the relative path to build folder
+    logger.settitle('cmake ' + buildfolder)
 
     if rebuild and os.path.exists(buildfolder):
         shutil.rmtree(buildfolder)
@@ -689,6 +713,7 @@ def cmake(generator, buildfolder, cmakeopts, **opts):
 
 
 def gmake(buildfolder, generator, **opts):
+    logger.settitle('make ' + buildfolder)
     if 'MinGW' in generator:
         cmds = ['mingw32-make']
     else:
@@ -731,6 +756,7 @@ def get_sdkenv(vcpath, arch):
 
 def msbuild(buildfolder, generator, cmakeopts):
     '''Build visual studio solution using specified compiler'''
+    logger.settitle('msbuild ' + buildfolder)
     if os.name != 'nt':
         raise Exception('Visual Studio builds only supported on Windows')
 
@@ -849,6 +875,7 @@ def testharness():
         if 'tests' not in co.split():
             continue
 
+        logger.settitle('testbench ' + key)
         logger.write('Running testbench for %s...'% key)
 
         if 'Visual Studio' in generator:
