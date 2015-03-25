@@ -169,7 +169,7 @@ class Logger():
             url = pastebin('\n'.join([self.header, self.build, self.test,
                                       prefix, errors, logs]))
             self.write(' '.join([prefix, url]))
-            self.logfp.write('\n'.join(['**', self.test, prefix, url]))
+            self.logfp.write('\n'.join(['**', self.test, prefix, url, '']))
         else:
             message = '\n'.join([prefix, errors, logs])
             if os.linesep == '\r\n':
