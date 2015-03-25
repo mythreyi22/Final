@@ -1282,7 +1282,6 @@ def _test(build, tmpfolder, seq, command, extras):
         If not, validate new bitstream with decoder then save
     '''
     testhash = testcasehash(seq, command)
-    logger.settest(seq, command, extras, testhash)
 
     # run the encoder, abort early if any errors encountered
     logs, sum, errors = encodeharness(build, tmpfolder, seq, command, extras)
@@ -1350,19 +1349,19 @@ def _test(build, tmpfolder, seq, command, extras):
 
 
 def runtest(key, seq, command, extras):
+    testhash = testcasehash(seq, command)
     if skip_string:
-        testhash = testcasehash(seq, command)
         if [True for f in (seq, command, testhash) if skip_string in f]:
             logger.write('Skipping test', command)
             return
 
     if only_string:
-        testhash = testcasehash(seq, command)
         if not [True for f in (seq, command, testhash) if only_string in f]:
             return
 
     tmpfolder = tempfile.mkdtemp(prefix='x265-temp')
     try:
+        logger.settest(seq, command, extras, testhash)
         logger.write('testing x265-%s %s %s' % (key, seq, command))
         print 'extras: %s ...' % ' '.join(extras),
         sys.stdout.flush()
@@ -1391,6 +1390,8 @@ def multipasstest(key, seq, multipass, always, extras):
     try:
         for cmd in multipass:
             command = cmd.strip() + always
+            testhash = testcasehash(seq, command)
+            logger.settest(seq, command, extras, testhash)
             logger.write('testing x265-%s %s %s' % (key, seq, command))
             print 'extras: %s ...' % ' '.join(extras),
             sys.stdout.flush()
