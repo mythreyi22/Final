@@ -1303,7 +1303,7 @@ def checkdecoder(tmpdir):
     hashErrors = [l for l in stdout.splitlines() if '***ERROR***' in l]
     if hashErrors or errors:
         return 'Validation failed with %s\n\n' % my_hm_decoder + \
-               '\n'.join([hashErrors, errors])
+               '\n'.join(hashErrors + ['', errors])
     else:
         return ''
 
