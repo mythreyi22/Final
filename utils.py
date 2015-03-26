@@ -71,6 +71,13 @@ except ImportError, e:
     print '** `my_email_*` not defined in conf.py, defaulting to None'
     my_email_from, my_email_to, my_smtp_pwd = None, None, None
 
+try:
+    from conf import my_save_changed
+    save_changed = my_save_changed
+except ImportError, e:
+    pass
+
+
 class Logger():
     def __init__(self, testfile):
         nowdate = datetime.datetime.now().strftime('log-%y%m%d%H%M')

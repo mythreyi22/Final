@@ -16,6 +16,11 @@ my_smtp_pwd     = ''
 my_smtp_host    = 'smtp.gmail.com'
 my_smtp_port    = 587
 
+# change to True if you want all output-change bitstreams to be saved
+# for later review. If False, you can still enable this on an individual
+# run by adding --save-changed to the command line
+my_save_changed = False
+
 # note that on POSIX systems you can use '~/' to signify your home dir
 
 # location for encoder intermediates. One temp folder will be created
