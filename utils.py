@@ -750,7 +750,7 @@ def cmake(generator, buildfolder, cmakeopts, **opts):
     else:
         generator = None
 
-    cmds = ['cmake', os.path.abspath(my_x265_source)]
+    cmds = ['cmake', '-Wno-dev', os.path.abspath(my_x265_source)]
 
     if generator:
         cmds.append('-G')
