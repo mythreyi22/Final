@@ -36,6 +36,12 @@ spotchecks = utils.spotchecks()
 
 print 'Running 1000 test encodes, press CTRL+C to abort (maybe twice)\n'
 
+# Never allow the long test script to save golden outputs, it will run the
+# golden outputs folder out of disk space, filling it with outputs that are
+# likely never re-used for validation. When save_results is False, every output
+# bitstream is validated by the HM decoder
+utils.save_results = False
+
 try:
     logger.settestcount(1000)
     for x in xrange(1000):
