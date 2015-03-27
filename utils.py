@@ -323,6 +323,7 @@ ignored_x265_warnings = (
     '--ssim used with AQ off: results will be invalid!',
     '--psnr used with AQ on: results will be invalid!',
     '--tune psnr should be used if attempting to benchmark psnr!',
+    '--tune ssim should be used if attempting to benchmark ssim!',
     'Assembly not supported in this binary',
     '!! HEVC Range Extension specifications are not finalized !!',
     '!! This output bitstream may not be compliant with the final spec !!',
