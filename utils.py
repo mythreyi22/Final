@@ -1340,7 +1340,7 @@ def _test(build, tmpfolder, seq, command, extras):
         logger.write('validating with decoder')
         decodeerr = checkdecoder(tmpfolder)
         if decodeerr:
-            hashfname = savebadstream(tmpdir)
+            hashfname = savebadstream(tmpfolder)
             decodeerr += '\nThis bitstream was saved to %s' % hashfname
             logger.testfail('Decoder validation failed', decodeerr, logs)
         else:
