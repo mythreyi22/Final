@@ -91,7 +91,7 @@ class Logger():
         self.logfp = open(self.logfname, 'wb')
         self.header  = 'system   : %s\n' % my_machine_name
         self.header += 'hardware : %s\n' % my_machine_desc
-        self.header += 'version  : %s\n' % hgversion()
+        self.header += '%s\n' % hgrevisioninfo(hgversion())
         self.logfp.write(self.header + '\n')
         self.logfp.write('Running %s\n\n' % testfile)
         self.logfp.flush()
