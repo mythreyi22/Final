@@ -83,4 +83,5 @@ option_strings = {
     'noasm'   : '-DENABLE_ASSEMBLY=OFF',
     'nocolor' : '-DCMAKE_COLOR_MAKEFILE=OFF',
     'crt'     : '-DSTATIC_LINK_CRT=ON',
+    'native'  : '-DNATIVE_BUILD=ON',
 }
