@@ -1,0 +1,12 @@
+# List of command lines to be run for fprofile tuning, see https://bitbucket.org/sborho/test-harness
+
+# these command-lines tune x265 for real-time
+
+Coastguard-4k.y4m,--preset ultrafast -f 100
+News-4k.y4m,--preset superfast -f 100
+NebutaFestival_2560x1600_60_10bit_crop.yuv,--preset ultrafast -f 100
+BasketballDrive_1920x1080_50.y4m,--preset ultrafast -f 100
+KristenAndSara_1280x720_60.y4m,--preset ultrafast -f 100
+big_buck_bunny_360p24.y4m,--preset ultrafast -f 100
+
+# vim: set tw=200

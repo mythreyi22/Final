@@ -905,7 +905,7 @@ def msbuild(buildfolder, generator, cmakeopts):
     return err
 
 
-def buildall():
+def buildall(prof=None):
     if not run_make:
         return
     for key in my_builds:
@@ -919,6 +919,16 @@ def buildall():
                 cmakeopts.append(option_strings[o])
             else:
                 logger.write('Unknown cmake option', o)
+
+        if prof is 'generate':
+            cmakeopts.append('-DFPROFILE_GENERATE=ON')
+            cmakeopts.append('-DFPROFILE_USE=OFF')
+        elif prof is 'use':
+            cmakeopts.append('-DFPROFILE_GENERATE=OFF')
+            cmakeopts.append('-DFPROFILE_USE=ON')
+        else:
+            cmakeopts.append('-DFPROFILE_GENERATE=OFF')
+            cmakeopts.append('-DFPROFILE_USE=OFF')
 
         cout, cerr = cmake(generator, buildfolder, cmakeopts, **opts)
         if cerr:
