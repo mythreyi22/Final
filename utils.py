@@ -985,7 +985,7 @@ def testharness():
             os.environ['PATH'] = origpath
 
         if err:
-            prefix = '** testbench failure reported for %s:: ' % key
+            prefix = '** testbench failure reported for %s::\n' % key
             logger.writeerr(prefix + err)
 
 
