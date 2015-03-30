@@ -1088,7 +1088,7 @@ def parsex265(tmpfolder, stdout, stderr):
     leaks = os.path.join(tmpfolder, 'x265_leaks.txt')
     if os.path.exists(leaks):
         contents = open(leaks, 'r').read()
-        if 'No memory leaks detected' not in contents:
+        if contents and 'No memory leaks detected' not in contents:
             errors += '** leaks reported:\n' + contents + '\n'
 
     # parse summary from last line of stdout
