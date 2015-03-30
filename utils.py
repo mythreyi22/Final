@@ -923,7 +923,9 @@ def buildall(prof=None):
             else:
                 logger.write('Unknown cmake option', o)
 
-        if prof is 'generate':
+        if not isancestor('65d004d54895'): # cmake: introduce fprofile options
+            pass
+        elif prof is 'generate':
             cmakeopts.append('-DFPROFILE_GENERATE=ON')
             cmakeopts.append('-DFPROFILE_USE=OFF')
         elif prof is 'use':
