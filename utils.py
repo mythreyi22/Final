@@ -136,7 +136,10 @@ class Logger():
             message = message.replace(os.linesep, '\n')
         self.logfp.write(message + '\n')
         self.logfp.flush()
-        self.errors += 1
+        if 'warning' in message and not 'error ' in message:
+            pass
+        else:
+            self.errors += 1
 
     def settest(self, seq, command, extras, hash):
         '''configure current test case'''

@@ -24,6 +24,8 @@ for k in debugs:
 
 utils.buildall()
 if logger.errors:
+    # send results to mail
+    logger.email_results()
     sys.exit(1)
 
 tests = utils.parsetestfile()

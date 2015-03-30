@@ -25,6 +25,8 @@ for k in debugs:
 
 utils.buildall()
 if logger.errors:
+    # send results to mail
+    logger.email_results()
     sys.exit(1)
 
 always = ' --no-info --hash=1' # must begin with a space

@@ -18,11 +18,11 @@ from utils import logger
 
 utils.buildall()
 if logger.errors:
+    # send results to mail
+    logger.email_results()
     sys.exit(1)
 
 utils.testharness()
-if logger.errors:
-    sys.exit(1)
 
 always = ' -f50 --hash=1 --no-info' # must begin with a space
 extras = ['--psnr', '--ssim']
