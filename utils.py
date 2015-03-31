@@ -935,6 +935,10 @@ def buildall(prof=None):
             cmakeopts.append('-DFPROFILE_GENERATE=OFF')
             cmakeopts.append('-DFPROFILE_USE=OFF')
 
+        # force the default of release build if not already specified
+        if '-DCMAKE_BUILD_TYPE=' not in ' '.join(cmakeopts):
+            cmakeopts.append('-DCMAKE_BUILD_TYPE=Release')
+
         cout, cerr = cmake(generator, buildfolder, cmakeopts, **opts)
         if cerr:
             prefix = 'cmake errors reported for %s:: ' % key
