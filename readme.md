@@ -444,7 +444,7 @@ should first run the smoke-tests to ensure that:
 
 4. No leaks or check failures were found
 
-If all these tests pass, then you have a reasonable expecation that the
+If all these tests pass, then you have a reasonable expectation that the
 patch does not break anything and can be sent to the mailing list.
 
 
