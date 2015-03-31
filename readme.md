@@ -491,8 +491,9 @@ three stages.
 3. compile build targets with -fprofile-use and -march=native
 
 Disclaimers:
-* the last build will be noisy, if you look through the logs
-* Only GCC/MinGW is supported at this time.
-* Don't expect encoder outputs to exactly match non-PGO builds, since
+
++ the last build will be noisy, if you look through the logs
++ Only GCC/MinGW is supported at this time.
++ Don't expect encoder outputs to exactly match non-PGO builds, since
   different GCC builds of x265 will often generate slightly different
   outputs (reldeb != debug != release != -m32)
