@@ -12,6 +12,7 @@
 # only test cases which match the string(s) within the braces are
 # allowed to update their golden outputs to this commit
 
+bf98009eb155 [bitrate] amortization depreciation for ABR
 0c4c8b111554 [pass 2,pass 3] fix for second pass cutree offsets
 7105fb807224 disable buggy lookahead batching and slicing
 7b66c36ed9ef [pmode] ignore bidir mode if not B-slice
