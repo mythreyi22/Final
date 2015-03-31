@@ -486,7 +486,7 @@ sequences) and then run: `fprofile.py`
 It operates much the same way as the smoke test except it operates in
 three stages.
 
-1. compile build targets with PGO intrumentation
+1. compile build targets with PGO instrumentation
 2. run test cases with each build target
 3. compile build targets with -fprofile-use and -march=native
 
