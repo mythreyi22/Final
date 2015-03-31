@@ -470,3 +470,29 @@ in your patch is otherwise worthwhile and does not make bad changes to
 the encoder outputs. That is outside the scope of this test harness, it
 is not evaluating whether the new golden outputs are better than the
 previous ones.
+
+
+Profile Guided Optimizations
+----------------------------
+
+Once you have configured the test harness to build and test GCC (or
+MinGW) builds (detailed above), you can use the test-harness to drive
+profile-guided optimizations.
+
+All you have to do is edit fprofile-tests.txt to include the use cases
+that you would like to optimize for (including representative video
+sequences) and then run: `fprofile.py`
+
+It operates much the same way as the smoke test except it operates in
+three stages.
+
+1. compile build targets with PGO intrumentation
+2. run test cases with each build target
+3. compile build targets with -fprofile-use and -march=native
+
+Disclaimers:
+* the last build will be noisy, if you look through the logs
+* Only GCC/MinGW is supported at this time.
+* Don't expect encoder outputs to exactly match non-PGO builds, since
+  different GCC builds of x265 will often generate slightly different
+  outputs (reldeb != debug != release != -m32)
