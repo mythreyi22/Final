@@ -493,7 +493,7 @@ three stages.
 Disclaimers:
 
 + the last build will be noisy, if you look through the logs
-+ Only GCC/MinGW is supported at this time.
++ Only GCC/MinGW and Intel C++ (icpc) is supported at this time.
 + Don't expect encoder outputs to exactly match non-PGO builds, since
   different GCC builds of x265 will often generate slightly different
   outputs (reldeb != debug != release != -m32)
