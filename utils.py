@@ -1194,16 +1194,14 @@ def checkoutputs(key, seq, command, sum, tmpdir):
             open(fname, 'w').write(sum)
         return lastfname, False
 
-    if '--vbv' in command:
-        # outputs did not match but this is a VBV test case and only a changing
-        # commit which declares vbv changes can make new golden outputs
+    if '--vbv-bufsize' in command:
+        # outputs did not match but this is a VBV test case.
+        # an open commmit with the 'vbv' keyword may take credit for the change
         for oc in opencommits:
-            if oc in changefilter:
-                if 'vbv' in changefilter[oc]:
-                    revdate = hgrevisiondate(oc)
-                    lastfname = '%s-%s-%s' % (revdate, group, oc)
-                    return lastfname, None
-        return lastfname, ''
+            if 'vbv' in changefilter.get(oc, ''):
+                lastfname = '%s-%s-%s' % (hgrevisiondate(oc), group, oc)
+                return lastfname, None
+        return lastfname, 'VBV output change'
 
     # outputs do not match last good, check for a changing commit that might
     # take credit for this test case being changed
