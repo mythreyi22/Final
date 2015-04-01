@@ -17,6 +17,8 @@ utils.py                    | core routines for running tests and logging failur
 smoke-test.py               | execution script for smoke tests (build, testbench, short encodes)
 regression-test.py          | execution script for overnight regression test encodes
 long-test.py                | execution script for week long exhaustive testing
+fprofile.py                 | execution script for profile-guided optimization builds
+fprofile-tests.txt          | test cases used for PGO runs
 conf.py.example             | example configuration file
 output-changing-commits.txt | text file with list of x265 commits which changed outputs
 readme.md                   | this file
