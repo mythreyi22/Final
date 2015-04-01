@@ -33,7 +33,7 @@ tests = utils.parsetestfile()
 configs = [cmd for seq, cmd in tests if '--vbv' not in cmd]
 sequences = list(set([seq for seq, cmd in tests]))
 
-always = ' --no-info --hash=1' # must begin with a space
+always = '--no-info --hash=1'
 spotchecks = utils.spotchecks()
 
 print 'Running 1000 test encodes, press CTRL+C to abort (maybe twice)\n'
@@ -45,17 +45,16 @@ print 'Running 1000 test encodes, press CTRL+C to abort (maybe twice)\n'
 utils.save_results = False
 
 try:
+
     logger.settestcount(1000)
     for x in xrange(1000):
+        build = random.choice(my_builds.keys())
+        logger.setbuild(build)
+
         seq = random.choice(sequences)
         cfg = random.choice(configs)
         extras = ['--psnr', '--ssim', random.choice(spotchecks)]
-        build = random.choice(my_builds.keys())
-        logger.setbuild(build)
-        if ',' in cfg:
-            utils.multipasstest(build, seq, cfg.split(','), always, extras)
-        else:
-            utils.runtest(build, seq, cfg + always, extras)
+        utils.runtest(build, seq, cfg, always, extras)
 
     # send results to mail
     logger.email_results()

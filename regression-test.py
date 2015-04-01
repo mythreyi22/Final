@@ -29,22 +29,19 @@ if logger.errors:
     logger.email_results()
     sys.exit(1)
 
-always = ' --no-info --hash=1' # must begin with a space
+always = '--no-info --hash=1'
 spotchecks = utils.spotchecks()
 
-tests = utils.parsetestfile()
-
 try:
+
+    tests = utils.parsetestfile()
     logger.settestcount(len(my_builds.keys()) * len(tests))
 
     for build in my_builds:
         logger.setbuild(build)
         for seq, command in tests:
             extras = ['--psnr', '--ssim', random.choice(spotchecks)]
-            if ',' in command:
-                utils.multipasstest(build, seq, command.split(','), always, extras)
-            else:
-                utils.runtest(build, seq, command + always, extras)
+            utils.runtest(build, seq, command, always, extras)
 
     # send results to mail
     logger.email_results()

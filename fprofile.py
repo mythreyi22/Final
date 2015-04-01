@@ -43,12 +43,8 @@ if logger.errors:
 logger.settestcount(len(my_builds.keys()) * len(tests))
 for key in my_builds:
     logger.setbuild(key)
-
     for (seq, command) in tests:
-        if ',' in command:
-            logger.write('Ignoring multipass test', command)
-            continue
-        utils.runtest(key, seq, command, [])
+        utils.runtest(key, seq, command, '', [])
 
 # build shared lib, add native arch compile option
 for key in my_builds.keys():

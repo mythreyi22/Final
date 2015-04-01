@@ -22,23 +22,21 @@ if logger.errors:
     logger.email_results()
     sys.exit(1)
 
+# run testbenches
 utils.testharness()
 
-always = ' -f50 --hash=1 --no-info' # must begin with a space
+always = '-f50 --hash=1 --no-info'
 extras = ['--psnr', '--ssim']
 
-tests = utils.parsetestfile()
-
 try:
+
+    tests = utils.parsetestfile()
     logger.settestcount(len(my_builds.keys()) * len(tests))
+
     for key in my_builds:
         logger.setbuild(key)
-
         for (seq, command) in tests:
-            if ',' in command:
-                logger.write('Ignoring multipass test', command)
-                continue
-            utils.runtest(key, seq, command + always, extras)
+            utils.runtest(key, seq, command, always, extras)
 
     # send results to mail
     logger.email_results()

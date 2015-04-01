@@ -146,7 +146,6 @@ class Logger():
         self.test  = 'command: %s %s\n' % (seq, command)
         self.test += '   hash: %s\n' % hash
         self.test += ' extras: ' + ' '.join(extras) + '\n\n'
-        self.testcount += 1
         nofn = '[%d/%d]' % (self.testcount, self.totaltests)
         self.settitle(' '.join([nofn, seq, command]))
         print nofn,
@@ -1410,54 +1409,52 @@ def _test(build, tmpfolder, seq, command, extras):
         logger.write('PASS')
 
 
-def runtest(key, seq, command, extras):
-    testhash = testcasehash(seq, command)
-    if skip_string:
-        if [True for f in (seq, command, testhash) if skip_string in f]:
-            logger.write('Skipping test', command)
-            return
+def runtest(key, seq, commands, always, extras):
+    '''
+    Execute one complete test case (one line in a testcase file):
+       key      - build keyname
+       seq      - sequence basename
+       commands - comma seperated list of command lines (multipass)
+       always   - output-changing arguments which must always be present (hashed)
+       extras   - non-output changing arguments
 
-    if only_string:
-        if not [True for f in (seq, command, testhash) if only_string in f]:
+    Creates a temp-folder, runs the test(s), verifies, then removes the temp-
+    folder.
+    '''
+
+    def skip(*matchers):
+        if skip_string:
+            if [True for f in matchers if skip_string in f]:
+                logger.write('Skipping test', cmd)
+                return True
+        if only_string:
+            if not [True for f in matchers if only_string in f]:
+                return True
+        return False
+
+    cmds = []
+    for command in commands.split(','):
+        command = command.strip()
+        if always:
+            command = command + ' ' + always
+        testhash = testcasehash(seq, command)
+        if skip(seq, command, testhash):
             return
+        cmds.append((command, testhash))
 
     tmpfolder = tempfile.mkdtemp(prefix='x265-temp')
     try:
-        logger.settest(seq, command, extras, testhash)
-        logger.write('testing x265-%s %s %s' % (key, seq, command))
-        print 'extras: %s ...' % ' '.join(extras),
-        sys.stdout.flush()
-        _test(key, tmpfolder, seq, command, extras)
-        logger.write('')
-    finally:
-        shutil.rmtree(tmpfolder)
 
-
-def multipasstest(key, seq, multipass, always, extras):
-    # multipass is an array of command lines, each encode command line is run
-    # in series (each given the same input sequence and 'extras' options and
-    # within the same temp folder so multi-pass stats files and analysis load /
-    # save files will be left unharmed between calls
-
-    if skip_string:
-        if [True for command in multipass if skip_string in command]:
-            logger.write('Skipping test', command)
-            return
-
-    if only_string:
-        if [True for command in multipass if only_string not in command]:
-            return
-
-    tmpfolder = tempfile.mkdtemp(prefix='x265-temp')
-    try:
-        for cmd in multipass:
-            command = cmd.strip() + always
-            testhash = testcasehash(seq, command)
+        logger.testcount += 1
+        for command, testhash in cmds:
             logger.settest(seq, command, extras, testhash)
             logger.write('testing x265-%s %s %s' % (key, seq, command))
             print 'extras: %s ...' % ' '.join(extras),
             sys.stdout.flush()
+
             _test(key, tmpfolder, seq, command, extras)
+
         logger.write('')
+
     finally:
         shutil.rmtree(tmpfolder)
