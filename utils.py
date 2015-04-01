@@ -198,6 +198,7 @@ class Logger():
             print msg
             self.logfp.write(msg)
         self.logfp.close()
+        self.settitle(os.path.basename(test_file) + ' complete')
 
     def email_results(self):
         if not (my_email_from and my_email_to and my_smtp_pwd):
