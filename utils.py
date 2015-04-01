@@ -1432,6 +1432,7 @@ def runtest(key, seq, commands, always, extras):
                 return True
         return False
 
+    logger.testcount += 1
     cmds = []
     for command in commands.split(','):
         command = command.strip()
@@ -1445,7 +1446,6 @@ def runtest(key, seq, commands, always, extras):
     tmpfolder = tempfile.mkdtemp(prefix='x265-temp')
     try:
 
-        logger.testcount += 1
         for command, testhash in cmds:
             logger.settest(seq, command, extras, testhash)
             logger.write('testing x265-%s %s %s' % (key, seq, command))
