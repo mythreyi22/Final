@@ -136,10 +136,7 @@ class Logger():
             message = message.replace(os.linesep, '\n')
         self.logfp.write(message + '\n')
         self.logfp.flush()
-        if 'warning' in message or 'CMake Warning' in message and not 'error ' in message and not 'CMake Error:' in message:
-            pass
-        else:
-            self.errors += 1
+        self.errors += 1
 
     def settest(self, seq, command, extras, hash):
         '''configure current test case'''
