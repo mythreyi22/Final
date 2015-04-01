@@ -67,12 +67,14 @@ my_pastebin_key  | Can be left empty unless you are automating the tests
 my_make_flags    | Python list of extra arguments to pass to gmake
 option_strings   | Python dict mapping short names to cmake options, for convenience
 my_builds        | Python dict listing all of the builds of x265 you intend to test
+my_save_changed  | boolean controlling whether output-change bitstreams are saved by default
 
 Note:
+
 	conf.py is a Python script and uses Python syntax and white-space
 	rules. r'foo' is a Python *raw* string which means you can use
 	back-slashes without escaping them, except for the very end of the
-	string. r'foo\' is invalid because Python thinks you are escaping
+	string. So r'foo\' is invalid because Python thinks you are escaping
 	the close quote.
 
 For Windows deveopers, we recommend that my_builds{} have at least one of
@@ -86,7 +88,7 @@ each of:
 
 For Linux/Mac developers, we recommend at least gcc, gcc -m32, and gcc
 16bpp. Most builds should have the 'check' option enabled, for run-time
-validation checking within the encoder (VS debug builds have then
+validation checking within the encoder (VS debug builds have them
 enabled implicitly).
 
 Most of the data fields in my_builds{} are self-explanatory, but the
@@ -475,8 +477,8 @@ previous ones.
 Profile Guided Optimizations
 ----------------------------
 
-Once you have configured the test harness to build and test GCC (or
-MinGW) builds (detailed above), you can use the test-harness to drive
+Once you have configured the test harness to build and test GCC or
+MinGW builds (detailed above), you can use the test-harness to drive
 profile-guided optimizations.
 
 All you have to do is edit fprofile-tests.txt to include the use cases
@@ -493,7 +495,7 @@ three stages.
 Disclaimers:
 
 + the last build will be noisy, if you look through the logs
-+ Only GCC/MinGW and Intel C++ (icpc) is supported at this time.
++ Only GCC/MinGW and Intel C++ (icpc) are supported at this time.
 + Don't expect encoder outputs to exactly match non-PGO builds, since
   different GCC builds of x265 will often generate slightly different
   outputs (reldeb != debug != release != -m32)
