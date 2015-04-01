@@ -1383,8 +1383,8 @@ def _test(build, tmpfolder, seq, command, extras):
                            (testhash, lastsum, sum)
                 diff = vbv_tolerance + 1
             if diff > vbv_tolerance:
-                addfail(testhash, lastfname, logs, errors + diffmsg)
-                logger.testfail(diffmsg, errors, logs)
+                addfail(testhash, lastfname, logs, diffmsg)
+                logger.testfail(diffmsg, '', logs)
             else:
                 logger.write(diffmsg)
         else:
