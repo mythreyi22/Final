@@ -922,6 +922,8 @@ def buildall(prof=None):
 
         if not isancestor('65d004d54895'): # cmake: introduce fprofile options
             pass
+        elif 'Makefiles' not in generator:
+            pass # our cmake script does not support PGO for MSVC yet
         elif prof is 'generate':
             cmakeopts.append('-DFPROFILE_GENERATE=ON')
             cmakeopts.append('-DFPROFILE_USE=OFF')
