@@ -611,7 +611,7 @@ def pastebin(content):
     if url.startswith('http://pastebin.com/'):
         return url
     else:
-        return 'pastebin failed <%s> paste contents:\n%s' + (url, content)
+        return 'pastebin failed <%s> paste contents:\n%s' % (url, content)
 
 
 def hgversion():
