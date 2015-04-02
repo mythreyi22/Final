@@ -166,7 +166,7 @@ class Logger():
                 return
             except ImportError:
                 pass
-        elif 'xterm' in os.getenv('TERM'):
+        elif 'xterm' in os.getenv('TERM', ''):
             sys.stdout.write("\x1b]2;%s\x07" % title)
 
     def testfail(self, prefix, errors, logs):
