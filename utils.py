@@ -1097,7 +1097,7 @@ def parsex265(tmpfolder, stdout, stderr):
     def scansummary(output):
         ssim, psnr, bitrate = 'N/A', 'N/A', 'N/A'
         for line in output.splitlines():
-            if 'encoded' not in line or 'fps' not in line:
+            if not line.startswith('encoded '):
                 continue
             words = line.split()
             if 'fps),' in words:
@@ -1111,7 +1111,7 @@ def parsex265(tmpfolder, stdout, stderr):
                 psnr = words[index + 1]
                 if psnr.endswith(','): psnr = psnr[:-1]
             if bitrate:
-                return ssim, psnr, bitrate
+                return bitrate, ssim, psnr
         return None
 
     # parse summary from last line of stdout
