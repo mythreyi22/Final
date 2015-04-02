@@ -1094,25 +1094,34 @@ def parsex265(tmpfolder, stdout, stderr):
         if contents and 'No memory leaks detected' not in contents:
             errors += '** leaks reported:\n' + contents + '\n'
 
+    def scansummary(output):
+        ssim, psnr, bitrate = 'N/A', 'N/A', 'N/A'
+        for line in output.splitlines():
+            if 'encoded' not in line or 'fps' not in line:
+                continue
+            words = line.split()
+            if 'fps),' in words:
+                index = words.index('fps),')
+                bitrate = words[index + 1]
+            if 'SSIM' in words:
+                ssim = words[-2]
+                if ssim.startswith('('): ssim = ssim[1:]
+            if 'PSNR:' in words:
+                index = words.index('PSNR:')
+                psnr = words[index + 1]
+                if psnr.endswith(','): psnr = psnr[:-1]
+            if bitrate:
+                return ssim, psnr, bitrate
+        return None
+
     # parse summary from last line of stdout
-    ssim, psnr, bitrate = 'N/A', 'N/A', 'N/A'
-    for line in stdout.splitlines():
-        if 'encoded' not in line or 'fps' not in line:
-            continue
-        words = line.split()
-        if 'fps),' in words:
-            index = words.index('fps),')
-            bitrate = words[index + 1]
-        if 'SSIM' in words:
-            ssim = words[-2]
-            if ssim.startswith('('): ssim = ssim[1:]
-        if 'PSNR:' in words:
-            index = words.index('PSNR:')
-            psnr = words[index + 1]
-            if psnr.endswith(','): psnr = psnr[:-1]
-        if bitrate:
-            break
-    summary = 'bitrate: %s, SSIM: %s, PSNR: %s' % (bitrate, ssim, psnr)
+    sum = scansummary(stdout)
+    if sum is None:
+        sum = scansummary(stderr)
+    if sum:
+        summary = 'bitrate: %s, SSIM: %s, PSNR: %s' % sum
+    else:
+        summary = 'bitrate: N/A, SSIM: N/A, PSNR: N/A'
 
     # check for warnings and errors in x265 logs, report together with most
     # recent progress report if there was any
