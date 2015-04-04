@@ -209,7 +209,7 @@ class Logger():
         msg['From'] = my_email_from
         testname = self.testname.split('-')
         status = self.errors and 'failures' or 'successful'
-        msg['Subject'] = ' '.join(testname + [status, '-', hggetbranch(testrev)], '-', platform.system())
+        msg['Subject'] = ' '.join([platform.system(), '_']+testname + [status, '-', hggetbranch(testrev)])
 
         session = smtplib.SMTP(my_smtp_host, my_smtp_port)
         try:
