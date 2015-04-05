@@ -1405,6 +1405,11 @@ def _test(build, tmpfolder, seq, command, extras):
             prefix = 'OUTPUT CHANGE WITH DECODE ERRORS'
             logger.testfail(prefix, errors + decodeerr, logs)
         elif '--vbv-bufsize' in command:
+            # golden outputs might have used --log=none, recover from this
+            if 'N/A' in lastsum and 'N/A' not in sum:
+                logger.write('saving new outputs with valid summary:', sum)
+                newgoldenoutputs(seq, command, lastfname, sum, logs, tmpfolder)
+
             # VBV encodes are non-deterministic, check that golden output
             # bitrate is within 1% of new bitrate. Example summary:
             # 'bitrate: 121.95, SSIM: 20.747, PSNR: 53.359'
