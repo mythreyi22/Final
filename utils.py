@@ -82,6 +82,7 @@ except ImportError, e:
 
 class Logger():
     def __init__(self, testfile):
+        testharnesspath = os.path.dirname(os.path.abspath(__file__))
         nowdate = datetime.datetime.now().strftime('log-%y%m%d%H%M')
         self.testname = os.path.splitext(os.path.basename(testfile))[0]
         self.logfname = '%s-%s.txt' % (nowdate, self.testname)
@@ -93,7 +94,8 @@ class Logger():
         self.logfp = open(self.logfname, 'wb')
         self.header  = 'system:      %s\n' % my_machine_name
         self.header += 'hardware:    %s\n' % my_machine_desc
-        self.header += '%s\n' % hgrevisioninfo(hgversion())
+        self.header += 'testharness: %s\n' % hgversion(testharnesspath)
+        self.header += '%s\n' % hgrevisioninfo(hgversion(my_x265_source))
         self.logfp.write(self.header + '\n')
         self.logfp.write('Running %s\n\n' % testfile)
         self.logfp.flush()
@@ -296,7 +298,7 @@ def setup(argv, preferredlist):
         logger.close()
     atexit.register(closelog)
 
-    testrev = hgversion()
+    testrev = hgversion(my_x265_source)
     if testrev.endswith('+'):
         # we do not store golden outputs if uncommitted changes
         save_results = False
@@ -637,9 +639,9 @@ def pastebin(content):
         return 'pastebin failed <%s> paste contents:\n%s' % (url, content)
 
 
-def hgversion():
+def hgversion(reporoot):
     out, err = Popen(['hg', 'id', '-i'], stdout=PIPE, stderr=PIPE,
-                     cwd=my_x265_source).communicate()
+                     cwd=reporoot).communicate()
     if err:
         raise Exception('Unable to determine source version: ' + err)
     # note, if the ID ends with '+' it means the user's repository has
