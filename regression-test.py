@@ -6,7 +6,6 @@
 # GNU General Public License version 2 or any later version. See COPYING
 
 import os
-import random
 import sys
 import shutil
 
@@ -30,7 +29,6 @@ if logger.errors:
     sys.exit(1)
 
 always = '--no-info --hash=1'
-spotchecks = utils.spotchecks()
 
 try:
 
@@ -40,7 +38,7 @@ try:
     for build in my_builds:
         logger.setbuild(build)
         for seq, command in tests:
-            extras = ['--psnr', '--ssim', random.choice(spotchecks)]
+            extras = ['--psnr', '--ssim', utils.getspotcheck(command)]
             utils.runtest(build, seq, command, always, extras)
 
     # send results to mail

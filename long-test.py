@@ -32,9 +32,7 @@ tests = utils.parsetestfile()
 
 configs = [cmd for seq, cmd in tests if '--vbv' not in cmd]
 sequences = list(set([seq for seq, cmd in tests]))
-
 always = '--no-info --hash=1'
-spotchecks = utils.spotchecks()
 
 print 'Running 1000 test encodes, press CTRL+C to abort (maybe twice)\n'
 
@@ -53,7 +51,7 @@ try:
 
         seq = random.choice(sequences)
         cfg = random.choice(configs)
-        extras = ['--psnr', '--ssim', random.choice(spotchecks)]
+        extras = ['--psnr', '--ssim', utils.getspotcheck(cfg)]
         utils.runtest(build, seq, cfg, always, extras)
 
     # send results to mail

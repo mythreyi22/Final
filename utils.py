@@ -9,6 +9,7 @@ import filecmp
 import md5
 import os
 import platform
+import random
 import shutil
 import shlex
 import sys
@@ -34,6 +35,7 @@ changers = None      # list of all output changing commits which are ancestors
 changefilter = {}
 vbv_tolerance = .015 # fraction of bitrate difference allowed (1.5%)
 logger = None
+spot_checks = []
 
 try:
     from conf import my_machine_name, my_machine_desc, my_x265_source
@@ -312,6 +314,7 @@ def setup(argv, preferredlist):
 
     changers = findchangeancestors()
     logger.logrevs(changers[0])
+    initspotchecks()
 
 
 ignored_compiler_warnings = (
@@ -565,9 +568,9 @@ def testcasehash(sequence, command):
     return m.hexdigest()[:12]
 
 
-def spotchecks():
+def initspotchecks():
     # these options can be added to any test and should not affect outputs
-    spotchecks = [
+    sc = [
         '--no-asm',
         '--asm=SSE2',
         '--asm=SSE3',
@@ -585,13 +588,33 @@ def spotchecks():
     ]
     # stats: introduce X265_LOG_FRAME for file level CSV logging without console logs
     if isancestor('a5af4cf20660'):
-        spotchecks.append('--log=frame')
+        sc.append('--log=frame')
     # check if the revision under test is after the NUMA pools commit
     if isancestor('62b8fe990df5'):
-        spotchecks.append('--pools=3')
+        sc.append('--pools=3')
     else:
-        spotchecks.append('--threads=3')
-    return spotchecks
+        sc.append('--threads=3')
+
+    global spot_checks
+    spot_checks = sc
+
+
+def getspotcheck(cmd):
+    '''pick a random spot check, but don't allow some combinations'''
+    forbiddens = {
+        '--log=none': ['vbv'],
+        '--pools=3' : ['veryslow', 'placebo'],
+        '--threads=3' : ['veryslow', 'placebo'],
+        '--no-asm'  : ['veryslow', 'placebo'],
+    }
+    global spot_checks
+    while True:
+        sc = random.choice(spot_checks)
+        f = forbiddens.get(sc, [])
+        if [match for match in f if match in cmd]:
+            # pick another spot-check
+            continue
+        return sc
 
 
 def pastebin(content):
