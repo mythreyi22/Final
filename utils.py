@@ -1411,6 +1411,7 @@ def _test(build, tmpfolder, seq, command, extras):
             if 'N/A' in lastsum and 'N/A' not in sum:
                 logger.write('saving new outputs with valid summary:', sum)
                 newgoldenoutputs(seq, command, lastfname, sum, logs, tmpfolder)
+                return
 
             # VBV encodes are non-deterministic, check that golden output
             # bitrate is within 1% of new bitrate. Example summary:
