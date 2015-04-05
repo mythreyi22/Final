@@ -100,8 +100,8 @@ class Logger():
 
     def setbuild(self, key):
         '''configure current build info'''
-        _, _, generator, co, opts = my_builds[key]
-        self.build  = 'cur build: %s\n' % key
+        _, group, generator, co, opts = my_builds[key]
+        self.build  = 'cur build: %s group=%s\n' % (key, group)
         self.build += 'generator: %s\n' % generator
         self.build += 'options  : %s %s\n' % (co, str(opts))
         self.logfp.write(self.build + '\n')
