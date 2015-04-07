@@ -333,6 +333,7 @@ ignored_x265_warnings = (
     '!! HEVC Range Extension specifications are not finalized !!',
     '!! This output bitstream may not be compliant with the final spec !!',
     'Max TU size should be less than or equal to max CU size, setting max TU size = 16',
+    'QGSize should be less than or equal to maxCUSize, setting QGSize = 16',
     'No thread pool allocated, --wpp disabled',
     'No thread pool allocated, --pme disabled',
     'Support for interlaced video is experimental',
