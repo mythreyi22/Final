@@ -12,6 +12,7 @@
 # only test cases which match the string(s) within the braces are
 # allowed to update their golden outputs to this commit
 
+0ce13ce29304 [lossless] lossless encodes get valid profile and unbounded level 8.5
 fa6451ec733a [lookahead-slices] do not disable pool if l-slices requested
 bf98009eb155 [bitrate] amortization depreciation for ABR
 0c4c8b111554 [pass 2,pass 3] fix for second pass cutree offsets
