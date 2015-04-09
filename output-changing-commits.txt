@@ -12,6 +12,8 @@
 # only test cases which match the string(s) within the braces are
 # allowed to update their golden outputs to this commit
 
+751f9cf1dfc9 [vbv] tune initial predictor states
+1b15d6129041 [vbv] split bref predictor from b predictor
 0ce13ce29304 [lossless] lossless encodes get valid profile and unbounded level 8.5
 fa6451ec733a [lookahead-slices] do not disable pool if l-slices requested
 bf98009eb155 [bitrate] amortization depreciation for ABR
