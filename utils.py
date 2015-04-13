@@ -79,6 +79,11 @@ try:
 except ImportError, e:
     pass
 
+try:
+    from conf import my_coredumppath
+except Exception as e:
+    print '** `my_coredumppath` not defined in conf.py, defaulting to none'
+    my_coredumppath = None
 
 class Logger():
     def __init__(self, testfile):
@@ -486,6 +491,24 @@ else:
         else:
             return errors
 
+# save binaries, core dump and required files to debug
+def save_coredump(tmpfolder, binary):
+    if not my_coredumppath or not os.path.exists(my_coredumppath):
+        return 'core dump saving not enabled\n'
+    try:
+        dest_dir = os.path.join(my_coredumppath, time.strftime("%d-%m-%Y_%H-%M-%S"))
+        os.mkdir(dest_dir)
+        if binary:
+            shutil.copy(binary, dest_dir)
+        for filename in os.listdir(my_coredumppath):
+            if not os.path.isdir(os.path.join(my_coredumppath, filename)):
+                shutil.move(os.path.join(my_coredumppath, filename), dest_dir)
+        for filename in os.listdir(tmpfolder):
+            if not os.path.isdir(os.path.join(tmpfolder, filename)):
+                shutil.copy(os.path.join(tmpfolder,filename), dest_dir)
+        return 'core dump file stored in %s\n\n' % dest_dir
+    except Exception, e:
+        return 'unable to save coredump, ' + str(e) + '\n'
 
 def parseYuvFilename(fname):
     '''requires the format: foo_bar_WxH_FPS[_10bit][_CSP][_crop].yuv'''
@@ -1072,10 +1095,17 @@ def encodeharness(key, tmpfolder, sequence, command, inextras):
         logger.write('Sequence not found')
         errors = 'sequence <%s> not found\n\n' % seqfullpath
     else:
+        def prefn():
+            import resource # enable core dumps
+            resource.setrlimit(resource.RLIMIT_CORE, (-1, -1))
+
         origpath = os.environ['PATH']
         if 'PATH' in opts:
             os.environ['PATH'] += os.pathsep + opts['PATH']
-        p = Popen(cmds, cwd=tmpfolder, stdout=PIPE, stderr=PIPE)
+        if os.name == 'nt':
+            p = Popen(cmds, cwd=tmpfolder, stdout=PIPE, stderr=PIPE)
+        else:
+            p = Popen(cmds, cwd=tmpfolder, stdout=PIPE, stderr=PIPE, preexec_fn=prefn)
         stdout, stderr = p.communicate()
         os.environ['PATH'] = origpath
 
@@ -1103,6 +1133,9 @@ def encodeharness(key, tmpfolder, sequence, command, inextras):
             errors += 'encoder abort (ret 4)\n\n'
         elif p.returncode:
             errors += 'x265 return code %d\n\n' % p.returncode
+
+        if p.returncode:
+            errors += save_coredump(tmpfolder, x265)
 
     return (logs, summary, errors)
 

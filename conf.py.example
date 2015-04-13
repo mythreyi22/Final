@@ -29,6 +29,25 @@ my_save_changed = False
 # will use the default temp folder for your platform and user account
 my_tempfolder   = ''
 
+
+# If you want to save encoder coredumps to debug crashes then configure
+# as below and restart your machine.
+
+# Windows: add registry entry in LocalDumps with same path as
+# 'my_coredumppath' variable.
+# HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\Windows Error Reporting\LocalDumps
+# example- "DumpFolder", REG_EXPAND_SZ, "C:\x265_coredumps"
+
+# Linux: assign a path to 'my_coredumppath' variable and the script
+# manage the rest
+
+# Mac:  edit /etc/sysctl.conf as a root and this entry,
+# kern.coredump=1
+# kern.corefile=/cores/x265_coredumps/core.%P
+
+# writable folder path in which to save core dump files
+my_coredumppath = ''
+
 # if you want the script to create pastebins of warnings and errors you
 # must register at pastebin.com, sign in, then go to http://pastebin.com/api
 # to find 'Your Unique Developer API Key'
