@@ -87,6 +87,7 @@ class Logger():
         self.testname = os.path.splitext(os.path.basename(testfile))[0]
         self.logfname = '%s-%s.txt' % (nowdate, self.testname)
         print 'Logging test results to %s\n' % self.logfname
+        self.start_time = datetime.datetime.now()
         self.errors = 0
         self.testcount = 0
         self.totaltests = 0
@@ -207,8 +208,8 @@ class Logger():
     def email_results(self):
         if not (my_email_from and my_email_to and my_smtp_pwd):
             return
-
-        msg = MIMEText(open(self.logfname, 'r').read())
+        duration = str(datetime.datetime.now() - self.start_time).split('.')[0]
+        msg = MIMEText("Test Duration(H:M:S) = " + duration + "\n\n" + open(self.logfname, 'r').read())
         msg['To'] = my_email_to
         msg['From'] = my_email_from
         testname = self.testname.split('-')
