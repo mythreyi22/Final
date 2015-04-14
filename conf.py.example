@@ -36,7 +36,7 @@ my_tempfolder   = ''
 # Windows: add registry entry in LocalDumps with same path as
 # 'my_coredumppath' variable.
 # HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\Windows Error Reporting\LocalDumps
-# example- "DumpFolder", REG_EXPAND_SZ, "C:\x265_coredumps"
+# example- "DumpFolder", REG_EXPAND_SZ, "C:\\x265_coredumps"
 
 # Linux: assign a path to 'my_coredumppath' variable and the script
 # manage the rest
