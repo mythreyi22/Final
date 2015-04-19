@@ -81,6 +81,7 @@ except ImportError, e:
 
 try:
     from conf import my_coredumppath
+    my_coredumppath = os.path.expanduser(my_coredumppath)
 except Exception as e:
     print '** `my_coredumppath` not defined in conf.py, defaulting to none'
     my_coredumppath = None
