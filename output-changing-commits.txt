@@ -12,6 +12,8 @@
 # only test cases which match the string(s) within the braces are
 # allowed to update their golden outputs to this commit
 
+77267c5390df lookahead merge and amvp estimation
+5521aa355df8 fine-grained AQ and RDO for DQP cost
 751f9cf1dfc9 [vbv] tune initial predictor states
 1b15d6129041 [vbv] split bref predictor from b predictor
 0ce13ce29304 [lossless] lossless encodes get valid profile and unbounded level 8.5
