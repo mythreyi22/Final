@@ -613,7 +613,6 @@ def initspotchecks():
         '--recon=recon.y4m',
         '--csv=test.csv',
         '--no-progress',
-        '--log=none',
         '--log=debug',
         '--log=full',
     ]
