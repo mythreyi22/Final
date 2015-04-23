@@ -571,11 +571,14 @@ def parseY4MHeader(fname):
 
 
 def parsetestfile():
-    global test_file
+    global test_file, vbv_tolerance
     missing = set()
     tests = []
     for line in open(test_file).readlines():
         line = line.strip()
+        if line.startswith('# vbv-tolerance ='):
+            vbv_tolerance = float(line.split('=')[1])
+            print 'using vbv tolerance', vbv_tolerance
         if len(line) < 3 or line[0] == '#':
             continue
 
