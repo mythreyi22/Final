@@ -1506,7 +1506,7 @@ def runtest(key, seq, commands, always, extras):
     def skip(*matchers):
         if skip_string:
             if [True for f in matchers if skip_string in f]:
-                logger.write('Skipping test', cmd)
+                logger.write('Skipping test', f)
                 return True
         if only_string:
             if not [True for f in matchers if only_string in f]:
