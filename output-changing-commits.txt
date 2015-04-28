@@ -12,7 +12,7 @@
 # only test cases which match the string(s) within the braces are
 # allowed to update their golden outputs to this commit
 
-0c2b347de0ec [pass] fix 2-pass determinism bug
+37d8bfd67c68 [pass] fix 2-pass determinism bug
 77267c5390df lookahead merge and amvp estimation
 5521aa355df8 fine-grained AQ and RDO for DQP cost
 751f9cf1dfc9 [vbv] tune initial predictor states
