@@ -1446,6 +1446,8 @@ def _test(build, tmpfolder, seq, command, extras):
         decodeerr = checkdecoder(tmpfolder)
         if decodeerr:
             prefix = 'OUTPUT CHANGE WITH DECODE ERRORS'
+            hashfname = savebadstream(tmpfolder)
+            prefix += '\nThis bitstream was saved to %s' % hashfname
             logger.testfail(prefix, errors + decodeerr, logs)
         elif '--vbv-bufsize' in command:
             # golden outputs might have used --log=none, recover from this
