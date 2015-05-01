@@ -12,6 +12,7 @@
 # only test cases which match the string(s) within the braces are
 # allowed to update their golden outputs to this commit
 
+62a43374399f non-det fix in selectMVP()
 bca33880585a patch series which changes global ME behavior
 37d8bfd67c68 [pass] fix 2-pass determinism bug
 77267c5390df lookahead merge and amvp estimation
