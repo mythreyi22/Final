@@ -21,6 +21,12 @@ my_smtp_port    = 587
 # run by adding --save-changed to the command line
 my_save_changed = False
 
+# Allow the scripts to use a locally modified output-changing-commits.txt 
+# (skipping the download step). Leave False unless you are testing
+# commits you intend to push directly after testing (and this is only
+# possible if *you* have push rights).
+my_local_changers = False
+
 # note that on POSIX systems you can use '~/' to signify your home dir
 
 # location for encoder intermediates. One temp folder will be created

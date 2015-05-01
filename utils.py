@@ -86,6 +86,11 @@ except Exception as e:
     print '** `my_coredumppath` not defined in conf.py, defaulting to none'
     my_coredumppath = None
 
+try:
+    from conf import my_local_changers
+except Exception as e:
+    my_local_changers = False
+
 class Logger():
     def __init__(self, testfile):
         testharnesspath = os.path.dirname(os.path.abspath(__file__))
@@ -748,8 +753,11 @@ def getcommits():
 
     out = Popen(['hg', 'status', fname], stdout=PIPE).communicate()[0]
     if 'M' in out:
-        print 'local %s is modified, disabling download' % fname
-        return open(fname).readlines()
+        if my_local_changers:
+            print 'local %s is modified, disabling download' % fname
+            return open(fname).readlines()
+        else:
+            print 'changes in %s ignored, my_local_changers is false' % fname
 
     try:
         print 'Downloading most recent list of output changing commits...',
