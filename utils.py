@@ -18,11 +18,6 @@ import time
 import urllib
 from subprocess import Popen, PIPE
 from distutils.spawn import find_executable
-from email.mime.text import MIMEText
-import smtplib
-import ftplib
-from ftplib import FTP
-from collections import defaultdict
 
 run_make  = True     # run cmake and make/msbuild
 run_bench = True     # run test benches
@@ -85,20 +80,20 @@ except ImportError, e:
 try:
     from conf import my_coredumppath
     my_coredumppath = os.path.expanduser(my_coredumppath)
-except Exception as e:
+except ImportError, e:
     print '** `my_coredumppath` not defined in conf.py, defaulting to none'
     my_coredumppath = None
 
 try:
     from conf import my_ftp_url, my_ftp_user, my_ftp_pass, my_ftp_folder
     from conf import my_binaries_upload
-except Exception as e:
+except ImportError, e:
     my_ftp_url, my_ftp_user, my_ftp_pass = None, None, None
     my_binaries_upload = []
 
 try:
     from conf import my_local_changers
-except Exception as e:
+except ImportError, e:
     my_local_changers = False
 
 class Logger():
@@ -229,6 +224,10 @@ class Logger():
     def email_results(self):
         if not (my_email_from and my_email_to and my_smtp_pwd):
             return
+
+        import smtplib
+        from email.mime.text import MIMEText
+
         duration = str(datetime.datetime.now() - self.start_time).split('.')[0]
         msg = MIMEText("Test Duration(H:M:S) = " + duration + "\n\n" + open(self.logfname, 'r').read())
         msg['To'] = my_email_to
@@ -246,8 +245,8 @@ class Logger():
             session.ehlo()
             session.login(my_email_from, my_smtp_pwd)
             session.sendmail(my_email_from, my_email_to, msg.as_string())
-        except Exception as e:
-            print('Unable to send email', e)
+        except smtplib.SMTPException, e:
+            print 'Unable to send email', e
         finally:
             session.quit()
 
@@ -514,6 +513,9 @@ def upload_binaries():
     if not (my_ftp_url and my_ftp_user and my_ftp_pass):
         return
 
+    import ftplib
+    from collections import defaultdict
+
     debugopts = set(['reldeb', 'ftrapv', 'noasm', 'ppa', 'debug', 'stats', 'static'])
 
     for key in my_binaries_upload:
@@ -574,7 +576,7 @@ def upload_binaries():
             return
 
         try:
-            ftp = FTP(my_ftp_url)
+            ftp = ftplib.FTP(my_ftp_url)
             ftp.login(my_ftp_user, my_ftp_pass)
             ftp.cwd(ftp_path)
 
@@ -592,7 +594,7 @@ def upload_binaries():
             ftp.storbinary('STOR ' + dll_name, dll)
             list_allfiles = ftp.nlst()
         except ftplib.all_errors, e:
-            print("ftp failed", e)
+            print "ftp failed", e
             return
 
         if folder == 'Release': # never delete tagged builds
