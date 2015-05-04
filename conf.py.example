@@ -16,6 +16,13 @@ my_smtp_pwd     = ''
 my_smtp_host    = 'smtp.gmail.com'
 my_smtp_port    = 587
 
+# keys from my_builds that you wish to upload to ftp
+my_binaries_upload = []
+my_ftp_url = ''
+my_ftp_user = ''
+my_ftp_pass = ''
+my_ftp_folder = '' # 'Shared/HEVC/x265_Binaries'
+
 # change to True if you want all output-change bitstreams to be saved
 # for later review. If False, you can still enable this on an individual
 # run by adding --save-changed to the command line
@@ -98,7 +105,7 @@ option_strings = {
     'warn'    : '-DWARNINGS_AS_ERRORS=ON',
     'checked' : '-DCHECKED_BUILD=ON',
     'ftrapv'  : '-DENABLE_AGGRESSIVE_CHECKS=ON',
-    '16bpp'   : '-DHIGH_BIT_DEPTH=ON',
+    'main10'  : '-DHIGH_BIT_DEPTH=ON',
     'debug'   : '-DCMAKE_BUILD_TYPE=Debug',
     'reldeb'  : '-DCMAKE_BUILD_TYPE=RelWithDebInfo',
     'tests'   : '-DENABLE_TESTS=ON',

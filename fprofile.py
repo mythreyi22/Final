@@ -20,7 +20,7 @@ from utils import logger
 for key in my_builds.keys():
     buildfolder, group, generator, co, opts = my_builds[key]
     words = co.split()
-    for opt in ('checked', 'reldeb', 'ftrapv', 'noasm', 'ppa', 'tests'):
+    for opt in ('checked', 'reldeb', 'ftrapv', 'noasm', 'ppa', 'tests', 'stats'):
         while opt in words:
             print 'dropping %s option from %s build' % (opt, key)
             words.remove(opt)

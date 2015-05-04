@@ -20,6 +20,9 @@ from subprocess import Popen, PIPE
 from distutils.spawn import find_executable
 from email.mime.text import MIMEText
 import smtplib
+import ftplib
+from ftplib import FTP
+from collections import defaultdict
 
 run_make  = True     # run cmake and make/msbuild
 run_bench = True     # run test benches
@@ -85,6 +88,13 @@ try:
 except Exception as e:
     print '** `my_coredumppath` not defined in conf.py, defaulting to none'
     my_coredumppath = None
+
+try:
+    from conf import my_ftp_url, my_ftp_user, my_ftp_pass, my_ftp_folder
+    from conf import my_binaries_upload
+except Exception as e:
+    my_ftp_url, my_ftp_user, my_ftp_pass = None, None, None
+    my_binaries_upload = []
 
 try:
     from conf import my_local_changers
@@ -499,6 +509,122 @@ else:
         else:
             return errors
 
+# ftp upload x265 binaries
+def upload_binaries():
+    if not (my_ftp_url and my_ftp_user and my_ftp_pass):
+        return
+
+    debugopts = set(['reldeb', 'ftrapv', 'noasm', 'ppa', 'debug', 'stats', 'static'])
+
+    for key in my_binaries_upload:
+        buildfolder, buildgroup, generator, co, opts = my_builds[key]
+        buildopts = set(co.split())
+        if buildopts & debugopts:
+            print 'debug option(s) %s detected, skipping build %s' % (buildopts & debugopts, key)
+            continue
+        if not os.path.exists(buildfolder):
+            print '%s buildfolder does not exist' % buildfolder
+            continue
+
+        for p in ('main', 'main10', 'main12'):
+            if p in buildopts:
+                profile = p
+                break
+        else:
+            profile = 'main'
+
+        osname = platform.system()
+        branch = hggetbranch(testrev)
+        tagdistance = hggettagdistance(testrev)
+
+        folder = 'Development' # default
+        if branch == 'stable':
+            if tagdistance.endswith('+0'):
+                folder = 'Release'
+                tagdistance = tagdistance[:-2]
+            else:
+                folder = 'Stable'
+
+        ftp_path = '/'.join([my_ftp_folder, osname, folder, profile])
+
+        # open x265 binary & library files and give appropriate names for them to upload
+        # ex: Darwin - x265-1.5+365-887ac5e457e0, libx265-1.5+365-887ac5e457e0.dylib
+        exe_name = '-'.join(['x265', tagdistance, testrev])
+        dll_name = '-'.join(['libx265', tagdistance, testrev])
+        try:
+            if osname == 'Windows':
+                exe_name += '.exe'
+                dll_name += '.dll'
+                x265 = open(os.path.join(buildfolder, 'Release', 'x265.exe'), 'rb')
+                dll = open(os.path.join(buildfolder, 'Release', 'libx265.dll'), 'rb')
+            elif osname == 'Darwin':
+                dll_name += '.dylib'
+                x265 = open(os.path.join(buildfolder, 'x265'), 'rb')
+                dll =  open(os.path.join(buildfolder, 'libx265.dylib'), 'rb')
+            elif osname == 'Linux':
+                dll_name += '.so'
+                x265 = open(os.path.join(buildfolder, 'x265'), 'rb')
+                dll =  open(os.path.join(buildfolder, 'libx265.so'), 'rb')
+                compilertype = 'gcc'
+                if opts.get('CXX') == 'icpc':
+                    compilertype = 'intel'
+                ftp_path = '/'.join([my_ftp_folder, osname, compilertype, folder, profile])
+        except EnvironmentError, e:
+            print("failed to open x265binary or library file", e)
+            return
+
+        try:
+            ftp = FTP(my_ftp_url)
+            ftp.login(my_ftp_user, my_ftp_pass)
+            ftp.cwd(ftp_path)
+
+            # list the files from ftp location ex:
+            # x265-1.5+365-887ac5e457e0, libx265-1.5+365-887ac5e457e0.dylib...
+            list_allfiles = ftp.nlst()
+
+            # if files is already exist, delete and re-upload
+            for file in (exe_name, dll_name):
+                if file in list_allfiles:
+                    ftp.delete(file)
+
+            # upload x265 binary and corresponding libraries
+            ftp.storbinary('STOR ' + exe_name, x265)
+            ftp.storbinary('STOR ' + dll_name, dll)
+            list_allfiles = ftp.nlst()
+        except ftplib.all_errors, e:
+            print("ftp failed", e)
+            return
+
+        if folder == 'Release': # never delete tagged builds
+            continue
+        tagrevs = defaultdict(set)
+        for file in list_allfiles:
+            name, tagdist, hash = file.split('-', 2)
+            tag, dist = tagdist.split('+', 1)
+            tagrevs[tag].add(int(dist)) # { '1.6' : (100, 110, 112) }
+
+        # Keep M last build versions for most recent N tags, and last stable
+        # build on each tag. Note that this is relying on string sorting of
+        # version numbers - '1.10' would be less than '1.9' - so it is relying
+        # on the policy to bump to version '2.0' following '1.9'
+
+        M = 8
+        N = folder == 'Stable' and 2 or 1
+        keeprevs = []
+        for tags_count, tag in enumerate(sorted(tagrevs.keys(), reverse=True)):
+            revs = ['+'.join([tag, str(rev)]) for rev in sorted(tagrevs[tag], reverse=True)]
+            if tags_count < N:
+                keeprevs.extend(revs[:M])
+            elif folder == 'Stable':
+                keeprevs.append(revs[0])
+            else:
+                break
+
+        for file in list_allfiles:
+            name, tagdist, hash = file.split('-', 2)
+            if tagdist not in keeprevs:
+                ftp.delete(file)
+
 # save binaries, core dump and required files to debug
 def save_coredump(tmpfolder, binary):
     if not my_coredumppath or not os.path.exists(my_coredumppath):
@@ -737,6 +863,13 @@ def hggetbranch(rev):
         raise Exception('Unable to determine revision phase: ' + err)
     return out
 
+def hggettagdistance(rev):
+    if rev.endswith('+'): rev = rev[:-1]
+    out, err = Popen(['hg', 'log', '-r', rev, '--template', '{latesttag}+{latesttagdistance}'],
+                     stdout=PIPE, stderr=PIPE, cwd=my_x265_source).communicate()
+    if err:
+        raise Exception('Unable to determine tag distance: ' + err)
+    return out
 
 def isancestor(ancestor):
     # hg log -r "descendants(1bed2e325efc) and 5ebd5d7c0a76"
