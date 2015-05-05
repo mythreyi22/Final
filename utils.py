@@ -643,7 +643,7 @@ def save_coredump(tmpfolder, binary):
             if not os.path.isdir(os.path.join(tmpfolder, filename)):
                 shutil.copy(os.path.join(tmpfolder,filename), dest_dir)
         return 'core dump file stored in %s\n\n' % dest_dir
-    except Exception, e:
+    except EnvironmentError, e:
         return 'unable to save coredump, ' + str(e) + '\n'
 
 def parseYuvFilename(fname):
