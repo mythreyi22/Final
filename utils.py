@@ -34,6 +34,7 @@ changefilter = {}
 vbv_tolerance = .015 # fraction of bitrate difference allowed (1.5%)
 logger = None
 spot_checks = []
+encoder_binary_name = 'x265' # default `x265`
 
 try:
     from conf import my_machine_name, my_machine_desc, my_x265_source
@@ -1078,7 +1079,7 @@ def msbuild(buildfolder, generator, cmakeopts):
         if not msbuild:
             raise Exception('Unable to find msbuild.exe')
 
-    p = Popen([msbuild, '/clp:disableconsolecolor', target, 'x265.sln'],
+    p = Popen([msbuild, '/clp:disableconsolecolor', target, encoder_binary_name + '.sln'],
               stdout=PIPE, stderr=PIPE, cwd=buildfolder, env=env)
     out, err = async_poll_process(p, True)
     if not err:
@@ -1216,14 +1217,18 @@ def encodeharness(key, tmpfolder, sequence, command, inextras):
             target = 'RelWithDebInfo'
         else:
             target = 'Release'
-        x265 = os.path.abspath(os.path.join(buildfolder, target, 'x265'))
+        x265 = os.path.abspath(os.path.join(buildfolder, target, encoder_binary_name))
     else:
-        x265 = os.path.abspath(os.path.join(buildfolder, 'x265'))
+        x265 = os.path.abspath(os.path.join(buildfolder, encoder_binary_name))
     if os.name == 'nt': x265 += '.exe'
 
-    cmds = [x265, seqfullpath, 'bitstream.hevc']
-    cmds.extend(shlex.split(command))
-    cmds.extend(extras)
+    cmds = [x265]
+    if '--command-file' in command:
+        cmds.append(command)
+    else:
+        cmds.extend([seqfullpath, 'bitstream.hevc'])
+        cmds.extend(shlex.split(command))
+        cmds.extend(extras)
 
     logs, errors, summary = '', '', ''
     if not os.path.isfile(x265):
