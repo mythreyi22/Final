@@ -342,10 +342,6 @@ def setup(argv, preferredlist):
     initspotchecks()
 
 
-ignored_compiler_warnings = (
-    'ld: warning: PIE disabled', # link warning on 32bit GCC builds on Mac
-)
-
 ignored_x265_warnings = (
     '--psnr used with psy on: results will be invalid!',
     '--ssim used with AQ off: results will be invalid!',
@@ -416,10 +412,7 @@ if os.name == 'nt':
                         line = qerr.get()
                         if fulloutput: output += line
                         if my_progress: print line,
-                        for i in ignored_compiler_warnings:
-                            if line.startswith(i):
-                                break
-                        else:
+                        if 'PIE' not in line:
                             errors += ''.join(out[-3:])
                             out = []
                             errors += line
@@ -481,10 +474,7 @@ else:
                         empty = False
                         if fulloutput: output += line
                         if my_progress: print line,
-                        for i in ignored_compiler_warnings:
-                            if line.startswith(i):
-                                break
-                        else:
+                        if 'PIE' not in line:
                             errors += ''.join(out[-3:])
                             out = []
                             errors += line
