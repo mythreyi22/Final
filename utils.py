@@ -97,6 +97,40 @@ try:
 except ImportError, e:
     my_local_changers = False
 
+try:
+    from conf import dll
+except ImportError, e:
+    dll = []
+
+class Build():
+    def __init__(self, *args):
+        self.folder, self.group, self.gen, self.cmakeopts, self.opts = args[0][0],args[0][1],args[0][2],args[0][3], args[0][4]
+        co = self.cmakeopts.split()
+        if 'debug' in co:
+            target = 'Debug'
+        elif 'reldeb' in co:
+            target = 'RelWithDebInfo'
+        else:
+            target = 'Release'
+
+        for p in ('main', 'main10', 'main12'):
+            if p in co:
+                self.profile = p
+                break
+        else:
+            self.profile = 'main'
+
+        osname = platform.system()
+        if osname == 'Windows':
+            self.exe = os.path.join(self.folder, target, 'x265.exe')
+            self.dll = os.path.join(self.folder, target, 'libx265.dll')
+        elif osname == 'Darwin':
+            self.exe = os.path.join(self.folder, 'x265')
+            self.dll = os.path.join(self.folder, 'libx265.dylib')
+        elif osname == 'Linux':
+            self.exe = os.path.join(self.folder, 'x265')
+            self.dll = os.path.join(self.folder, 'libx265.so')
+
 class Logger():
     def __init__(self, testfile):
         testharnesspath = os.path.dirname(os.path.abspath(__file__))
@@ -1144,6 +1178,26 @@ def buildall(prof=None):
         if errors:
             logger.writeerr(prefix + '\n' + errors + '\n')
 
+    # output depth support: to bind libx265_main for 8bit encoder, libx265_main10 for 10bit encoder
+    osname = platform.system()
+    for tup in dll:
+        try:
+            build1 = Build(my_builds[tup[0]])
+            build2 = Build(my_builds[tup[1]])
+        except IndexError:
+            print("`dll` variable format is wrong", dll)
+            return
+        b1  = (build1.dll).replace('libx265.', 'libx265_' + build2.profile + '.')
+        b2  = (build2.dll).replace('libx265.', 'libx265_' + build1.profile + '.')
+        try:
+            if osname == 'Windows':
+                shutil.copy(build1.dll, b2)
+                shutil.copy(build2.dll, b1)
+            else:
+                os.symlink(build1.dll, b2)
+                os.symlink(build2.dll, b1)
+        except IOError:
+            print("failed to copy library file from main to main10 build folder or vice versa", tup)
 
 def testharness():
     if not run_bench:

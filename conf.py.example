@@ -16,6 +16,10 @@ my_smtp_pwd     = ''
 my_smtp_host    = 'smtp.gmail.com'
 my_smtp_port    = 587
 
+# output depth support: to bind libx265_main for 8bit encoder, libx265_main10 for 10bit encoder
+# keys pair from my_builds ex: dll = [('gcc', 'gcc10'), ('vc11', 'vc1110')]
+dll = []
+
 # keys from my_builds that you wish to upload to ftp
 my_binaries_upload = []
 my_ftp_url = ''
