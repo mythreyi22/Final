@@ -33,8 +33,9 @@ changers = None      # list of all output changing commits which are ancestors
 changefilter = {}
 vbv_tolerance = .015 # fraction of bitrate difference allowed (1.5%)
 logger = None
+buildObj = {}
 spot_checks = []
-encoder_binary_name = 'x265' # default `x265`
+encoder_binary_name = 'x265'
 
 try:
     from conf import my_machine_name, my_machine_desc, my_x265_source
@@ -354,6 +355,10 @@ def setup(argv, preferredlist):
         test_file = listInRepo
     elif not os.path.exists(test_file):
         raise Exception('Unable to find test list file ' + test_file)
+
+    global buildObj
+    for key in my_builds:
+        buildObj[key] = Build(*my_builds[key])
 
     global logger, testrev, changers
     logger = Logger(test_file)
@@ -1185,25 +1190,31 @@ def buildall(prof=None):
             logger.writeerr(prefix + '\n' + errors + '\n')
 
     # output depth support: to bind libx265_main for 8bit encoder, libx265_main10 for 10bit encoder
-    osname = platform.system()
     for tup in dll:
-        try:
-            build1 = Build(*my_builds[tup[0]])
-            build2 = Build(*my_builds[tup[1]])
-        except IndexError:
+        if len(tup) != 2:
             print("`dll` variable format is wrong", dll)
             return
+        if tup[0] not in buildObj or tup[1] not in buildObj:
+            print("`dll` variable format is wrong", dll)
+            return
+
+        build1 = buildObj[tup[0]]
+        build2 = buildObj[tup[1]]
         b1  = (build1.dll).replace('libx265.', 'libx265_' + build2.profile + '.')
         b2  = (build2.dll).replace('libx265.', 'libx265_' + build1.profile + '.')
         try:
+            if os.path.lexists(b1):
+                os.unlink(b1)
+            if os.path.lexists(b2):
+                os.unlink(b2)
             if osname == 'Windows':
                 shutil.copy(build1.dll, b2)
                 shutil.copy(build2.dll, b1)
             else:
-                os.symlink(build1.dll, b2)
-                os.symlink(build2.dll, b1)
+                os.symlink(os.path.abspath(build1.dll), b2)
+                os.symlink(os.path.abspath(build2.dll), b1)
         except IOError:
-            print("failed to copy library file from main to main10 build folder or vice versa", tup)
+            print("failed to setup library pair", tup)
 
 def testharness():
     if not run_bench:
