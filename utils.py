@@ -102,17 +102,21 @@ try:
 except ImportError, e:
     dll = []
 
+osname = platform.system()
+if osname == 'Windows':
+    exe_ext = '.exe'
+    dll_ext = '.dll'
+elif osname == 'Darwin':
+    exe_ext = ''
+    dll_ext = '.dylib'
+elif osname == 'Linux':
+    exe_ext = ''
+    dll_ext = '.so'
+
 class Build():
     def __init__(self, *args):
         self.folder, self.group, self.gen, self.cmakeopts, self.opts = args
         co = self.cmakeopts.split()
-        if 'debug' in co:
-            target = 'Debug'
-        elif 'reldeb' in co:
-            target = 'RelWithDebInfo'
-        else:
-            target = 'Release'
-
         for p in ('main', 'main10', 'main12'):
             if p in co:
                 self.profile = p
@@ -120,16 +124,18 @@ class Build():
         else:
             self.profile = 'main'
 
-        osname = platform.system()
-        if osname == 'Windows':
-            self.exe = os.path.join(self.folder, target, 'x265.exe')
-            self.dll = os.path.join(self.folder, target, 'libx265.dll')
-        elif osname == 'Darwin':
-            self.exe = os.path.join(self.folder, 'x265')
-            self.dll = os.path.join(self.folder, 'libx265.dylib')
-        elif osname == 'Linux':
-            self.exe = os.path.join(self.folder, 'x265')
-            self.dll = os.path.join(self.folder, 'libx265.so')
+        if 'Visual Studio' in self.gen:
+            if 'debug' in co:
+                target = 'Debug'
+            elif 'reldeb' in co:
+                target = 'RelWithDebInfo'
+            else:
+                target = 'Release'
+            self.exe = os.path.join(self.folder, target, 'x265' + exe_ext)
+            self.dll = os.path.join(self.folder, target, 'libx265' + dll_ext)
+        else:
+            self.exe = os.path.join(self.folder, 'x265' + exe_ext)
+            self.dll = os.path.join(self.folder, 'libx265' + dll_ext)
 
 class Logger():
     def __init__(self, testfile):
