@@ -99,9 +99,9 @@ except ImportError, e:
     my_local_changers = False
 
 try:
-    from conf import dll
+    from conf import my_libpairs
 except ImportError, e:
-    dll = []
+    my_libpairs = []
 
 osname = platform.system()
 if osname == 'Windows':
@@ -1190,12 +1190,12 @@ def buildall(prof=None):
             logger.writeerr(prefix + '\n' + errors + '\n')
 
     # output depth support: to bind libx265_main for 8bit encoder, libx265_main10 for 10bit encoder
-    for tup in dll:
+    for tup in my_libpairs:
         if len(tup) != 2:
-            print("`dll` variable format is wrong", dll)
+            print("`my_libpairs` variable format is wrong", my_libpairs)
             return
         if tup[0] not in buildObj or tup[1] not in buildObj:
-            print("`dll` variable format is wrong", dll)
+            print("`my_libpairs` variable format is wrong", my_libpairs)
             return
 
         build1 = buildObj[tup[0]]
@@ -1215,6 +1215,7 @@ def buildall(prof=None):
                 os.symlink(os.path.abspath(build2.dll), b1)
         except IOError:
             print("failed to setup library pair", tup)
+
 
 def testharness():
     if not run_bench:
