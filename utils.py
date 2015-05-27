@@ -104,7 +104,7 @@ except ImportError, e:
 
 class Build():
     def __init__(self, *args):
-        self.folder, self.group, self.gen, self.cmakeopts, self.opts = args[0][0],args[0][1],args[0][2],args[0][3], args[0][4]
+        self.folder, self.group, self.gen, self.cmakeopts, self.opts = args
         co = self.cmakeopts.split()
         if 'debug' in co:
             target = 'Debug'
@@ -1182,8 +1182,8 @@ def buildall(prof=None):
     osname = platform.system()
     for tup in dll:
         try:
-            build1 = Build(my_builds[tup[0]])
-            build2 = Build(my_builds[tup[1]])
+            build1 = Build(*my_builds[tup[0]])
+            build2 = Build(*my_builds[tup[1]])
         except IndexError:
             print("`dll` variable format is wrong", dll)
             return
