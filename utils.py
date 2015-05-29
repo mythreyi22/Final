@@ -127,16 +127,18 @@ class Build():
 
         if 'Visual Studio' in self.gen:
             if 'debug' in co:
-                target = 'Debug'
+                self.target = 'Debug'
             elif 'reldeb' in co:
-                target = 'RelWithDebInfo'
+                self.target = 'RelWithDebInfo'
             else:
-                target = 'Release'
-            self.exe = os.path.join(self.folder, target, 'x265' + exe_ext)
-            self.dll = os.path.join(self.folder, target, 'libx265' + dll_ext)
+                self.target = 'Release'
+            self.exe = os.path.join(self.folder, self.target, encoder_binary_name + exe_ext)
+            self.dll = os.path.join(self.folder, self.target, 'libx265' + dll_ext)
+            self.testbench = os.path.join(self.folder, 'test', self.target, 'TestBench' + exe_ext)
         else:
-            self.exe = os.path.join(self.folder, 'x265' + exe_ext)
+            self.exe = os.path.join(self.folder, encoder_binary_name + exe_ext)
             self.dll = os.path.join(self.folder, 'libx265' + dll_ext)
+            self.testbench = os.path.join(self.folder, 'test', 'TestBench' + exe_ext)
 
 class Logger():
     def __init__(self, testfile):
@@ -161,10 +163,10 @@ class Logger():
 
     def setbuild(self, key):
         '''configure current build info'''
-        _, group, generator, co, opts = my_builds[key]
-        self.build  = 'cur build: %s group=%s\n' % (key, group)
-        self.build += 'generator: %s\n' % generator
-        self.build += 'options  : %s %s\n' % (co, str(opts))
+        b = buildObj[key]
+        self.build  = 'cur build: %s group=%s\n' % (key, b.group)
+        self.build += 'generator: %s\n' % b.gen
+        self.build += 'options  : %s %s\n' % (b.cmakeopts, str(b.opts))
         self.logfp.write(self.build + '\n')
         self.logfp.flush()
 
@@ -555,23 +557,15 @@ def upload_binaries():
     debugopts = set(['reldeb', 'ftrapv', 'noasm', 'ppa', 'debug', 'stats', 'static'])
 
     for key in my_binaries_upload:
-        buildfolder, buildgroup, generator, co, opts = my_builds[key]
-        buildopts = set(co.split())
+        build = buildObj[key]
+        buildopts = set(build.co.split())
         if buildopts & debugopts:
             print 'debug option(s) %s detected, skipping build %s' % (buildopts & debugopts, key)
             continue
-        if not os.path.exists(buildfolder):
-            print '%s buildfolder does not exist' % buildfolder
+        if not os.path.exists(build.folder):
+            print '%s buildfolder does not exist' % build.folder
             continue
 
-        for p in ('main', 'main10', 'main12'):
-            if p in buildopts:
-                profile = p
-                break
-        else:
-            profile = 'main'
-
-        osname = platform.system()
         branch = hggetbranch(testrev)
         tagdistance = hggettagdistance(testrev)
 
@@ -583,30 +577,20 @@ def upload_binaries():
             else:
                 folder = 'Stable'
 
-        ftp_path = '/'.join([my_ftp_folder, osname, folder, profile])
+        ftp_path = '/'.join([my_ftp_folder, osname, folder, build.profile])
 
         # open x265 binary & library files and give appropriate names for them to upload
         # ex: Darwin - x265-1.5+365-887ac5e457e0, libx265-1.5+365-887ac5e457e0.dylib
-        exe_name = '-'.join(['x265', tagdistance, testrev])
-        dll_name = '-'.join(['libx265', tagdistance, testrev])
+        exe_name = '-'.join(['x265', tagdistance, testrev]) + exe_ext
+        dll_name = '-'.join(['libx265', tagdistance, testrev]) + dll_ext
         try:
-            if osname == 'Windows':
-                exe_name += '.exe'
-                dll_name += '.dll'
-                x265 = open(os.path.join(buildfolder, 'Release', 'x265.exe'), 'rb')
-                dll = open(os.path.join(buildfolder, 'Release', 'libx265.dll'), 'rb')
-            elif osname == 'Darwin':
-                dll_name += '.dylib'
-                x265 = open(os.path.join(buildfolder, 'x265'), 'rb')
-                dll =  open(os.path.join(buildfolder, 'libx265.dylib'), 'rb')
-            elif osname == 'Linux':
-                dll_name += '.so'
-                x265 = open(os.path.join(buildfolder, 'x265'), 'rb')
-                dll =  open(os.path.join(buildfolder, 'libx265.so'), 'rb')
+            x265 = open(build.exe, 'rb')
+            dll = open(build.dll, 'rb')
+            if osname == 'Linux':
                 compilertype = 'gcc'
-                if opts.get('CXX') == 'icpc':
+                if build.opts.get('CXX') == 'icpc':
                     compilertype = 'intel'
-                ftp_path = '/'.join([my_ftp_folder, osname, compilertype, folder, profile])
+                ftp_path = '/'.join([my_ftp_folder, osname, compilertype, folder, build.profile])
         except EnvironmentError, e:
             print("failed to open x265binary or library file", e)
             return
@@ -1060,7 +1044,7 @@ def get_sdkenv(vcpath, arch):
     return newenv
 
 
-def msbuild(buildfolder, generator, cmakeopts):
+def msbuild(buildkey, buildfolder, generator, cmakeopts):
     '''Build visual studio solution using specified compiler'''
     logger.settitle('msbuild ' + buildfolder)
     if os.name != 'nt':
@@ -1104,13 +1088,8 @@ def msbuild(buildfolder, generator, cmakeopts):
     env = os.environ.copy()
     env.update(sdkenv)
 
-    target = '/p:Configuration='
-    if '-DCMAKE_BUILD_TYPE=Debug' in cmakeopts:
-        target += 'Debug'
-    elif '-DCMAKE_BUILD_TYPE=RelWithDebInfo' in cmakeopts:
-        target += 'RelWithDebInfo'
-    else:
-        target += 'Release'
+    build = buildObj[buildkey]
+    target = ''.join(['/p:Configuration=', build.target])
 
     # use the newest MSBuild installed
     for f in (r'C:\Program Files (x86)\MSBuild\12.0\Bin\MSBuild.exe',
@@ -1143,13 +1122,12 @@ def msbuild(buildfolder, generator, cmakeopts):
 def buildall(prof=None):
     if not run_make:
         return
-    for key in my_builds:
+    for key in buildObj:
         logger.write('building %s...'% key)
-
-        buildfolder, _, generator, co, opts = my_builds[key]
+        build = buildObj[key]
 
         cmakeopts = []
-        for o in co.split():
+        for o in build.cmakeopts.split():
             if o in option_strings:
                 cmakeopts.append(option_strings[o])
             else:
@@ -1157,7 +1135,7 @@ def buildall(prof=None):
 
         if not isancestor('65d004d54895'): # cmake: introduce fprofile options
             pass
-        elif 'Makefiles' not in generator:
+        elif 'Makefiles' not in build.gen:
             pass # our cmake script does not support PGO for MSVC yet
         elif prof is 'generate':
             cmakeopts.append('-DFPROFILE_GENERATE=ON')
@@ -1173,15 +1151,15 @@ def buildall(prof=None):
         if '-DCMAKE_BUILD_TYPE=' not in ' '.join(cmakeopts):
             cmakeopts.append('-DCMAKE_BUILD_TYPE=Release')
 
-        cout, cerr = cmake(generator, buildfolder, cmakeopts, **opts)
+        cout, cerr = cmake(build.gen, build.folder, cmakeopts, **build.opts)
         if cerr:
             prefix = 'cmake errors reported for %s:: ' % key
             errors = cout + cerr
-        elif 'Makefiles' in generator:
-            errors = gmake(buildfolder, generator, **opts)
+        elif 'Makefiles' in build.gen:
+            errors = gmake(build.folder, build.gen, **build.opts)
             prefix = 'make warnings or errors reported for %s:: ' % key
-        elif 'Visual Studio' in generator:
-            errors = msbuild(buildfolder, generator, cmakeopts)
+        elif 'Visual Studio' in build.gen:
+            errors = msbuild(key, build.folder, build.gen, cmakeopts)
             prefix = 'msbuild warnings or errors reported for %s:: ' % key
         else:
             raise NotImplemented()
@@ -1225,33 +1203,22 @@ def buildall(prof=None):
 def testharness():
     if not run_bench:
         return
-    for key in my_builds:
-        buildfolder, _, generator, co, opts = my_builds[key]
 
-        if 'tests' not in co.split():
+    for key in buildObj:
+        build = buildObj[key]
+        bench = build.testbench
+
+        if 'tests' not in build.cmakeopts.split():
             continue
-
         logger.settitle('testbench ' + key)
         logger.write('Running testbench for %s...'% key)
-
-        if 'Visual Studio' in generator:
-            if 'debug' in co.split():
-                target = 'Debug'
-            elif 'reldeb' in co.split():
-                target = 'RelWithDebInfo'
-            else:
-                target = 'Release'
-            bench = os.path.abspath(os.path.join(buildfolder, 'test', target, 'TestBench'))
-        else:
-            bench = os.path.abspath(os.path.join(buildfolder, 'test', 'TestBench'))
-        if os.name == 'nt': bench += '.exe'
 
         if not os.path.isfile(bench):
             err = 'testbench <%s> not built' % bench
         else:
             origpath = os.environ['PATH']
-            if 'PATH' in opts:
-                os.environ['PATH'] += os.pathsep + opts['PATH']
+            if 'PATH' in build.opts:
+                os.environ['PATH'] += os.pathsep + build.opts['PATH']
             p = Popen([bench], stdout=PIPE, stderr=PIPE)
             err = async_poll_process(p, False)
             os.environ['PATH'] = origpath
@@ -1275,8 +1242,6 @@ def encodeharness(key, tmpfolder, sequence, command, inextras):
        error   - full description of encoder warnings and errors
     '''
 
-    buildfolder, _, generator, cmakeopts, opts = my_builds[key]
-
     extras = inextras[:] # make copy so we can append locally
     if sequence.lower().endswith('.yuv'):
         (width, height, fps, depth, csp) = parseYuvFilename(sequence)
@@ -1287,18 +1252,8 @@ def encodeharness(key, tmpfolder, sequence, command, inextras):
 
     seqfullpath = os.path.join(my_sequences, sequence)
 
-    if 'Visual Studio' in generator:
-        if 'debug' in cmakeopts.split():
-            target = 'Debug'
-        elif 'reldeb' in cmakeopts.split():
-            target = 'RelWithDebInfo'
-        else:
-            target = 'Release'
-        x265 = os.path.abspath(os.path.join(buildfolder, target, encoder_binary_name))
-    else:
-        x265 = os.path.abspath(os.path.join(buildfolder, encoder_binary_name))
-    if os.name == 'nt': x265 += '.exe'
-
+    build = buildObj[key]
+    x265 = build.exe
     cmds = [x265]
     if '--command-file' in command:
         cmds.append(command)
@@ -1320,8 +1275,8 @@ def encodeharness(key, tmpfolder, sequence, command, inextras):
             resource.setrlimit(resource.RLIMIT_CORE, (-1, -1))
 
         origpath = os.environ['PATH']
-        if 'PATH' in opts:
-            os.environ['PATH'] += os.pathsep + opts['PATH']
+        if 'PATH' in build.opts:
+            os.environ['PATH'] += os.pathsep + build.opts['PATH']
         if os.name == 'nt':
             p = Popen(cmds, cwd=tmpfolder, stdout=PIPE, stderr=PIPE)
         else:
