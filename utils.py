@@ -132,13 +132,13 @@ class Build():
                 self.target = 'RelWithDebInfo'
             else:
                 self.target = 'Release'
-            self.exe = os.path.join(self.folder, self.target, encoder_binary_name + exe_ext)
-            self.dll = os.path.join(self.folder, self.target, 'libx265' + dll_ext)
-            self.testbench = os.path.join(self.folder, 'test', self.target, 'TestBench' + exe_ext)
+            self.exe = os.path.abspath(os.path.join(self.folder, self.target, encoder_binary_name + exe_ext))
+            self.dll = os.path.abspath(os.path.join(self.folder, self.target, 'libx265' + dll_ext))
+            self.testbench = os.path.abspath(os.path.join(self.folder, 'test', self.target, 'TestBench' + exe_ext))
         else:
-            self.exe = os.path.join(self.folder, encoder_binary_name + exe_ext)
-            self.dll = os.path.join(self.folder, 'libx265' + dll_ext)
-            self.testbench = os.path.join(self.folder, 'test', 'TestBench' + exe_ext)
+            self.exe = os.path.abspath(os.path.join(self.folder, encoder_binary_name + exe_ext))
+            self.dll = os.path.abspath(os.path.join(self.folder, 'libx265' + dll_ext))
+            self.testbench = os.path.abspath(os.path.join(self.folder, 'test', 'TestBench' + exe_ext))
 
 class Logger():
     def __init__(self, testfile):
