@@ -12,6 +12,7 @@
 # only test cases which match the string(s) within the braces are
 # allowed to update their golden outputs to this commit
 
+8aa2bedda740 bug fix for limit-refs rd 0/4
 61a6bc52debf reordering causes early out behaviour to change slightly
 58309953273e lowres mv used as motion candidate
 4c0648e4c3cc [crqpoffs] copy-paste fix crqpoffs
