@@ -176,7 +176,7 @@ class Build():
         if '-DCMAKE_BUILD_TYPE=' not in ' '.join(cmakeopts):
             cmakeopts.append('-DCMAKE_BUILD_TYPE=Release')
 
-    def cmake_build(self, cmakeopts, buildfolder):
+    def cmake_build(self, key, cmakeopts, buildfolder):
         cout, cerr = cmake(self.gen, buildfolder, cmakeopts, **self.opts)
         if cerr:
             prefix = 'cmake errors reported for %s:: ' % key
@@ -1201,7 +1201,7 @@ def buildall(prof=None):
                 defaultco.append('-DLINKED_12BIT=ON')
                 extra_libs.append(lib_main12)
                 build.cmakeoptions(subco, prof)
-                build.cmake_build(subco, os.path.join(build.folder, bitdepthfolder))
+                build.cmake_build(key, subco, os.path.join(build.folder, bitdepthfolder))
                 shutil.copy(os.path.join(build.folder, bitdepthfolder, build.target, static_lib),
                             os.path.join(build.folder, 'default', lib_main12))
             elif '10bit' == bitdepthfolder:
@@ -1209,14 +1209,14 @@ def buildall(prof=None):
                 defaultco.append('-DLINKED_10BIT=ON')
                 extra_libs.append(lib_main10)
                 build.cmakeoptions(subco, prof)
-                build.cmake_build(subco, os.path.join(build.folder, bitdepthfolder))
+                build.cmake_build(key, subco, os.path.join(build.folder, bitdepthfolder))
                 shutil.copy(os.path.join(build.folder, bitdepthfolder, build.target, static_lib),
                             os.path.join(build.folder, 'default', lib_main10))
             else:
                 defaultco.append('-DLINKED_8BIT=ON')
                 extra_libs.append(lib_main)
                 build.cmakeoptions(subco, prof)
-                build.cmake_build(subco, os.path.join(build.folder, bitdepthfolder))
+                build.cmake_build(key, subco, os.path.join(build.folder, bitdepthfolder))
                 shutil.copy(os.path.join(build.folder, bitdepthfolder, build.target, static_lib),
                             os.path.join(build.folder, 'default', lib_main))
 
@@ -1231,7 +1231,7 @@ def buildall(prof=None):
             if extra_link_flag: defaultco.append(extra_link_flag)
 
         build.cmakeoptions(defaultco, prof)
-        build.cmake_build(defaultco, os.path.join(build.folder, 'default'))
+        build.cmake_build(key, defaultco, os.path.join(build.folder, 'default'))
 
 
     # output depth support: to bind libx265_main for 8bit encoder, libx265_main10 for 10bit encoder
