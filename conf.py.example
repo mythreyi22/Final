@@ -112,6 +112,7 @@ option_strings = {
     'checked' : '-DCHECKED_BUILD=ON',
     'ftrapv'  : '-DENABLE_AGGRESSIVE_CHECKS=ON',
     'main10'  : '-DHIGH_BIT_DEPTH=ON',
+    'main12'  : '-DHIGH_BIT_DEPTH=ON -DMAIN12=ON',
     'debug'   : '-DCMAKE_BUILD_TYPE=Debug',
     'reldeb'  : '-DCMAKE_BUILD_TYPE=RelWithDebInfo',
     'tests'   : '-DENABLE_TESTS=ON',
