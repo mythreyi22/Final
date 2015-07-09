@@ -1181,55 +1181,57 @@ def buildall(prof=None):
         else:
             generator = None
 
-        cmakeopts2 = []
-        extra_lib = '-DEXTRA_LIB='
-        if 'add-depths' in build.opts:
-            for bitdepthfolder in build.opts['add-depths']:
-                if not os.path.exists(os.path.join(build.folder, bitdepthfolder)):
-                    os.mkdir(os.path.join(build.folder, bitdepthfolder))
-                cmakeopts = []
-                for o in build.cmakeopts.split():
-                    if o in option_strings:
-                        cmakeopts.append(option_strings[o])
-                    else:
-                        logger.write('Unknown cmake option', o)
-                cmakeopts.append('-DENABLE_SHARED=OFF')
-                cmakeopts.append('-DENABLE_CLI=OFF')
-                cmakeopts.append('-DEXPORT_C_API=OFF')
-                if '12' in bitdepthfolder or '10' in bitdepthfolder:
-                    cmakeopts.append('-DHIGH_BIT_DEPTH=ON')
-                    if '12' in bitdepthfolder:
-                        cmakeopts.append('-DMAIN12=ON')
-                        cmakeopts2.append('-DLINKED_12BIT=ON')
-                        extra_lib = ';'.join([extra_lib, lib_main12])
-                        build.cmakeoptions(cmakeopts, prof)
-                        build.cmake_build(cmakeopts, os.path.join(build.folder, bitdepthfolder))
-                        shutil.copy(os.path.join(build.folder, bitdepthfolder, build.target, static_lib), os.path.join(build.folder, 'default', lib_main12))
-                    elif '10' in bitdepthfolder:
-                        cmakeopts2.append('-DLINKED_10BIT=ON')
-                        extra_lib = ';'.join([extra_lib, lib_main10])
-                        build.cmakeoptions(cmakeopts, prof)
-                        build.cmake_build(cmakeopts, os.path.join(build.folder, bitdepthfolder))
-                        shutil.copy(os.path.join(build.folder, bitdepthfolder, build.target, static_lib), os.path.join(build.folder, 'default', lib_main10))
+        defaultco = []
+        extra_libs = []
+        for bitdepthfolder in build.opts.get('add-depths', []):
+            if not os.path.exists(os.path.join(build.folder, bitdepthfolder)):
+                os.mkdir(os.path.join(build.folder, bitdepthfolder))
+            subco = []
+            for o in build.cmakeopts.split():
+                if o in option_strings:
+                    subco.append(option_strings[o])
                 else:
-                    cmakeopts2.append('-DLINKED_8BIT=ON')
-                    extra_lib = ';'.join([extra_lib, lib_main])
-                    build.cmakeoptions(cmakeopts, prof)
-                    build.cmake_build(cmakeopts, os.path.join(build.folder, bitdepthfolder))
-                    shutil.copy(os.path.join(build.folder, bitdepthfolder, build.target, static_lib), os.path.join(build.folder, 'default', lib_main))
+                    logger.write('Unknown cmake option', o)
+            subco.append('-DENABLE_SHARED=OFF')
+            subco.append('-DENABLE_CLI=OFF')
+            subco.append('-DEXPORT_C_API=OFF')
+            if '12bit' == bitdepthfolder:
+                subco.append('-DHIGH_BIT_DEPTH=ON')
+                subco.append('-DMAIN12=ON')
+                defaultco.append('-DLINKED_12BIT=ON')
+                extra_libs.append(lib_main12)
+                build.cmakeoptions(subco, prof)
+                build.cmake_build(subco, os.path.join(build.folder, bitdepthfolder))
+                shutil.copy(os.path.join(build.folder, bitdepthfolder, build.target, static_lib),
+                            os.path.join(build.folder, 'default', lib_main12))
+            elif '10bit' == bitdepthfolder:
+                subco.append('-DHIGH_BIT_DEPTH=ON')
+                defaultco.append('-DLINKED_10BIT=ON')
+                extra_libs.append(lib_main10)
+                build.cmakeoptions(subco, prof)
+                build.cmake_build(subco, os.path.join(build.folder, bitdepthfolder))
+                shutil.copy(os.path.join(build.folder, bitdepthfolder, build.target, static_lib),
+                            os.path.join(build.folder, 'default', lib_main10))
+            else:
+                defaultco.append('-DLINKED_8BIT=ON')
+                extra_libs.append(lib_main)
+                build.cmakeoptions(subco, prof)
+                build.cmake_build(subco, os.path.join(build.folder, bitdepthfolder))
+                shutil.copy(os.path.join(build.folder, bitdepthfolder, build.target, static_lib),
+                            os.path.join(build.folder, 'default', lib_main))
 
         for o in build.cmakeopts.split():
             if o in option_strings:
-                cmakeopts2.append(option_strings[o])
+                defaultco.append(option_strings[o])
             else:
                 logger.write('Unknown cmake option', o)
 
-        if 'add-depths' in build.opts:
-            cmakeopts2.append(extra_lib)
-            if not osname == 'Windows':
-                cmakeopts2.append(extra_link_flag)
-        build.cmakeoptions(cmakeopts2, prof)
-        build.cmake_build(cmakeopts2, os.path.join(build.folder, 'default'))
+        if extra_libs:
+            defaultco.append('-DEXTRA_LIB=' + ';'.join(extra_libs))
+            if extra_link_flag: defaultco.append(extra_link_flag)
+
+        build.cmakeoptions(defaultco, prof)
+        build.cmake_build(defaultco, os.path.join(build.folder, 'default'))
 
 
     # output depth support: to bind libx265_main for 8bit encoder, libx265_main10 for 10bit encoder
