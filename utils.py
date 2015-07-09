@@ -1240,7 +1240,7 @@ def buildall(prof=None):
             print("`my_libpairs` variable format is wrong", my_libpairs)
             return
         if tup[0] not in buildObj or tup[1] not in buildObj:
-            print("`my_libpairs` variable format is wrong", my_libpairs)
+            # do not warn here, since the build list may be pruned
             return
 
         build1 = buildObj[tup[0]]
