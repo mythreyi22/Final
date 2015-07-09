@@ -105,14 +105,24 @@ except ImportError, e:
 
 osname = platform.system()
 if osname == 'Windows':
-    exe_ext = '.exe'
-    dll_ext = '.dll'
-elif osname == 'Darwin':
-    exe_ext = ''
-    dll_ext = '.dylib'
-elif osname == 'Linux':
-    exe_ext = ''
-    dll_ext = '.so'
+    exe_ext         = '.exe'
+    dll_ext         = '.dll'
+    static_lib      = 'x265-static.lib'
+    lib_main        = 'x265-static-main.lib'
+    lib_main10      = 'x265-static-main10.lib'
+    lib_main12      = 'x265-static-main12.lib'
+    extra_link_flag = ''
+else:
+    exe_ext         = ''
+    static_lib      = 'libx265.a'
+    lib_main        = 'libx265_main.a'
+    lib_main10      = 'libx265_main10.a'
+    lib_main12      = 'libx265_main12.a'
+    extra_link_flag = r'-DEXTRA_LINK_FLAGS=-L.'
+    if osname == 'Darwin':
+        dll_ext     = '.dylib'
+    elif osname == 'Linux':
+        dll_ext     = '.so'
 
 class Build():
     def __init__(self, *args):
@@ -132,13 +142,56 @@ class Build():
                 self.target = 'RelWithDebInfo'
             else:
                 self.target = 'Release'
-            self.exe = os.path.abspath(os.path.join(self.folder, self.target, encoder_binary_name + exe_ext))
-            self.dll = os.path.abspath(os.path.join(self.folder, self.target, 'libx265' + dll_ext))
-            self.testbench = os.path.abspath(os.path.join(self.folder, 'test', self.target, 'TestBench' + exe_ext))
+            self.exe = os.path.abspath(os.path.join(self.folder, 'default', self.target, encoder_binary_name + exe_ext))
+            self.dll = os.path.abspath(os.path.join(self.folder, 'default', self.target, 'libx265' + dll_ext))
+            self.testbench = os.path.abspath(os.path.join(self.folder, 'default', 'test', self.target, 'TestBench' + exe_ext))
         else:
-            self.exe = os.path.abspath(os.path.join(self.folder, encoder_binary_name + exe_ext))
-            self.dll = os.path.abspath(os.path.join(self.folder, 'libx265' + dll_ext))
-            self.testbench = os.path.abspath(os.path.join(self.folder, 'test', 'TestBench' + exe_ext))
+            self.target = ''
+            self.exe = os.path.abspath(os.path.join(self.folder, 'default', encoder_binary_name + exe_ext))
+            self.dll = os.path.abspath(os.path.join(self.folder, 'default', 'libx265' + dll_ext))
+            self.testbench = os.path.abspath(os.path.join(self.folder, 'default', 'test', 'TestBench' + exe_ext))
+
+    def cmakeoptions(self, cmakeopts, prof):
+        for o in self.cmakeopts.split():
+            if o in option_strings:
+                cmakeopts.append(option_strings[o])
+            else:
+                logger.write('Unknown cmake option', o)
+
+        if not isancestor('65d004d54895'): # cmake: introduce fprofile options
+            pass
+        elif 'Makefiles' not in self.gen:
+            pass # our cmake script does not support PGO for MSVC yet
+        elif prof is 'generate':
+            cmakeopts.append('-DFPROFILE_GENERATE=ON')
+            cmakeopts.append('-DFPROFILE_USE=OFF')
+        elif prof is 'use':
+            cmakeopts.append('-DFPROFILE_GENERATE=OFF')
+            cmakeopts.append('-DFPROFILE_USE=ON')
+        else:
+            cmakeopts.append('-DFPROFILE_GENERATE=OFF')
+            cmakeopts.append('-DFPROFILE_USE=OFF')
+
+        # force the default of release build if not already specified
+        if '-DCMAKE_BUILD_TYPE=' not in ' '.join(cmakeopts):
+            cmakeopts.append('-DCMAKE_BUILD_TYPE=Release')
+			
+    def cmake_build(self, cmakeopts, buildfolder):
+        cout, cerr = cmake(self.gen, buildfolder, cmakeopts, **self.opts)
+        if cerr:
+            prefix = 'cmake errors reported for %s:: ' % key
+            errors = cout + cerr
+        elif 'Makefiles' in self.gen:
+            errors = gmake(buildfolder, self.gen, **self.opts)
+            prefix = 'make warnings or errors reported for %s:: ' % key
+        elif 'Visual Studio' in self.gen:
+            errors = msbuild(key, buildfolder, self.gen, cmakeopts)
+            prefix = 'msbuild warnings or errors reported for %s:: ' % key
+        else:
+            raise NotImplemented()
+
+        if errors:
+            logger.writeerr(prefix + '\n' + errors + '\n')
 
 class Logger():
     def __init__(self, testfile):
@@ -961,14 +1014,6 @@ def cmake(generator, buildfolder, cmakeopts, **opts):
     # buildfolder is the relative path to build folder
     logger.settitle('cmake ' + buildfolder)
 
-    if rebuild and os.path.exists(buildfolder):
-        shutil.rmtree(buildfolder)
-        if os.name == 'nt': time.sleep(1)
-    if not os.path.exists(buildfolder):
-        os.mkdir(buildfolder)
-    else:
-        generator = None
-
     cmds = ['cmake', '-Wno-dev', os.path.abspath(my_x265_source)]
 
     if generator:
@@ -1126,46 +1171,66 @@ def buildall(prof=None):
         logger.write('building %s...'% key)
         build = buildObj[key]
 
-        cmakeopts = []
+        if rebuild and os.path.exists(build.folder):
+            shutil.rmtree(build.folder)
+        if os.name == 'nt': time.sleep(1)
+        if not os.path.exists(build.folder):
+            os.mkdir(build.folder)
+        if not os.path.exists(os.path.join(build.folder, 'default')):
+            os.mkdir(os.path.join(build.folder, 'default'))
+        else:
+            generator = None
+
+        cmakeopts2 = []
+        extra_lib = '-DEXTRA_LIB='
+        if 'add-depths' in build.opts:
+            for bitdepthfolder in build.opts['add-depths']:
+                if not os.path.exists(os.path.join(build.folder, bitdepthfolder)):
+                    os.mkdir(os.path.join(build.folder, bitdepthfolder))
+                cmakeopts = []
+                for o in build.cmakeopts.split():
+                    if o in option_strings:
+                        cmakeopts.append(option_strings[o])
+                    else:
+                        logger.write('Unknown cmake option', o)
+                cmakeopts.append('-DENABLE_SHARED=OFF')
+                cmakeopts.append('-DENABLE_CLI=OFF')
+                cmakeopts.append('-DEXPORT_C_API=OFF')
+                if '12' in bitdepthfolder or '10' in bitdepthfolder:
+                    cmakeopts.append('-DHIGH_BIT_DEPTH=ON')
+                    if '12' in bitdepthfolder:
+                        cmakeopts.append('-DMAIN12=ON')
+                        cmakeopts2.append('-DLINKED_12BIT=ON')
+                        extra_lib = ';'.join([extra_lib, lib_main12])
+                        build.cmakeoptions(cmakeopts, prof)
+                        build.cmake_build(cmakeopts, os.path.join(build.folder, bitdepthfolder))
+                        shutil.copy(os.path.join(build.folder, bitdepthfolder, build.target, static_lib), os.path.join(build.folder, 'default', lib_main12))
+                    elif '10' in bitdepthfolder:
+                        cmakeopts2.append('-DLINKED_10BIT=ON')
+                        extra_lib = ';'.join([extra_lib, lib_main10])
+                        build.cmakeoptions(cmakeopts, prof)
+                        build.cmake_build(cmakeopts, os.path.join(build.folder, bitdepthfolder))
+                        shutil.copy(os.path.join(build.folder, bitdepthfolder, build.target, static_lib), os.path.join(build.folder, 'default', lib_main10))
+                else:
+                    cmakeopts2.append('-DLINKED_8BIT=ON')
+                    extra_lib = ';'.join([extra_lib, lib_main])
+                    build.cmakeoptions(cmakeopts, prof)
+                    build.cmake_build(cmakeopts, os.path.join(build.folder, bitdepthfolder))
+                    shutil.copy(os.path.join(build.folder, bitdepthfolder, build.target, static_lib), os.path.join(build.folder, 'default', lib_main))
+
         for o in build.cmakeopts.split():
             if o in option_strings:
-                cmakeopts.append(option_strings[o])
+                cmakeopts2.append(option_strings[o])
             else:
                 logger.write('Unknown cmake option', o)
 
-        if not isancestor('65d004d54895'): # cmake: introduce fprofile options
-            pass
-        elif 'Makefiles' not in build.gen:
-            pass # our cmake script does not support PGO for MSVC yet
-        elif prof is 'generate':
-            cmakeopts.append('-DFPROFILE_GENERATE=ON')
-            cmakeopts.append('-DFPROFILE_USE=OFF')
-        elif prof is 'use':
-            cmakeopts.append('-DFPROFILE_GENERATE=OFF')
-            cmakeopts.append('-DFPROFILE_USE=ON')
-        else:
-            cmakeopts.append('-DFPROFILE_GENERATE=OFF')
-            cmakeopts.append('-DFPROFILE_USE=OFF')
+        if 'add-depths' in build.opts:
+            cmakeopts2.append(extra_lib)
+            if not osname == 'Windows':
+                cmakeopts2.append(extra_link_flag)
+        build.cmakeoptions(cmakeopts2, prof)
+        build.cmake_build(cmakeopts2, os.path.join(build.folder, 'default'))
 
-        # force the default of release build if not already specified
-        if '-DCMAKE_BUILD_TYPE=' not in ' '.join(cmakeopts):
-            cmakeopts.append('-DCMAKE_BUILD_TYPE=Release')
-
-        cout, cerr = cmake(build.gen, build.folder, cmakeopts, **build.opts)
-        if cerr:
-            prefix = 'cmake errors reported for %s:: ' % key
-            errors = cout + cerr
-        elif 'Makefiles' in build.gen:
-            errors = gmake(build.folder, build.gen, **build.opts)
-            prefix = 'make warnings or errors reported for %s:: ' % key
-        elif 'Visual Studio' in build.gen:
-            errors = msbuild(key, build.folder, build.gen, cmakeopts)
-            prefix = 'msbuild warnings or errors reported for %s:: ' % key
-        else:
-            raise NotImplemented()
-
-        if errors:
-            logger.writeerr(prefix + '\n' + errors + '\n')
 
     # output depth support: to bind libx265_main for 8bit encoder, libx265_main10 for 10bit encoder
     for tup in my_libpairs:

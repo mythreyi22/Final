@@ -89,7 +89,7 @@ my_builds = {
     #'gcc10' : ('gcc10/', 'gcc10', 'Unix Makefiles', '16bpp', {}),
     #'llvm'  : ('llvm/', 'gcc', 'Unix Makefiles', 'checked',
     #           {'CC' : 'clang', 'CXX' : 'clang++'}),
-    #'vc11'  : ('vc11/', 'vc', 'Visual Studio 11 Win64', 'checked', {}),
+    #'vc11'  : ('vc11/', 'vc', 'Visual Studio 11 Win64', 'checked', {'add-depths': ['8bit', '12bit']}),
     #'vc11D' : ('vc11D/', 'vc', 'Visual Studio 11 Win64', 'debug crt noasm ppa', {}),
     #'win32' : ('vc11x86/', 'vc', 'Visual Studio 11', 'static ppa', {}),
     #'mingw' : ('mingw/', 'gcc', 'MinGW Makefiles', 'tests',
