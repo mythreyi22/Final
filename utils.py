@@ -175,7 +175,7 @@ class Build():
         # force the default of release build if not already specified
         if '-DCMAKE_BUILD_TYPE=' not in ' '.join(cmakeopts):
             cmakeopts.append('-DCMAKE_BUILD_TYPE=Release')
-			
+
     def cmake_build(self, cmakeopts, buildfolder):
         cout, cerr = cmake(self.gen, buildfolder, cmakeopts, **self.opts)
         if cerr:
