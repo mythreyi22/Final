@@ -1237,7 +1237,7 @@ def buildall(prof=None):
     # output depth support: to bind libx265_main for 8bit encoder, libx265_main10 for 10bit encoder
     for tup in my_libpairs:
         if len(tup) != 2:
-            print("`my_libpairs` variable format is wrong", my_libpairs)
+            print "`my_libpairs` variable format is wrong", my_libpairs
             return
         if tup[0] not in buildObj or tup[1] not in buildObj:
             # do not warn here, since the build list may be pruned
