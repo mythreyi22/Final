@@ -17,9 +17,9 @@ my_smtp_host    = 'smtp.gmail.com'
 my_smtp_port    = 587
 
 # --output-depth test support:
-# declare pairs of compatible (main, main10) builds which can provide
+# declare pairs of compatible (main, main10, main12) builds which can provide
 # shared libraries for each other using key pairs from my_builds. For
-# example: my_libpairs = [('gcc', 'gcc10'), ('vc11', 'vc1110')]
+# example: my_libpairs = [('gcc', 'gcc10', 'gcc12'), ('vc11', 'vc1110', 'vc1112')]
 my_libpairs = []
 
 # keys from my_builds that you wish to upload to ftp

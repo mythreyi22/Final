@@ -1233,36 +1233,56 @@ def buildall(prof=None):
         build.cmakeoptions(defaultco, prof)
         build.cmake_build(key, defaultco, os.path.join(build.folder, 'default'))
 
-
-    # output depth support: to bind libx265_main for 8bit encoder, libx265_main10 for 10bit encoder
+    if 'add-depths' in build.opts or not my_libpairs:
+        return
+    # output depth support: to bind libx265_main, main10, main12 for 8, 10, 12 bit encoders
     for tup in my_libpairs:
-        if len(tup) != 2:
+        if len(tup) != 3:
             print "`my_libpairs` variable format is wrong", my_libpairs
             return
-        if tup[0] not in buildObj or tup[1] not in buildObj:
+        if tup[0] not in buildObj or tup[1] not in buildObj or tup[2] not in buildObj:
             # do not warn here, since the build list may be pruned
             return
 
         build1 = buildObj[tup[0]]
         build2 = buildObj[tup[1]]
+        build3 = buildObj[tup[2]]
         if 'static' in build1.cmakeopts.split() or \
-           'static' in build2.cmakeopts.split():
+           'static' in build2.cmakeopts.split() or \
+           'static' in build3.cmakeopts.split():
             print "%s or %s not generating shared libs" % tup
             return
 
-        b1  = (build1.dll).replace('libx265.', 'libx265_' + build2.profile + '.')
-        b2  = (build2.dll).replace('libx265.', 'libx265_' + build1.profile + '.')
+        b12  = (build1.dll).replace('libx265.', 'libx265_' + build2.profile + '.')
+        b13  = (build1.dll).replace('libx265.', 'libx265_' + build3.profile + '.')
+        b21  = (build2.dll).replace('libx265.', 'libx265_' + build1.profile + '.')
+        b23  = (build2.dll).replace('libx265.', 'libx265_' + build3.profile + '.')
+        b31  = (build3.dll).replace('libx265.', 'libx265_' + build1.profile + '.')
+        b32  = (build3.dll).replace('libx265.', 'libx265_' + build2.profile + '.')
         try:
-            if os.path.lexists(b1):
-                os.unlink(b1)
-            if os.path.lexists(b2):
-                os.unlink(b2)
+            if os.path.lexists(b12) and os.path.lexists(b13):
+                os.unlink(b12)
+                os.unlink(b13)
+            if os.path.lexists(b21) and os.path.lexists(b23):
+                os.unlink(b21)
+                os.unlink(b23)
+            if os.path.lexists(b31) and os.path.lexists(b32):
+                os.unlink(b31)
+                os.unlink(b32)
             if osname == 'Windows':
-                shutil.copy(build1.dll, b2)
-                shutil.copy(build2.dll, b1)
+                shutil.copy(build1.dll, b21)
+                shutil.copy(build1.dll, b31)
+                shutil.copy(build2.dll, b12)
+                shutil.copy(build2.dll, b32)
+                shutil.copy(build3.dll, b13)
+                shutil.copy(build3.dll, b23)
             else:
-                os.symlink(os.path.abspath(build1.dll), b2)
-                os.symlink(os.path.abspath(build2.dll), b1)
+                os.symlink(os.path.abspath(build1.dll), b21)
+                os.symlink(os.path.abspath(build1.dll), b31)
+                os.symlink(os.path.abspath(build2.dll), b12)
+                os.symlink(os.path.abspath(build2.dll), b32)
+                os.symlink(os.path.abspath(build3.dll), b13)
+                os.symlink(os.path.abspath(build3.dll), b23)
         except IOError:
             print("failed to setup library pair", tup)
 
@@ -1770,6 +1790,9 @@ def runtest(key, seq, commands, always, extras):
             print 'extras: %s ...' % ' '.join(extras),
             sys.stdout.flush()
 
+            build = buildObj[key]
+            if '--output-depth' in command and ('add-depths' in build.opts or not my_libpairs):
+                continue
             _test(key, tmpfolder, seq, command, extras)
 
         logger.write('')
