@@ -29,6 +29,7 @@ if logger.errors:
     sys.exit(1)
 
 always = '--no-info --hash=1'
+hasffplay = find_executable('ffplay')
 
 try:
 
@@ -38,7 +39,7 @@ try:
     for build in my_builds:
         logger.setbuild(build)
         for seq, command in tests:
-            if 'ffplay' in  command and not find_executable('ffplay'):
+            if 'ffplay' in command and not hasffplay:
                 continue
             extras = ['--psnr', '--ssim', utils.getspotcheck(command)]
             utils.runtest(build, seq, command, always, extras)
