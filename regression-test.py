@@ -15,7 +15,7 @@ import utils
 utils.setup(sys.argv, 'regression-tests.txt')
 
 from conf import my_builds, my_machine_name, my_sequences
-from utils import logger
+from utils import logger, find_executable
 
 # do not use debug builds for long-running tests
 debugs = [key for key in my_builds if 'debug' in my_builds[key][3]]
@@ -38,6 +38,8 @@ try:
     for build in my_builds:
         logger.setbuild(build)
         for seq, command in tests:
+            if 'ffplay' in  command and not find_executable('ffplay'):
+                continue
             extras = ['--psnr', '--ssim', utils.getspotcheck(command)]
             utils.runtest(build, seq, command, always, extras)
 
