@@ -12,6 +12,7 @@
 # only test cases which match the string(s) within the braces are
 # allowed to update their golden outputs to this commit
 
+8521e8d7a477 Depth-first search for RD 5/6
 523540864864 MV cost overflow fix
 9feee64efa44 race hazard fix for CQP/CRF
 8aa2bedda740 bug fix for limit-refs rd 0/4
