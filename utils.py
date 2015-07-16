@@ -827,7 +827,7 @@ def initspotchecks():
     ]
     # stats: introduce X265_LOG_FRAME for file level CSV logging without console logs
     if isancestor('a5af4cf20660'):
-        sc.append('--log=frame')
+        sc.append('--csv-log-level=1')
     # check if the revision under test is after the NUMA pools commit
     if isancestor('62b8fe990df5'):
         sc.append('--pools=3')
