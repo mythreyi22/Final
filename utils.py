@@ -825,9 +825,16 @@ def initspotchecks():
         '--log=debug',
         '--log=full',
     ]
+    if isancestor('63fe043f739c'):
+        # these have no effect without --csv=[fname] which is
+        # a different spot-check. In order for this to work we need to
+        # support multi-option spot checks
+        #sc.append('--csv-log-level=1')
+        #sc.append('--csv-log-level=2')
+        pass
     # stats: introduce X265_LOG_FRAME for file level CSV logging without console logs
-    if isancestor('a5af4cf20660'):
-        sc.append('--csv-log-level=1')
+    elif isancestor('a5af4cf20660'):
+        sc.append('--log-level=frame')
     # check if the revision under test is after the NUMA pools commit
     if isancestor('62b8fe990df5'):
         sc.append('--pools=3')
