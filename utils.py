@@ -1257,7 +1257,7 @@ def buildall(prof=None):
         if 'static' in build1.cmakeopts.split() or \
            'static' in build2.cmakeopts.split() or \
            'static' in build3.cmakeopts.split():
-            print "%s or %s not generating shared libs" % tup
+            print "%s or %s or %s not generating shared libs" % tup
             return
 
         b12  = (build1.dll).replace('libx265.', 'libx265_' + build2.profile + '.')
