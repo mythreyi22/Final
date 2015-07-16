@@ -531,6 +531,8 @@ if os.name == 'nt':
             errors = ''.join(out[-10:])
         if proc.returncode == -11:
             errors += 'SIGSEGV\n'
+        elif proc.returncode == -10:
+            errors += 'SIGBUS\n'
         elif proc.returncode == -6:
             errors += 'SIGABRT\n'
         elif proc.returncode == -4:
@@ -588,6 +590,8 @@ else:
             errors = ''.join(out[-10:])
         if proc.returncode == -11:
             errors += 'SIGSEGV\n'
+        elif proc.returncode == -10:
+            errors += 'SIGBUS\n'
         elif proc.returncode == -6:
             errors += 'SIGABRT\n'
         elif proc.returncode == -4:
