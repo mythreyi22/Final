@@ -327,7 +327,7 @@ class Logger():
 
         duration = str(datetime.datetime.now() - self.start_time).split('.')[0]
         msg = MIMEText("Test Duration(H:M:S) = " + duration + "\n\n" + open(self.logfname, 'r').read())
-        msg['To'] = my_email_to
+        msg['To'] = ", ".join(my_email_to)
         msg['From'] = my_email_from
         testname = self.testname.split('-')
         status = self.errors and 'failures' or 'successful'
