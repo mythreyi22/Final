@@ -843,11 +843,6 @@ def initspotchecks():
     # stats: introduce X265_LOG_FRAME for file level CSV logging without console logs
     elif isancestor('a5af4cf20660'):
         sc.append('--log-level=frame')
-    # check if the revision under test is after the NUMA pools commit
-    if isancestor('62b8fe990df5'):
-        sc.append('--pools=3')
-    else:
-        sc.append('--threads=3')
 
     global spot_checks
     spot_checks = sc
@@ -857,8 +852,6 @@ def getspotcheck(cmd):
     '''pick a random spot check, but don't allow some combinations'''
     forbiddens = {
         '--log=none': ['vbv'],
-        '--pools=3' : ['veryslow', 'placebo'],
-        '--threads=3' : ['veryslow', 'placebo'],
         '--no-asm'  : ['veryslow', 'placebo'],
     }
     global spot_checks
