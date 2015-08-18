@@ -12,6 +12,7 @@
 # only test cases which match the string(s) within the braces are
 # allowed to update their golden outputs to this commit
 
+923bfe2a098b RC scene change fixes
 1e49e854439a [pmode] add depth first search to pmode
 dc5d58411210 qg-size 32 set to default
 dbe8c629ccc7 rd-0 fixes
