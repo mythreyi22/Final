@@ -1483,20 +1483,7 @@ def checkoutputs(key, seq, command, sum, tmpdir):
 
     # walk list of ancestor commits which changed outputs until we find the
     # most recent output bitstream we are expected to match
-    testingbranch = hggetbranch(testrev)
     for commit in changers:
-        lastknowngoodcommitbranch =  hggetbranch(commit)
-        if testingbranch == 'stable':
-            if lastknowngoodcommitbranch == 'stable':
-                revdate = hgrevisiondate(commit)
-                lastfname = '%s-%s-%s' % (revdate, group, commit)
-                testfolder = os.path.join(my_goldens, testhash, lastfname)
-                if os.path.isdir(testfolder):
-                    # this stable commit has known-good stable outputs
-                    break
-            else:
-                continue
-
         nc = 'no-change-%s-%s.txt' % (group, commit)
         nochange = os.path.join(my_goldens, testhash, nc)
         if os.path.exists(nochange):
