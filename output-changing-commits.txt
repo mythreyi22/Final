@@ -12,6 +12,7 @@
 # only test cases which match the string(s) within the braces are
 # allowed to update their golden outputs to this commit
 
+3c6cc793ecb0 [pme] limit-refs support added to pme
 2980141a744a RC changes merged to default
 923bfe2a098b [bitrate,vbv] RC scene change fixes
 1e49e854439a [pmode] add depth first search to pmode
