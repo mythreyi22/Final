@@ -12,6 +12,8 @@
 # only test cases which match the string(s) within the braces are
 # allowed to update their golden outputs to this commit
 
+cb66ddebed49 RC scene changes merged to default
+69d55d4c53eb RC scene changes
 3ef81a6d1015 Remove keyframe SEI, affects all streams
 3c6cc793ecb0 limit-refs support added to pme
 2980141a744a RC changes merged to default
