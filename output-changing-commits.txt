@@ -12,6 +12,8 @@
 # only test cases which match the string(s) within the braces are
 # allowed to update their golden outputs to this commit
 
+82e9576a33ef main12 psy-rdoq merged to default
+66bcd8d1da99 main12 psy-rdoq fixes
 cb66ddebed49 RC scene changes merged to default
 69d55d4c53eb RC scene changes
 44cc2ce22c43 SEI changes merged to default
