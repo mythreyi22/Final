@@ -12,6 +12,7 @@
 # only test cases which match the string(s) within the braces are
 # allowed to update their golden outputs to this commit
 
+a85011719ea1 RC scene cut bugfix v1
 e1269ce2d71a pme limit-refs changes, spot checks on pme stay valid
 82e9576a33ef main12 psy-rdoq merged to default
 66bcd8d1da99 main12 psy-rdoq fixes
