@@ -205,11 +205,17 @@ class Logger():
         self.testcount = 0
         self.totaltests = 0
         self.newoutputs = {}
-        self.logfp = open(self.logfname, 'wb')
-        self.header  = 'system:      %s\n' % my_machine_name
+        self.logfp = open(self.logfname, 'wb')        
+        self.header  = '\nsystem:      %s\n' % my_machine_name
         self.header += 'hardware:    %s\n' % my_machine_desc
         self.header += 'testharness: %s\n' % hgversion(testharnesspath)
         self.header += '%s\n' % hgrevisioninfo(hgversion(my_x265_source))
+        htmltable = "style='font-size:15px; font-family: Times New Roman'"
+        self.tableheader = r'<tr><th rowspan = "2">{0}</th><th rowspan = "2">{1}</th><th rowspan = "2">{2}</th><th colspan = "3">{3}</th><th rowspan = "2">{4}</th><th colspan = "3">{5}</th></tr>'.format('Failure Type','Failure Commands','Previous Good Revision','Previous Values','Current Revision','Current Values',)
+        self.tableheader2 = r'<tr> <th>Bitrate</th><th>SSIM</th><th>PSNR</th> <th>Bitrate</th><th>SSIM</th><th>PSNR</th> </tr>'
+        self.table = ['<htm><body ' + htmltable +' ><table border="1">']
+        self.table.append(self.tableheader)
+        self.table.append(self.tableheader2)
         self.logfp.write(self.header + '\n')
         self.logfp.write('Running %s\n\n' % testfile)
         self.logfp.flush()
@@ -261,6 +267,8 @@ class Logger():
         self.test  = 'command: %s %s\n' % (seq, command)
         self.test += '   hash: %s\n' % hash
         self.test += ' extras: ' + ' '.join(extras) + '\n\n'
+        self.tablecommand = '%s %s'% (seq, command)
+        self.tablecommand += '  '.join(extras)        
         nofn = '[%d/%d]' % (self.testcount, self.totaltests)
         self.settitle(' '.join([nofn, seq, command]))
         print nofn,
@@ -324,20 +332,30 @@ class Logger():
 
         import smtplib
         from email.mime.text import MIMEText
+        from email.mime.multipart import MIMEMultipart
 
+        msg = MIMEMultipart('alternative')
         duration = str(datetime.datetime.now() - self.start_time).split('.')[0]
-        msg = MIMEText("Test Duration(H:M:S) = " + duration + "\n\n" + open(self.logfname, 'r').read())
+        logger.table.append('</table>')
+        tableMsg = ''.join(logger.table)
+        textMsg = "<br> Test Duration(H:M:S) = " + duration + "<br>" + open(self.logfname, 'r').read()+ "<br><br>"
         if type(my_email_to) is str:
             msg['To'] = my_email_to
         else:
             msg['To'] = ", ".join(my_email_to)
+        textStyle = "style='font-size:15px; font-family: Times New Roman'"
+        failure_message = MIMEText(tableMsg + '<pre ' + textStyle +' >' + textMsg + '</pre></body></html>', 'html')
+        success_message = MIMEText('<pre ' + textStyle +' >' + textMsg + '</pre></body></html>', 'html')
         msg['From'] = my_email_from
         testname = self.testname.split('-')
         status = self.errors and 'failures' or 'successful'
         branch = hggetbranch(testrev)
         data = [platform.system(), '-'] + testname + [status, '-', branch]
         msg['Subject'] = ' '.join(data)
-
+        if self.errors:
+            msg.attach(failure_message)
+        else:
+            msg.attach(success_message)        
         session = smtplib.SMTP(my_smtp_host, my_smtp_port)
         try:
             session.ehlo()
@@ -1489,11 +1507,12 @@ def checkoutputs(key, seq, command, sum, tmpdir):
         if os.path.exists(nochange):
             # this commit claims to match outputs of a previous commit
             commit = open(nochange, 'r').read()
-            revdate = hgrevisiondate(commit)
+            revdate = hgrevisiondate(commit)            
             lastfname = '%s-%s-%s' % (revdate, group, commit)
+            logger.tableprevrevision = '%s' %commit
             testfolder = os.path.join(my_goldens, testhash, lastfname)
             break
-
+        logger.tableprevrevision = '%s' %commit
         revdate = hgrevisiondate(commit)
         lastfname = '%s-%s-%s' % (revdate, group, commit)
         testfolder = os.path.join(my_goldens, testhash, lastfname)
@@ -1686,6 +1705,7 @@ def _test(build, tmpfolder, seq, command, extras):
     logs, sum, errors = encodeharness(build, tmpfolder, seq, command, extras)
     if errors:
         logger.testfail('encoder warning or error reported', errors, logs)
+        failuretype = 'ENCODER WARNING OR ERROR REPORTED'
         return
 
     # check against last known good outputs - lastfname is the folder
@@ -1700,6 +1720,7 @@ def _test(build, tmpfolder, seq, command, extras):
             hashfname = savebadstream(tmpfolder)
             decodeerr += '\nThis bitstream was saved to %s' % hashfname
             logger.testfail('Decoder validation failed', decodeerr, logs)
+            failuretype = 'OUTPUT CHANGE WITH DECODE ERRORS '
         else:
             logger.write('Decoder validation ok:', sum)
             newgoldenoutputs(seq, command, lastfname, sum, logs, tmpfolder)
@@ -1713,7 +1734,7 @@ def _test(build, tmpfolder, seq, command, extras):
             prefix = 'OUTPUT CHANGE WITH DECODE ERRORS'
             hashfname = savebadstream(tmpfolder)
             prefix += '\nThis bitstream was saved to %s' % hashfname
-            logger.testfail(prefix, errors + decodeerr, logs)
+            logger.testfail(prefix, errors + decodeerr, logs)            
         elif '--vbv-bufsize' in command:
             # golden outputs might have used --log=none, recover from this
             if 'N/A' in lastsum and 'N/A' not in sum:
@@ -1729,6 +1750,7 @@ def _test(build, tmpfolder, seq, command, extras):
                 newbitrate = float(sum.split(',')[0].split(' ')[1])
                 diff = abs(lastbitrate - newbitrate) / lastbitrate
                 diffmsg = 'VBV OUTPUT CHANGED BY %.2f%%' % (diff * 100)
+                failuretype = 'VBV OUTPUT CHANGE'
             except (IndexError, ValueError), e:
                 diffmsg = 'Unable to parse bitrates for %s:\n<%s>\n<%s>' % \
                            (testhash, lastsum, sum)
@@ -1741,6 +1763,7 @@ def _test(build, tmpfolder, seq, command, extras):
         else:
             logger.write('FAIL')
             prefix = 'OUTPUT CHANGE: <%s> to <%s>' % (lastsum, sum)
+            failuretype = 'OUTPUT CHANGE'
             if save_changed:
                 hashfname = savebadstream(tmpfolder)
                 prefix += '\nThis bitstream was saved to %s' % hashfname
@@ -1749,6 +1772,22 @@ def _test(build, tmpfolder, seq, command, extras):
                 prefix += '\nbitstream hash was %s' % hashbitstream(badfn)
             addfail(testhash, lastfname, logs, errors)
             logger.testfail(prefix, errors, logs)
+            logger.tableprevvalue = lastsum            
+            logger.tablecurrentrevision = testrev
+            logger.tablecurrentvalue = sum
+            prevValue = logger.tableprevvalue
+            currValue = logger.tablecurrentvalue            
+            logger.table.append(r'<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td><td>{6}</td><td>{7}</td><td>{8}</td><td>{9}</td></tr>'\
+                                .format(failuretype,
+                                        logger.tablecommand,
+                                        logger.tableprevrevision,
+                                        prevValue.split(",")[0].split(":")[1],
+                                        prevValue.split(",")[1].split(":")[1],
+                                        prevValue.split(",")[2].split(":")[1],
+                                        logger.tablecurrentrevision,
+                                        currValue.split(",")[0].split(":")[1],
+                                        currValue.split(",")[1].split(":")[1],
+                                        currValue.split(",")[2].split(":")[1]))
     else:
         # outputs matched golden outputs
         addpass(testhash, lastfname, logs)
