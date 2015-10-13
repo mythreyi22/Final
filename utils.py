@@ -1705,7 +1705,6 @@ def _test(build, tmpfolder, seq, command, extras):
     logs, sum, errors = encodeharness(build, tmpfolder, seq, command, extras)
     if errors:
         logger.testfail('encoder warning or error reported', errors, logs)
-        failuretype = 'ENCODER WARNING OR ERROR REPORTED'
         return
 
     # check against last known good outputs - lastfname is the folder
@@ -1720,7 +1719,6 @@ def _test(build, tmpfolder, seq, command, extras):
             hashfname = savebadstream(tmpfolder)
             decodeerr += '\nThis bitstream was saved to %s' % hashfname
             logger.testfail('Decoder validation failed', decodeerr, logs)
-            failuretype = 'OUTPUT CHANGE WITH DECODE ERRORS '
         else:
             logger.write('Decoder validation ok:', sum)
             newgoldenoutputs(seq, command, lastfname, sum, logs, tmpfolder)
@@ -1734,7 +1732,8 @@ def _test(build, tmpfolder, seq, command, extras):
             prefix = 'OUTPUT CHANGE WITH DECODE ERRORS'
             hashfname = savebadstream(tmpfolder)
             prefix += '\nThis bitstream was saved to %s' % hashfname
-            logger.testfail(prefix, errors + decodeerr, logs)            
+            logger.testfail(prefix, errors + decodeerr, logs)
+            failuretype = 'OUTPUT CHANGE WITH DECODE ERRORS '
         elif '--vbv-bufsize' in command:
             # golden outputs might have used --log=none, recover from this
             if 'N/A' in lastsum and 'N/A' not in sum:
@@ -1772,12 +1771,12 @@ def _test(build, tmpfolder, seq, command, extras):
                 prefix += '\nbitstream hash was %s' % hashbitstream(badfn)
             addfail(testhash, lastfname, logs, errors)
             logger.testfail(prefix, errors, logs)
-            logger.tableprevvalue = lastsum            
-            logger.tablecurrentrevision = testrev
-            logger.tablecurrentvalue = sum
-            prevValue = logger.tableprevvalue
-            currValue = logger.tablecurrentvalue            
-            logger.table.append(r'<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td><td>{6}</td><td>{7}</td><td>{8}</td><td>{9}</td></tr>'\
+        logger.tableprevvalue = lastsum            
+        logger.tablecurrentrevision = testrev
+        logger.tablecurrentvalue = sum
+        prevValue = logger.tableprevvalue
+        currValue = logger.tablecurrentvalue            
+        logger.table.append(r'<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td><td>{6}</td><td>{7}</td><td>{8}</td><td>{9}</td></tr>'\
                                 .format(failuretype,
                                         logger.tablecommand,
                                         logger.tableprevrevision,
