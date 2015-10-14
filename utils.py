@@ -1699,6 +1699,25 @@ def _test(build, tmpfolder, seq, command, extras):
         If they exist, verify bit-exactness or report divergence
         If not, validate new bitstream with decoder then save
     '''
+
+    def table(failuretype, sum , lastsum):
+        logger.tableprevvalue = lastsum            
+        logger.tablecurrentrevision = testrev
+        logger.tablecurrentvalue = sum
+        prevValue = logger.tableprevvalue
+        currValue = logger.tablecurrentvalue            
+        logger.table.append(r'<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td><td>{6}</td><td>{7}</td><td>{8}</td><td>{9}</td></tr>'\
+                                .format(failuretype,
+                                        logger.tablecommand,
+                                        logger.tableprevrevision,
+                                        prevValue.split(",")[0].split(":")[1],
+                                        prevValue.split(",")[1].split(":")[1],
+                                        prevValue.split(",")[2].split(":")[1],
+                                        logger.tablecurrentrevision,
+                                        currValue.split(",")[0].split(":")[1],
+                                        currValue.split(",")[1].split(":")[1],
+                                        currValue.split(",")[2].split(":")[1]))
+
     testhash = testcasehash(seq, command)
 
     # run the encoder, abort early if any errors encountered
@@ -1734,6 +1753,7 @@ def _test(build, tmpfolder, seq, command, extras):
             prefix += '\nThis bitstream was saved to %s' % hashfname
             logger.testfail(prefix, errors + decodeerr, logs)
             failuretype = 'OUTPUT CHANGE WITH DECODE ERRORS '
+            table(failuretype, sum , lastsum)
         elif '--vbv-bufsize' in command:
             # golden outputs might have used --log=none, recover from this
             if 'N/A' in lastsum and 'N/A' not in sum:
@@ -1749,7 +1769,6 @@ def _test(build, tmpfolder, seq, command, extras):
                 newbitrate = float(sum.split(',')[0].split(' ')[1])
                 diff = abs(lastbitrate - newbitrate) / lastbitrate
                 diffmsg = 'VBV OUTPUT CHANGED BY %.2f%%' % (diff * 100)
-                failuretype = 'VBV OUTPUT CHANGE'
             except (IndexError, ValueError), e:
                 diffmsg = 'Unable to parse bitrates for %s:\n<%s>\n<%s>' % \
                            (testhash, lastsum, sum)
@@ -1757,12 +1776,15 @@ def _test(build, tmpfolder, seq, command, extras):
             if diff > vbv_tolerance:
                 addfail(testhash, lastfname, logs, diffmsg)
                 logger.testfail(diffmsg, '', '')
+                failuretype = 'VBV OUTPUT CHANGE'
+                table(failuretype, sum , lastsum)
             else:
                 logger.write(diffmsg)
         else:
             logger.write('FAIL')
             prefix = 'OUTPUT CHANGE: <%s> to <%s>' % (lastsum, sum)
             failuretype = 'OUTPUT CHANGE'
+            table(failuretype, sum , lastsum)
             if save_changed:
                 hashfname = savebadstream(tmpfolder)
                 prefix += '\nThis bitstream was saved to %s' % hashfname
@@ -1771,22 +1793,7 @@ def _test(build, tmpfolder, seq, command, extras):
                 prefix += '\nbitstream hash was %s' % hashbitstream(badfn)
             addfail(testhash, lastfname, logs, errors)
             logger.testfail(prefix, errors, logs)
-        logger.tableprevvalue = lastsum            
-        logger.tablecurrentrevision = testrev
-        logger.tablecurrentvalue = sum
-        prevValue = logger.tableprevvalue
-        currValue = logger.tablecurrentvalue            
-        logger.table.append(r'<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td><td>{6}</td><td>{7}</td><td>{8}</td><td>{9}</td></tr>'\
-                                .format(failuretype,
-                                        logger.tablecommand,
-                                        logger.tableprevrevision,
-                                        prevValue.split(",")[0].split(":")[1],
-                                        prevValue.split(",")[1].split(":")[1],
-                                        prevValue.split(",")[2].split(":")[1],
-                                        logger.tablecurrentrevision,
-                                        currValue.split(",")[0].split(":")[1],
-                                        currValue.split(",")[1].split(":")[1],
-                                        currValue.split(",")[2].split(":")[1]))
+
     else:
         # outputs matched golden outputs
         addpass(testhash, lastfname, logs)
