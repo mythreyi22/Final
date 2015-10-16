@@ -178,15 +178,22 @@ class Build():
 
     def cmake_build(self, key, cmakeopts, buildfolder):
         cout, cerr = cmake(self.gen, buildfolder, cmakeopts, **self.opts)
+        empty = 'empty'
         if cerr:
             prefix = 'cmake errors reported for %s:: ' % key
             errors = cout + cerr
+            _test.failuretype = 'cmake errors'
+            table(_test.failuretype, empty, empty, logger.build.strip('\n'))
         elif 'Makefiles' in self.gen:
             errors = gmake(buildfolder, self.gen, **self.opts)
             prefix = 'make warnings or errors reported for %s:: ' % key
+            _test.failuretype = 'make warnings or errors'
+            table(_test.failuretype, empty, empty, logger.build.strip('\n'))
         elif 'Visual Studio' in self.gen:
             errors = msbuild(key, buildfolder, self.gen, cmakeopts)
             prefix = 'msbuild warnings or errors reported for %s:: ' % key
+            _test.failuretype = 'msbuild warnings or errors'
+            table(_test.failuretype, empty, empty, logger.build.strip('\n'))
         else:
             raise NotImplemented()
 
@@ -367,7 +374,6 @@ class Logger():
             print 'Unable to send email', e
         finally:
             session.quit()
-
 
 def setup(argv, preferredlist):
     if not find_executable('hg'):
@@ -1194,6 +1200,7 @@ def buildall(prof=None):
     if not run_make:
         return
     for key in buildObj:
+        logger.setbuild(key)
         logger.write('building %s...'% key)
         build = buildObj[key]
 
@@ -1317,6 +1324,8 @@ def testharness():
     if not run_bench:
         return
 
+    empty = 'empty'
+
     for key in buildObj:
         build = buildObj[key]
         bench = build.testbench
@@ -1338,6 +1347,8 @@ def testharness():
 
         if err:
             prefix = '** testbench failure reported for %s::\n' % key
+            _test.failuretype = 'testbench failure'
+            table(_test.failuretype, empty, empty, logger.build.strip('\n'))
             logger.writeerr(prefix + err)
 
 
@@ -1692,15 +1703,28 @@ def checkdecoder(tmpdir):
         return ''
 
 
-def _test(build, tmpfolder, seq, command, extras):
-    '''
-    Run a test encode within the specified temp folder
-    Check to see if golden outputs exist:
-        If they exist, verify bit-exactness or report divergence
-        If not, validate new bitstream with decoder then save
-    '''
+def table(failuretype, sum , lastsum, build_info):
+    var_empty = '-'
+    if (sum == "empty"):
+        logger.table.append(r'<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td><td>{6}</td><td>{7}</td><td>{8}</td><td>{9}</td></tr>'\
+                                .format(failuretype, build_info, var_empty, var_empty, var_empty, var_empty, var_empty, var_empty, var_empty, var_empty))
 
-    def table(failuretype, sum , lastsum):
+    elif (sum == "encoderwarning"):
+        logger.tableprevvalue = lastsum            
+        prevValue = logger.tableprevvalue
+        logger.table.append(r'<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td><td>{6}</td><td>{7}</td><td>{8}</td><td>{9}</td></tr>'\
+                                .format(failuretype,
+                                        logger.tablecommand,
+                                        logger.tableprevrevision,
+                                        prevValue.split(",")[0].split(":")[1],
+                                        prevValue.split(",")[1].split(":")[1],
+                                        prevValue.split(",")[2].split(":")[1],
+                                        var_empty,
+                                        var_empty,
+                                        var_empty,
+                                        var_empty))
+        
+    else:
         logger.tableprevvalue = lastsum            
         logger.tablecurrentrevision = testrev
         logger.tablecurrentvalue = sum
@@ -1717,13 +1741,26 @@ def _test(build, tmpfolder, seq, command, extras):
                                         currValue.split(",")[0].split(":")[1],
                                         currValue.split(",")[1].split(":")[1],
                                         currValue.split(",")[2].split(":")[1]))
+            
+
+def _test(build, tmpfolder, seq, command, extras):
+    '''
+    Run a test encode within the specified temp folder
+    Check to see if golden outputs exist:
+        If they exist, verify bit-exactness or report divergence
+        If not, validate new bitstream with decoder then save
+    '''
 
     testhash = testcasehash(seq, command)
+    empty = 'empty'
 
     # run the encoder, abort early if any errors encountered
     logs, sum, errors = encodeharness(build, tmpfolder, seq, command, extras)
     if errors:
+        encoder_warning = 'encoderwarning'
         logger.testfail('encoder warning or error reported', errors, logs)
+        failuretype = 'encoder warning or error reported '
+        table(failuretype, encoder_warning , lastsum, empty)
         return
 
     # check against last known good outputs - lastfname is the folder
@@ -1752,8 +1789,8 @@ def _test(build, tmpfolder, seq, command, extras):
             hashfname = savebadstream(tmpfolder)
             prefix += '\nThis bitstream was saved to %s' % hashfname
             logger.testfail(prefix, errors + decodeerr, logs)
-            failuretype = 'OUTPUT CHANGE WITH DECODE ERRORS '
-            table(failuretype, sum , lastsum)
+            failuretype = 'output change with decode errors '
+            table(failuretype, sum , lastsum, empty)
         elif '--vbv-bufsize' in command:
             # golden outputs might have used --log=none, recover from this
             if 'N/A' in lastsum and 'N/A' not in sum:
@@ -1776,15 +1813,15 @@ def _test(build, tmpfolder, seq, command, extras):
             if diff > vbv_tolerance:
                 addfail(testhash, lastfname, logs, diffmsg)
                 logger.testfail(diffmsg, '', '')
-                failuretype = 'VBV OUTPUT CHANGE'
-                table(failuretype, sum , lastsum)
+                failuretype = 'vbv output change'
+                table(failuretype, sum , lastsum, empty)
             else:
                 logger.write(diffmsg)
         else:
             logger.write('FAIL')
             prefix = 'OUTPUT CHANGE: <%s> to <%s>' % (lastsum, sum)
-            failuretype = 'OUTPUT CHANGE'
-            table(failuretype, sum , lastsum)
+            failuretype = 'output change'
+            table(failuretype, sum , lastsum, empty)
             if save_changed:
                 hashfname = savebadstream(tmpfolder)
                 prefix += '\nThis bitstream was saved to %s' % hashfname
