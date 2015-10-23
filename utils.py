@@ -218,7 +218,7 @@ class Logger():
         self.header += 'testharness: %s\n' % hgversion(testharnesspath)
         self.header += '%s\n' % hgrevisioninfo(hgversion(my_x265_source))
         htmltable = "style='font-size:15px; font-family: Times New Roman'"
-        self.tableheader = r'<tr><th rowspan = "2">{0}</th><th rowspan = "2">{1}</th><th rowspan = "2">{2}</th><th colspan = "3">{3}</th><th rowspan = "2">{4}</th><th colspan = "3">{5}</th></tr>'.format('Failure Type','Failure Commands','Previous Good Revision','Previous Values','Current Revision','Current Values',)
+        self.tableheader = r'<tr><th rowspan = "2">{0}</th><th rowspan = "2">{1}</th><th rowspan = "2">{2}</th><th rowspan = "2">{3}</th><th colspan = "3">{4}</th><th rowspan = "2">{5}</th><th colspan = "3">{6}</th></tr>'.format('Failure Type','Failure Commands','Build','Previous Good Revision','Previous Values','Current Revision','Current Values',)
         self.tableheader2 = r'<tr> <th>Bitrate</th><th>SSIM</th><th>PSNR</th> <th>Bitrate</th><th>SSIM</th><th>PSNR</th> </tr>'
         self.table = ['<htm><body ' + htmltable +' ><table border="1">']
         self.table.append(self.tableheader)
@@ -1706,15 +1706,16 @@ def checkdecoder(tmpdir):
 def table(failuretype, sum , lastsum, build_info):
     var_empty = '-'
     if (sum == "empty"):
-        logger.table.append(r'<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td><td>{6}</td><td>{7}</td><td>{8}</td><td>{9}</td></tr>'\
-                                .format(failuretype, build_info, var_empty, var_empty, var_empty, var_empty, var_empty, var_empty, var_empty, var_empty))
+        logger.table.append(r'<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td><td>{6}</td><td>{7}</td><td>{8}</td><td>{9}</td><td>{10}</td></tr>'\
+                                .format(failuretype, var_empty, build_info, var_empty, var_empty, var_empty, var_empty, var_empty, var_empty, var_empty, var_empty))
 
     elif (sum == "encoderwarning"):
         logger.tableprevvalue = lastsum            
         prevValue = logger.tableprevvalue
-        logger.table.append(r'<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td><td>{6}</td><td>{7}</td><td>{8}</td><td>{9}</td></tr>'\
+        logger.table.append(r'<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td><td>{6}</td><td>{7}</td><td>{8}</td><td>{9}</td><td>{10}</td></tr>'\
                                 .format(failuretype,
                                         logger.tablecommand,
+                                        build_info,
                                         logger.tableprevrevision,
                                         prevValue.split(",")[0].split(":")[1],
                                         prevValue.split(",")[1].split(":")[1],
@@ -1730,9 +1731,10 @@ def table(failuretype, sum , lastsum, build_info):
         logger.tablecurrentvalue = sum
         prevValue = logger.tableprevvalue
         currValue = logger.tablecurrentvalue            
-        logger.table.append(r'<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td><td>{6}</td><td>{7}</td><td>{8}</td><td>{9}</td></tr>'\
+        logger.table.append(r'<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td><td>{6}</td><td>{7}</td><td>{8}</td><td>{9}</td><td>{10}</td></tr>'\
                                 .format(failuretype,
                                         logger.tablecommand,
+                                        build_info,
                                         logger.tableprevrevision,
                                         prevValue.split(",")[0].split(":")[1],
                                         prevValue.split(",")[1].split(":")[1],
@@ -1790,7 +1792,7 @@ def _test(build, tmpfolder, seq, command, extras):
             prefix += '\nThis bitstream was saved to %s' % hashfname
             logger.testfail(prefix, errors + decodeerr, logs)
             failuretype = 'output change with decode errors '
-            table(failuretype, sum , lastsum, empty)
+            table(failuretype, sum , lastsum, logger.build.strip('\n'))
         elif '--vbv-bufsize' in command:
             # golden outputs might have used --log=none, recover from this
             if 'N/A' in lastsum and 'N/A' not in sum:
@@ -1814,14 +1816,14 @@ def _test(build, tmpfolder, seq, command, extras):
                 addfail(testhash, lastfname, logs, diffmsg)
                 logger.testfail(diffmsg, '', '')
                 failuretype = 'vbv output change'
-                table(failuretype, sum , lastsum, empty)
+                table(failuretype, sum , lastsum, logger.build.strip('\n'))
             else:
                 logger.write(diffmsg)
         else:
             logger.write('FAIL')
             prefix = 'OUTPUT CHANGE: <%s> to <%s>' % (lastsum, sum)
             failuretype = 'output change'
-            table(failuretype, sum , lastsum, empty)
+            table(failuretype, sum , lastsum, logger.build.strip('\n'))
             if save_changed:
                 hashfname = savebadstream(tmpfolder)
                 prefix += '\nThis bitstream was saved to %s' % hashfname
