@@ -1708,16 +1708,14 @@ def table(failuretype, sum , lastsum, build_info):
                                 .format(failuretype, var_empty, build_info, var_empty, var_empty, var_empty, var_empty, var_empty, var_empty, var_empty, var_empty))
 
     elif (sum == "encoderwarning"):
-        logger.tableprevvalue = lastsum            
-        prevValue = logger.tableprevvalue
         logger.table.append(r'<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td><td>{6}</td><td>{7}</td><td>{8}</td><td>{9}</td><td>{10}</td></tr>'\
                                 .format(failuretype,
                                         logger.tablecommand,
                                         build_info,
                                         logger.tableprevrevision,
-                                        prevValue.split(",")[0].split(":")[1],
-                                        prevValue.split(",")[1].split(":")[1],
-                                        prevValue.split(",")[2].split(":")[1],
+                                        var_empty,
+                                        var_empty,
+                                        var_empty,
                                         var_empty,
                                         var_empty,
                                         var_empty,
@@ -1760,7 +1758,7 @@ def _test(build, tmpfolder, seq, command, extras):
         encoder_warning = 'encoderwarning'
         logger.testfail('encoder warning or error reported', errors, logs)
         failuretype = 'encoder warning or error reported '
-        table(failuretype, encoder_warning , lastsum, empty)
+        table(failuretype, encoder_warning , empty, empty)
         return
 
     # check against last known good outputs - lastfname is the folder
