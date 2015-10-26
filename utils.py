@@ -183,21 +183,19 @@ class Build():
             prefix = 'cmake errors reported for %s:: ' % key
             errors = cout + cerr
             _test.failuretype = 'cmake errors'
-            table(_test.failuretype, empty, empty, logger.build.strip('\n'))
         elif 'Makefiles' in self.gen:
             errors = gmake(buildfolder, self.gen, **self.opts)
             prefix = 'make warnings or errors reported for %s:: ' % key
             _test.failuretype = 'make warnings or errors'
-            table(_test.failuretype, empty, empty, logger.build.strip('\n'))
         elif 'Visual Studio' in self.gen:
             errors = msbuild(key, buildfolder, self.gen, cmakeopts)
             prefix = 'msbuild warnings or errors reported for %s:: ' % key
             _test.failuretype = 'msbuild warnings or errors'
-            table(_test.failuretype, empty, empty, logger.build.strip('\n'))
         else:
             raise NotImplemented()
 
         if errors:
+            table(_test.failuretype, empty, empty, logger.build.strip('\n'))		
             logger.writeerr(prefix + '\n' + errors + '\n')
 
 class Logger():
