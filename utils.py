@@ -486,6 +486,8 @@ ignored_x265_warnings = (
     'y4m: down-shifting reconstructed pixels to 8 bits',
     'level 5 detected, but NumPocTotalCurr (total references) is non-compliant',
     'Analysis load/save options incompatible with pmode/pme, Disabling pmode/pme'
+    '--rect disabled, requires --rdlevel 2 or higher'
+    '--cu-lossless disabled, requires --rdlevel 3 or higher'
 )
 
 
