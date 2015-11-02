@@ -178,7 +178,7 @@ class Build():
 
     def cmake_build(self, key, cmakeopts, buildfolder):
         cout, cerr = cmake(self.gen, buildfolder, cmakeopts, **self.opts)
-        empty = 'empty'
+        empty = True
         if cerr:
             prefix = 'cmake errors reported for %s:: ' % key
             errors = cout + cerr
@@ -1324,7 +1324,7 @@ def testharness():
     if not run_bench:
         return
 
-    empty = 'empty'
+    empty = True
 
     for key in buildObj:
         build = buildObj[key]
@@ -1415,7 +1415,7 @@ def encodeharness(key, tmpfolder, sequence, command, inextras):
         logs = 'Full encoder logs without progress reports or debug/full logs:\n'
         logs += ''.join(el) + stdout
 
-        summary, errors = parsex265(tmpfolder, stdout, stderr)
+        summary, errors, encoder_error_var = parsex265(tmpfolder, stdout, stderr)
         if p.returncode == -11:
             errors += 'x265 encountered SIGSEGV\n\n'
         elif p.returncode == -6:
@@ -1436,13 +1436,13 @@ def encodeharness(key, tmpfolder, sequence, command, inextras):
         if p.returncode:
             errors += save_coredump(tmpfolder, x265)
 
-    return (logs, summary, errors)
+    return (logs, summary, errors, encoder_error_var)
 
 
 def parsex265(tmpfolder, stdout, stderr):
     '''parse warnings and errors from stderr, summary from stdout, and look
        for leak and check failure files in the temp folder'''
-
+    encoder_error_var = True
     errors = ''
     check = os.path.join(tmpfolder, 'x265_check_failures.txt')
     if os.path.exists(check):
@@ -1494,14 +1494,19 @@ def parsex265(tmpfolder, stdout, stderr):
             lastprog = line
         elif line.startswith('x265 [error]:') or \
              (line.startswith('x265 [warning]:') and \
-              line[16:-ls] not in ignored_x265_warnings):
+              line[16:-ls] not in ignored_x265_warnings):		
             if lastprog:
                 errors += lastprog.replace('\r', os.linesep)
                 lastprog = None
             errors += line
-            logger.write(line[:-1])
-
-    return summary, errors
+            logger.write(line[:-1])						
+	    if line.startswith('x265 [error]:'):
+		    encoder_error_var = True
+        elif (line.startswith('x265 [warning]:') and \
+              line[16:-ls] not in ignored_x265_warnings):
+            encoder_error_var = False
+	
+    return summary, errors, encoder_error_var
 
 
 def checkoutputs(key, seq, command, sum, tmpdir):
@@ -1705,19 +1710,21 @@ def checkdecoder(tmpdir):
 
 def table(failuretype, sum , lastsum, build_info):
     var_empty = '-'
-    if (sum == "empty"):
+    if (sum == True):
         logger.table.append(r'<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td><td>{6}</td><td>{7}</td><td>{8}</td><td>{9}</td><td>{10}</td></tr>'\
                                 .format(failuretype, var_empty, build_info, var_empty, var_empty, var_empty, var_empty, var_empty, var_empty, var_empty, var_empty))
 
-    elif (sum == "encoderwarning"):
+    elif (sum == "encodererror"):
+        logger.tableprevvalue = lastsum 
+        prevValue = logger.tableprevvalue
         logger.table.append(r'<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td><td>{6}</td><td>{7}</td><td>{8}</td><td>{9}</td><td>{10}</td></tr>'\
                                 .format(failuretype,
                                         logger.tablecommand,
                                         build_info,
                                         logger.tableprevrevision,
-                                        var_empty,
-                                        var_empty,
-                                        var_empty,
+                                        prevValue.split(",")[0].split(":")[1],
+                                        prevValue.split(",")[1].split(":")[1],
+                                        prevValue.split(",")[2].split(":")[1],
                                         var_empty,
                                         var_empty,
                                         var_empty,
@@ -1752,21 +1759,25 @@ def _test(build, tmpfolder, seq, command, extras):
     '''
 
     testhash = testcasehash(seq, command)
-    empty = 'empty'
 
     # run the encoder, abort early if any errors encountered
-    logs, sum, errors = encodeharness(build, tmpfolder, seq, command, extras)
-    if errors:
-        encoder_warning = 'encoderwarning'
-        logger.testfail('encoder warning or error reported', errors, logs)
-        failuretype = 'encoder warning or error reported '
-        table(failuretype, encoder_warning , empty, empty)
+    logs, sum, encoder_errors, encoder_error_var = encodeharness(build, tmpfolder, seq, command, extras)
+    lastfname, errors = checkoutputs(build, seq, command, sum, tmpfolder)
+    fname = os.path.join(my_goldens, testhash, lastfname, 'summary.txt')
+    lastsum = open(fname, 'r').read()
+    if encoder_errors:
+        if (encoder_error_var):
+            logger.testfail('encoder error reported', encoder_errors, logs)
+            table('encoder error', 'encodererror' , lastsum, logger.build.strip('\n'))
+        else:
+            logger.testfail('encoder warning reported', encoder_errors, logs)
+            table('encoder warning', sum , lastsum, logger.build.strip('\n'))
         return
 
     # check against last known good outputs - lastfname is the folder
     # containing the last known good outputs (or for the new ones to be
     # created)
-    lastfname, errors = checkoutputs(build, seq, command, sum, tmpfolder)
+
     if errors is None:
         # no golden outputs for this test yet
         logger.write('validating with decoder')
@@ -1780,8 +1791,6 @@ def _test(build, tmpfolder, seq, command, extras):
             newgoldenoutputs(seq, command, lastfname, sum, logs, tmpfolder)
     elif errors:
         # outputs did not match golden outputs
-        fname = os.path.join(my_goldens, testhash, lastfname, 'summary.txt')
-        lastsum = open(fname, 'r').read()
 
         decodeerr = checkdecoder(tmpfolder)
         if decodeerr:
