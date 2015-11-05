@@ -1765,8 +1765,8 @@ def _test(build, tmpfolder, seq, command, extras):
     logs, sum, encoder_errors, encoder_error_var = encodeharness(build, tmpfolder, seq, command, extras)
     lastfname, errors = checkoutputs(build, seq, command, sum, tmpfolder)
     fname = os.path.join(my_goldens, testhash, lastfname, 'summary.txt')
-    lastsum = open(fname, 'r').read()
     if encoder_errors:
+        lastsum = open(fname, 'r').read()
         if (encoder_error_var):
             logger.testfail('encoder error reported', encoder_errors, logs)
             table('encoder error', 'encodererror' , lastsum, logger.build.strip('\n'))
@@ -1792,7 +1792,7 @@ def _test(build, tmpfolder, seq, command, extras):
             newgoldenoutputs(seq, command, lastfname, sum, logs, tmpfolder)
     elif errors:
         # outputs did not match golden outputs
-
+        lastsum = open(fname, 'r').read()
         decodeerr = checkdecoder(tmpfolder)
         if decodeerr:
             prefix = 'OUTPUT CHANGE WITH DECODE ERRORS'
