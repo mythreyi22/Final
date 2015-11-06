@@ -12,6 +12,7 @@
 # only test cases which match the string(s) within the braces are
 # allowed to update their golden outputs to this commit
 
+3381ed17d872 psyEnergy fixes in search
 f851138520c7 enable lookahead-slices by default
 15c037694a65 [pass 2, pass 3] RC bits calculation bug fix
 55a4a9b920ff [vbv] RC bug fixes merged to default
