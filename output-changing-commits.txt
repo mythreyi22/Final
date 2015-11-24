@@ -12,6 +12,7 @@
 # only test cases which match the string(s) within the braces are
 # allowed to update their golden outputs to this commit
 
+66e324379d2a psyenergy chroma bug fix
 e8f9a60d4cd9 intra fixes
 3381ed17d872 psyEnergy fixes in search
 f851138520c7 enable lookahead-slices by default
