@@ -128,12 +128,15 @@ class Build():
     def __init__(self, *args):
         self.folder, self.group, self.gen, self.cmakeopts, self.opts = args
         co = self.cmakeopts.split()
-        for p in ('main', 'main10', 'main12'):
-            if p in co:
-                self.profile = p
-                break
+        if 'add-depths' in self.opts:
+            self.profile = 'multilib'
         else:
-            self.profile = 'main'
+            for p in ('main', 'main10', 'main12'):
+                if p in co:
+                    self.profile = p
+                    break
+            else:
+                self.profile = 'main'
 
         if 'Visual Studio' in self.gen:
             if 'debug' in co:
@@ -645,7 +648,7 @@ def upload_binaries():
 
     for key in my_binaries_upload:
         build = buildObj[key]
-        buildopts = set(build.co.split())
+        buildopts = set(build.cmakeopts.split())
         if buildopts & debugopts:
             print 'debug option(s) %s detected, skipping build %s' % (buildopts & debugopts, key)
             continue
