@@ -1758,7 +1758,7 @@ def _test(build, tmpfolder, seq, command, extras):
         If they exist, verify bit-exactness or report divergence
         If not, validate new bitstream with decoder then save
     '''
-
+    empty = True
     testhash = testcasehash(seq, command)
 
     # run the encoder, abort early if any errors encountered
@@ -1766,13 +1766,21 @@ def _test(build, tmpfolder, seq, command, extras):
     lastfname, errors = checkoutputs(build, seq, command, sum, tmpfolder)
     fname = os.path.join(my_goldens, testhash, lastfname, 'summary.txt')
     if encoder_errors:
-        lastsum = open(fname, 'r').read()
         if (encoder_error_var):
             logger.testfail('encoder error reported', encoder_errors, logs)
-            table('encoder error', 'encodererror' , lastsum, logger.build.strip('\n'))
+            if os.path.exists(fname):
+                lastsum = open(fname, 'r').read()
+                table('encoder error', 'encodererror' , lastsum, logger.build.strip('\n'))
+            else:
+                table('encoder error', empty , empty, logger.build.strip('\n'))
         else:
             logger.testfail('encoder warning reported', encoder_errors, logs)
-            table('encoder warning', sum , lastsum, logger.build.strip('\n'))
+            if os.path.exists(fname):
+                lastsum = open(fname, 'r').read()
+                table('encoder warning', sum , lastsum, logger.build.strip('\n'))
+            else:
+                table('encoder warning', empty , empty, logger.build.strip('\n'))
+			
         return
 
     # check against last known good outputs - lastfname is the folder
@@ -1787,6 +1795,11 @@ def _test(build, tmpfolder, seq, command, extras):
             hashfname = savebadstream(tmpfolder)
             decodeerr += '\nThis bitstream was saved to %s' % hashfname
             logger.testfail('Decoder validation failed', decodeerr, logs)
+            if os.path.exists(fname):
+                lastsum = open(fname, 'r').read()
+                table('Decoder validation failed', sum , lastsum, logger.build.strip('\n'))
+            else:
+                table('Decoder validation failed', empty , empty, logger.build.strip('\n'))
         else:
             logger.write('Decoder validation ok:', sum)
             newgoldenoutputs(seq, command, lastfname, sum, logs, tmpfolder)
