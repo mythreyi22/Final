@@ -1598,13 +1598,17 @@ def checkoutputs(key, seq, command, sum, tmpdir):
         return lastfname, None
 
     # outputs did not match, and were expected to match, considered an error
-    oldsum = open(os.path.join(testfolder, 'summary.txt'), 'r').read()
-    res = '%s output does not match last good for group %s\n\n' % (key, group)
-    res += 'Previous last known good revision\n'
-    res += hgrevisioninfo(commit).replace(os.linesep, '\n') + '\n'
-    res += 'PREV: %s\n' % oldsum
-    res += ' NEW: %s\n\n' % sum
-    return lastfname, res
+    if os.path.isfile(summary.txt):
+        oldsum = open(os.path.join(testfolder, 'summary.txt'), 'r').read()
+        res = '%s output does not match last good for group %s\n\n' % (key, group)
+        res += 'Previous last known good revision\n'
+        res += hgrevisioninfo(commit).replace(os.linesep, '\n') + '\n'
+        res += 'PREV: %s\n' % oldsum
+        res += ' NEW: %s\n\n' % sum
+        return lastfname, res
+    else
+        print 'summary.txt file does not exist'
+        return lastfname, None
 
 
 
