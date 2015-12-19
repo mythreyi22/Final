@@ -1606,7 +1606,7 @@ def checkoutputs(key, seq, command, sum, tmpdir):
         res += 'PREV: %s\n' % oldsum
         res += ' NEW: %s\n\n' % sum
         return lastfname, res
-    else
+    else:
         print 'summary.txt file does not exist'
         return lastfname, None
 
