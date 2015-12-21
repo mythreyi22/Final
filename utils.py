@@ -1598,7 +1598,7 @@ def checkoutputs(key, seq, command, sum, tmpdir):
         return lastfname, None
 
     # outputs did not match, and were expected to match, considered an error
-    if os.path.isfile(os.path.join(testfolder, summary.txt)):
+    if os.path.isfile(os.path.join(testfolder, 'summary.txt')):
         oldsum = open(os.path.join(testfolder, 'summary.txt'), 'r').read()
         res = '%s output does not match last good for group %s\n\n' % (key, group)
         res += 'Previous last known good revision\n'
