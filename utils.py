@@ -488,7 +488,8 @@ ignored_x265_warnings = (
     'Analysis load/save options incompatible with pmode/pme, Disabling pmode/pme',
     '--rect disabled, requires --rdlevel 2 or higher',
     '--cu-lossless disabled, requires --rdlevel 3 or higher',
-    'Source height < 720p; disabling lookahead-slices'
+    'Source height < 720p; disabling lookahead-slices',
+    'Limit reference options 2 and 3 are not supported with pmode. Disabling limit reference'
 )
 
 
