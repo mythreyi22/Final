@@ -11,12 +11,8 @@
 # if a phrase is listed in braces at the start of the description, then
 # only test cases which match the string(s) within the braces are
 # allowed to update their golden outputs to this commit
-# 'vbv' is a special case here since it doesn't have real outputs; only
-# metrics are compared. A commit that also changes VBV outputs requires
-# a special line in addition to the regular line with no braces in it.
 
 da48f2690076 [vbv] presets updated
-da48f2690076 presets updated
 66e324379d2a psyenergy chroma bug fix
 e8f9a60d4cd9 intra fixes
 3381ed17d872 psyEnergy fixes in search
