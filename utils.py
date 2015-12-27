@@ -369,7 +369,7 @@ class Logger():
             session.ehlo()
             session.starttls()
             session.ehlo()
-            session.login(my_email_from, my_smtp_pwd)
+            session.login(my_email_from, my_smtp_pwd.decode('base64'))
             session.sendmail(my_email_from, my_email_to, msg.as_string())
         except smtplib.SMTPException, e:
             print 'Unable to send email', e

@@ -10,6 +10,7 @@ my_hm_decoder   = r'C:\projects\hm\bin\TAppDecoderStatic'
 my_progress     = True # do you want to see build / encode status on console?
 
 # fill these in to email results after each completed test run
+# here password should be base64 encoded
 my_email_from   = ''
 my_email_to     = ''
 my_smtp_pwd     = ''
