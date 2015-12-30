@@ -1830,7 +1830,7 @@ def _test(build, tmpfolder, seq, command, extras):
                 return
 
             # VBV encodes are non-deterministic, check that golden output
-            # bitrate is within 1% of new bitrate. Example summary:
+            # bitrate is within tolerance% of new bitrate. Example summary:
             # 'bitrate: 121.95, SSIM: 20.747, PSNR: 53.359'
             try:
                 lastbitrate = float(lastsum.split(',')[0].split(' ')[1])
