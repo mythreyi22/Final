@@ -31,7 +31,7 @@ testrev = None       # revision under test
 changers = None      # list of all output changing commits which are ancestors
                      # of the revision under test
 changefilter = {}
-vbv_tolerance = .015 # fraction of bitrate difference allowed (1.5%)
+vbv_tolerance = .05 # fraction of bitrate difference allowed (5%)
 logger = None
 buildObj = {}
 spot_checks = []
@@ -1514,7 +1514,7 @@ def parsex265(tmpfolder, stdout, stderr):
     return summary, errors, encoder_error_var
 
 
-def checkoutputs(key, seq, command, sum, tmpdir):
+def checkoutputs(key, seq, command, sum, tmpdir, logs):
     group = my_builds[key][1]
     testhash = testcasehash(seq, command)
 
@@ -1555,6 +1555,9 @@ def checkoutputs(key, seq, command, sum, tmpdir):
     golden = os.path.join(testfolder, 'bitstream.hevc')
     test = os.path.join(tmpdir, 'bitstream.hevc')
 
+    fname = os.path.join(my_goldens, testhash, lastfname, 'summary.txt')
+    lastsum = open(fname, 'r').read()
+
     if filecmp.cmp(golden, test):
         # outputs matched last-known good, record no-change status for all
         # output changing commits which were not previously accounted for
@@ -1567,8 +1570,7 @@ def checkoutputs(key, seq, command, sum, tmpdir):
         # if the test run which created the golden outputs used a --log=none
         # spot-check or something similar, the summary will have some unknowns
         # in it. Replace it with the current summary if it is complete
-        fname = os.path.join(my_goldens, testhash, lastfname, 'summary.txt')
-        lastsum = open(fname, 'r').read()
+
         if 'N/A' in lastsum and 'N/A' not in sum:
             print 'correcting golden output summary,',
             open(fname, 'w').write(sum)
@@ -1576,12 +1578,44 @@ def checkoutputs(key, seq, command, sum, tmpdir):
 
     if '--vbv-bufsize' in command:
         # outputs did not match but this is a VBV test case.
-        # an open commmit with the 'vbv' keyword may take credit for the change
+        # bitrate difference > vbv tolerance will take credit for the change
+        # or an open commmit with the 'vbv' keyword may take credit for the change
+
+        if 'N/A' in lastsum and 'N/A' not in sum:
+            logger.write('saving new outputs with valid summary:', sum)
+            return lastfname, None
+
+
+        def outputdiff():
+            # golden outputs might have used --log=none, recover from this
+            # VBV encodes are non-deterministic, check that golden output
+            # bitrate is within tolerance% of new bitrate. Example summary:
+            # 'bitrate: 121.95, SSIM: 20.747, PSNR: 53.359'
+            try:
+                lastbitrate = float(lastsum.split(',')[0].split(' ')[1])
+                newbitrate = float(sum.split(',')[0].split(' ')[1])
+                diff = abs(lastbitrate - newbitrate) / lastbitrate
+                diffmsg = 'VBV OUTPUT CHANGED BY %.2f%%' % (diff * 100)
+            except (IndexError, ValueError), e:
+                diffmsg = 'Unable to parse bitrates for %s:\n<%s>\n<%s>' % \
+                           (testhash, lastsum, sum)
+                diff = vbv_tolerance + 1
+            return diff, diffmsg
+
         for oc in opencommits:
+            lastfname = '%s-%s-%s' % (hgrevisiondate(oc), group, oc)
             if 'vbv' in changefilter.get(oc, ''):
-                lastfname = '%s-%s-%s' % (hgrevisiondate(oc), group, oc)
                 return lastfname, None
-        return lastfname, 'VBV output change'
+            else:
+                diff, diffmsg = outputdiff()
+                if diff > vbv_tolerance:
+                    logger.logfp.write('\n%s\n' % diffmsg)
+                    logger.write(diffmsg)
+                    return lastfname, None
+        else:
+            diff, diffmsg = outputdiff()
+            if diff > vbv_tolerance:
+                return lastfname, diffmsg
 
     # outputs do not match last good, check for a changing commit that might
     # take credit for this test case being changed
@@ -1771,7 +1805,7 @@ def _test(build, tmpfolder, seq, command, extras):
 
     # run the encoder, abort early if any errors encountered
     logs, sum, encoder_errors, encoder_error_var = encodeharness(build, tmpfolder, seq, command, extras)
-    lastfname, errors = checkoutputs(build, seq, command, sum, tmpfolder)
+    lastfname, errors = checkoutputs(build, seq, command, sum, tmpfolder, logs)
     fname = os.path.join(my_goldens, testhash, lastfname, 'summary.txt')
     if encoder_errors:
         if (encoder_error_var):
@@ -1812,46 +1846,21 @@ def _test(build, tmpfolder, seq, command, extras):
             logger.write('Decoder validation ok:', sum)
             newgoldenoutputs(seq, command, lastfname, sum, logs, tmpfolder)
     elif errors:
+        typeoferror = 'VBV' if '--vbv-bufsize' in command else ''
         # outputs did not match golden outputs
         lastsum = open(fname, 'r').read()
         decodeerr = checkdecoder(tmpfolder)
         if decodeerr:
-            prefix = 'OUTPUT CHANGE WITH DECODE ERRORS'
+            prefix = '%s OUTPUT CHANGE WITH DECODE ERRORS' % typeoferror
             hashfname = savebadstream(tmpfolder)
             prefix += '\nThis bitstream was saved to %s' % hashfname
             logger.testfail(prefix, errors + decodeerr, logs)
-            failuretype = 'output change with decode errors '
+            failuretype = '%s output change with decode errors ' % typeoferror
             table(failuretype, sum , lastsum, logger.build.strip('\n'))
-        elif '--vbv-bufsize' in command:
-            # golden outputs might have used --log=none, recover from this
-            if 'N/A' in lastsum and 'N/A' not in sum:
-                logger.write('saving new outputs with valid summary:', sum)
-                newgoldenoutputs(seq, command, lastfname, sum, logs, tmpfolder)
-                return
-
-            # VBV encodes are non-deterministic, check that golden output
-            # bitrate is within tolerance% of new bitrate. Example summary:
-            # 'bitrate: 121.95, SSIM: 20.747, PSNR: 53.359'
-            try:
-                lastbitrate = float(lastsum.split(',')[0].split(' ')[1])
-                newbitrate = float(sum.split(',')[0].split(' ')[1])
-                diff = abs(lastbitrate - newbitrate) / lastbitrate
-                diffmsg = 'VBV OUTPUT CHANGED BY %.2f%%' % (diff * 100)
-            except (IndexError, ValueError), e:
-                diffmsg = 'Unable to parse bitrates for %s:\n<%s>\n<%s>' % \
-                           (testhash, lastsum, sum)
-                diff = vbv_tolerance + 1
-            if diff > vbv_tolerance:
-                addfail(testhash, lastfname, logs, diffmsg)
-                logger.testfail(diffmsg, '', '')
-                failuretype = 'vbv output change'
-                table(failuretype, sum , lastsum, logger.build.strip('\n'))
-            else:
-                logger.write(diffmsg)
         else:
             logger.write('FAIL')
-            prefix = 'OUTPUT CHANGE: <%s> to <%s>' % (lastsum, sum)
-            failuretype = 'output change'
+            prefix = '%s OUTPUT CHANGE: <%s> to <%s>' % (typeoferror, lastsum, sum)
+            failuretype = '%s output change' % typeoferror
             table(failuretype, sum , lastsum, logger.build.strip('\n'))
             if save_changed:
                 hashfname = savebadstream(tmpfolder)
@@ -1861,12 +1870,10 @@ def _test(build, tmpfolder, seq, command, extras):
                 prefix += '\nbitstream hash was %s' % hashbitstream(badfn)
             addfail(testhash, lastfname, logs, errors)
             logger.testfail(prefix, errors, logs)
-
     else:
         # outputs matched golden outputs
         addpass(testhash, lastfname, logs)
         logger.write('PASS')
-
 
 def runtest(key, seq, commands, always, extras):
     '''
