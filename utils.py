@@ -157,7 +157,8 @@ class Build():
     def cmakeoptions(self, cmakeopts, prof):
         for o in self.cmakeopts.split():
             if o in option_strings:
-                cmakeopts.append(option_strings[o])
+                for tok in option_strings[o].split():
+                    cmakeopts.append(tok)
             else:
                 logger.write('Unknown cmake option', o)
 
@@ -1225,11 +1226,6 @@ def buildall(prof=None):
             if not os.path.exists(os.path.join(build.folder, bitdepthfolder)):
                 os.mkdir(os.path.join(build.folder, bitdepthfolder))
             subco = []
-            for o in build.cmakeopts.split():
-                if o in option_strings:
-                    subco.append(option_strings[o])
-                else:
-                    logger.write('Unknown cmake option', o)
             subco.append('-DENABLE_SHARED=OFF')
             subco.append('-DENABLE_CLI=OFF')
             subco.append('-DEXPORT_C_API=OFF')
@@ -1257,12 +1253,6 @@ def buildall(prof=None):
                 build.cmake_build(key, subco, os.path.join(build.folder, bitdepthfolder))
                 shutil.copy(os.path.join(build.folder, bitdepthfolder, build.target, static_lib),
                             os.path.join(build.folder, 'default', lib_main))
-
-        for o in build.cmakeopts.split():
-            if o in option_strings:
-                defaultco.append(option_strings[o])
-            else:
-                logger.write('Unknown cmake option', o)
 
         if extra_libs:
             defaultco.append('-DEXTRA_LIB=' + ';'.join(extra_libs))
