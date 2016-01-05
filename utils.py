@@ -1616,6 +1616,8 @@ def checkoutputs(key, seq, command, sum, tmpdir, logs):
             diff, diffmsg = outputdiff()
             if diff > vbv_tolerance:
                 return lastfname, diffmsg
+            else:
+                return lastfname, None
 
     # outputs do not match last good, check for a changing commit that might
     # take credit for this test case being changed
