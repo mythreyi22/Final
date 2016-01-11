@@ -12,6 +12,7 @@
 # only test cases which match the string(s) within the braces are
 # allowed to update their golden outputs to this commit
 
+6f44cd5d00ff psy-rd and chroma rd changes
 a6577bee0b71 Merge default into stable
 085b852981a2 Deblock/SAO sync logic updated
 84c9dfa130b6 weightp inconsistency issue fixed
