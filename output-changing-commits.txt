@@ -12,6 +12,8 @@
 # only test cases which match the string(s) within the braces are
 # allowed to update their golden outputs to this commit
 
+9574b4cc645b [pme]fix output mismatch against non-pme
+9fd212de2469 non-determination fix for limit-modes
 000912461b14 SAO fix for inconsistency
 6f44cd5d00ff psy-rd and chroma rd changes
 a6577bee0b71 Merge default into stable
