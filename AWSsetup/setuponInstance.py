@@ -336,7 +336,7 @@ def setup_x265repo_patch():
         if ret.wait()!=0:
             print("pull failed x265 repo")
         else:
-            ret=sub.Popen('hg update -r' + goldentip, cwd=orig_repo, stdout=log, stderr=log, shell=True)
+            ret=sub.Popen('hg update -r ' + goldentip, cwd=orig_repo, stdout=log, stderr=log, shell=True)
             if ret.wait()!=0:
                 log.write('\nERROR: update failed at goldentip: %s' %goldentip)
                 cleanup()
@@ -353,7 +353,7 @@ def setup_x265repo_patch():
         if ret.wait()!=0:
             print("pull failed x265 repo")
         else:
-            ret=sub.Popen('hg update tip', cwd=patches_repo, shell=True)
+            ret=sub.Popen('hg update -r ' + goldentip, cwd=patches_repo, stdout=log, stderr=log, shell=True)
             if ret.wait()!=0:
                 print("update failed")
             else:
