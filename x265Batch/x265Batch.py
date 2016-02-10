@@ -389,14 +389,14 @@ def upload_csv(test):
             ftp.storbinary('STOR ' + 'x265Benchmark_aux.csv',fp)
             ftp.cwd('./')
             ftp.cwd(my_ftp_path_defaultold)            
-            ftp.storbinary('STOR ' + '_'.join(now, 'x265Benchmark_aux.csv') ,fp)	
+            ftp.storbinary('STOR ' + '_'.join([now, 'x265Benchmark_aux.csv']) ,fp)
         else:
             ftp.cwd(my_ftp_path_stable)
             fp = open(os.path.join(test.resultdir, 'x265Benchmark_aux.csv'),'rb')
             ftp.storbinary('STOR ' + 'x265Benchmark_aux.csv',fp)
             ftp.cwd('./')
             ftp.cwd(my_ftp_path_stableold)            
-            ftp.storbinary('STOR ' +'_'.join(now, 'x265Benchmark_aux.csv'),fp)
+            ftp.storbinary('STOR ' +'_'.join([now, 'x265Benchmark_aux.csv']),fp)
     except ftplib.all_errors, e:
         print "ftp failed", e
 
