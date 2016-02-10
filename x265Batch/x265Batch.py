@@ -385,18 +385,18 @@ def upload_csv(test):
         ftp.login(my_ftp_user, my_ftp_pass.decode('base64'))
         if test.branch == 'default':
             ftp.cwd(my_ftp_path_default)
-            fp = open(os.path.join(test.resultdir, 'x265Benchmark_aux.csv'),'rb')
-            ftp.storbinary('STOR ' + 'x265Benchmark_aux.csv',fp)
+            fp = open(os.path.join(test.resultdir, test.finalcsv),'rb')
+            ftp.storbinary('STOR ' + test.finalcsv,fp)
             ftp.cwd('./')
             ftp.cwd(my_ftp_path_defaultold)            
-            ftp.storbinary('STOR ' + '_'.join([now, 'x265Benchmark_aux.csv']) ,fp)
+            ftp.storbinary('STOR ' + '_'.join([now, test.finalcsv]) ,fp)
         else:
             ftp.cwd(my_ftp_path_stable)
-            fp = open(os.path.join(test.resultdir, 'x265Benchmark_aux.csv'),'rb')
-            ftp.storbinary('STOR ' + 'x265Benchmark_aux.csv',fp)
+            fp = open(os.path.join(test.resultdir, test.finalcsv),'rb')
+            ftp.storbinary('STOR ' + test.finalcsv,fp)
             ftp.cwd('./')
             ftp.cwd(my_ftp_path_stableold)            
-            ftp.storbinary('STOR ' +'_'.join([now, 'x265Benchmark_aux.csv']),fp)
+            ftp.storbinary('STOR ' +'_'.join([now, test.finalcsv]),fp)
     except ftplib.all_errors, e:
         print "ftp failed", e
 

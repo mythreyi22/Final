@@ -404,7 +404,7 @@ def setup_regularx265repo():
             if ret.wait()!=0:
                 print("failed to update x265repo at latest tip")
 
-            cur_branch = branch(os.path.join(os.getcwd(), orig_repo))
+            cur_branch = hgbranch(os.path.join(os.getcwd(), orig_repo))
             if not prev_branch == cur_branch:
                 print('testing %s' %cur_branch)
             elif recent_default == latest_default:
@@ -456,9 +456,11 @@ def launch_tests():
     ret = sub.Popen(cmd, shell=True, stdout=log, stderr=log)
     if ret.wait() != 0:
         print("\n x265Batch run failed: %s \n" %cmd)
+        os.chdir("..//AWSsetup")
         cleanup()
     else:
         print("\n x265Batch run success: %s \n" %cmd)
+        upload_files()
         terminate_instance()
 
 
@@ -487,7 +489,6 @@ def main():
         parse()
         setup_regularx265repo()
         launch_tests()
-        upload_files()
 
 if __name__ == "__main__":
     main()
