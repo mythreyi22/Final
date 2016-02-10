@@ -67,10 +67,10 @@ while True:
 
     if '.txt' in userfiles[len(userfiles)-1]:
         p = ' '.join(userfiles[:len(userfiles)-1])
-        cmd = 'python LaunchInstance.py --iter %s --goldentip %s --instance create --commands %s -- %s' %(n, g, userfiles[len(userfiles)-1], p)
+        cmd = 'python LaunchInstance.py --mailid %s --iter %s --goldentip %s --instance create --commands %s -- %s' %(m, n, g, userfiles[len(userfiles)-1], p)
     else:
         p = ' '.join(userfiles[:len(userfiles)])
-        cmd = 'python LaunchInstance.py --iter %s --goldentip %s --instance create -- %s' %(n, g, p)
+        cmd = 'python LaunchInstance.py --mailid %s --iter %s --goldentip %s --instance create -- %s' %(m, n, g, p)
     os.chdir("..//AWSsetup")
     ret = sub.Popen(cmd, shell=True)
     if ret.wait() == 0:

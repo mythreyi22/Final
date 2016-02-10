@@ -168,7 +168,7 @@ class Test:
                                                 '\n']))
                 self.sequences.add(cmd.split(' ')[0])
 
-        for file in glob.glob("*.txt"):
+        for file in glob.glob("..//AWSsetup//*.txt"):
             if '_commands.txt' in file:
                 with open(file) as f:
                     for cmd in f:
