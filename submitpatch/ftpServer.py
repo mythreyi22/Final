@@ -44,12 +44,24 @@ s.listen(100)
 print 'Socket now listening'
 
 
-# Function for handling connections. This will be used to create threads
-def launchJobs(conn, files):
-
+# now keep talking with the client
+while True:
+    # wait to accept a connection - blocking call
+    conn, addr = s.accept()
+    print('connected to ', addr)
+    conn.sendall('connected to FTP server...')
     userfiles = []
-    for f in files:
-        userfiles.append(os.path.join(my_FTPServer_usercontent, f))
+    while(1):
+        # receive zip file name
+        fullname = conn.recv(1024)
+        if fullname and '.patch' in fullname or '.txt' in fullname:
+            print('filename %s' %fullname)
+            userfiles.append(os.path.abspath(os.path.join(my_FTPServer_usercontent, fullname)))
+            #conn.sendall('      FTP Server received file')
+            continue
+        elif not '.patch' in fullname and not '.txt' in fullname:
+            break
+    print(userfiles)
 
     d, g, n, m, c = userfiles[len(userfiles)-1].split('_')
 
@@ -70,27 +82,6 @@ def launchJobs(conn, files):
         except Exception as e:
             print('let it be %s %s' %f %e)
     conn.close()
-
-
-# now keep talking with the client
-while True:
-    # wait to accept a connection - blocking call
-    conn, addr = s.accept()
-    print('connected to ', addr)
-    userfiles = []
-    while(1):
-        # receive zip file name
-        fullname = conn.recv(1024)
-	if fullname and '.patch' in fullname or '.txt' in fullname:
-            print('filename %s' %fullname)
-            userfiles.append(fullname)
-            #conn.sendall('      FTP Server received file')
-            continue
-        elif not '.patch' in fullname and not '.txt' in fullname:
-            break
-    print(userfiles)
-    # start new thread takes 1st argument as a function name to be run, second is the tuple of arguments to the function.
-    start_new_thread(launchJobs ,(conn, userfiles))
     time.sleep(10)
     
 s.close()

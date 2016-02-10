@@ -46,10 +46,10 @@ except ImportError, e:
     my_email_from, my_email_to, my_smtp_pwd = None, None, None
 
 try:
-    from paths_cfg import my_ftp_url, my_ftp_user, my_ftp_pass, my_ftp_path_stable, my_ftp_path_default, my_ftp_path_stableold, my_ftp_path_defaultold, my_ftp_branches, my_ftp_prevbranch, my_ftp_requestid, my_ftp_instanceid
+    from paths_cfg import my_ftp_url, my_ftp_user, my_ftp_pass, my_ftp_path, my_ftp_path_stable, my_ftp_path_default, my_ftp_path_stableold, my_ftp_path_defaultold, my_ftp_branches, my_ftp_prevbranch, my_ftp_requestid, my_ftp_instanceid
 except ImportError, e:
     print '** `my_email_*` not defined, defaulting to None'
-    my_ftp_url, my_ftp_user, my_ftp_pass, my_ftp_path_stable, my_ftp_path_default, my_ftp_path_stableold, my_ftp_path_defaultold, my_ftp_branches, my_ftp_prevbranch, my_ftp_requestid, my_ftp_instanceid = None, None, None, None, None, None, None, None, None, None, None
+    my_ftp_url, my_ftp_user, my_ftp_pass, my_ftp_path_stable, my_ftp_path, my_ftp_path_default, my_ftp_path_stableold, my_ftp_path_defaultold, my_ftp_branches, my_ftp_prevbranch, my_ftp_requestid, my_ftp_instanceid = None, None, None, None, None, None, None, None, None, None, None, None
 
 
 
@@ -217,7 +217,7 @@ def upload_files():
         ftp.cwd(my_ftp_branches)
         fp = open(os.path.join(cwd, 'branches', 'branches.txt'),'rb')
         ftp.storbinary('STOR ' +'branches.txt',fp)
-
+        ftp.cwd('./')
         ftp.cwd(my_ftp_prevbranch)
         fp = open(os.path.join(cwd, 'prevbranch', 'prevbranch.txt'),'rb')
         ftp.storbinary('STOR ' +'prevbranch.txt',fp)

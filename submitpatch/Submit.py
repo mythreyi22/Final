@@ -9,6 +9,7 @@ import sys
 import time
 import shutil
 from ftplib import FTP
+import ftplib
 
 try:
     from paths_cfg import my_FTP_Server, my_FTP_user, my_FTP_pwd, my_FTPServer_usercontent
@@ -58,7 +59,6 @@ class submit:
 
 
 def send_patches(test):
-
     def transfer(file, rename):
         # transfer files to FTP Server
         f = open(file, 'rb')
@@ -91,6 +91,9 @@ def send_patches(test):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # initiates TCP server connection
         s.connect((my_FTP_Server, 10256))
+        print('wait until connected to FTP Server...')
+        reply = s.recv(1024)
+        print(reply)
     except socket.error:
         print('Jenkin server is not running..')
         sys.exit(-1)
