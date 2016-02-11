@@ -38,9 +38,6 @@ try:
         for (seq, command) in tests:
             utils.runtest(key, seq, command, always, extras)
 
-    if not logger.errors:
-        utils.upload_binaries()
-
     # send results to mail
     logger.email_results()
 

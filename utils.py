@@ -1203,9 +1203,15 @@ def msbuild(buildkey, buildfolder, generator, cmakeopts):
     return err
 
 
-def buildall(prof=None):
+def buildall(prof=None, buildoptions=None):
+    global rebuild
     if not run_make:
         return
+    if not buildoptions == None:
+        rebuild = True
+        global buildObj
+        for key in buildoptions:
+            buildObj[key] = Build(*buildoptions[key])
     for key in buildObj:
         logger.setbuild(key)
         logger.write('building %s...'% key)

@@ -47,6 +47,24 @@ try:
     # send results to mail
     logger.email_results()
 
+    log = logger.logfname
+    logs = open(log,'r')
+    fatalerror = False
+    for line in logs:
+         if 'encoder error reported' in line or 'DECODE ERRORS' in line  or 'Validation failed' in line or 'encoder warning reported' in line:
+             fatalerror = True
+    if fatalerror == False:
+        for key, v in my_builds.iteritems():
+            buildoption = []
+            buildoption.append(v[0])
+            buildoption.append(v[1])
+            buildoption.append(v[2])
+            buildoption.append(v[3].replace('debug', '').replace('checked', '').replace('tests', '').replace('warn', '').replace('reldeb', '').replace('noasm',''))
+            buildoption.append(v[4])
+            my_builds[key] = tuple(buildoption)
+        utils.buildall(None, my_builds)
+        utils.upload_binaries()
+
 except KeyboardInterrupt:
     print 'Caught CTRL+C, exiting'
 
