@@ -12,6 +12,7 @@
 # only test cases which match the string(s) within the braces are
 # allowed to update their golden outputs to this commit
 
+f548abe8eae8 sao output uninitialisation fix
 9574b4cc645b [pme]fix output mismatch against non-pme
 9fd212de2469 non-determination fix for limit-modes
 000912461b14 SAO fix for inconsistency
