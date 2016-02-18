@@ -186,6 +186,7 @@ def terminate_instance():
     if my_patchtest == False:
         time.sleep(600) # hold 10 minuts before terminating instance to get requestid and instanceid
         download_requiredfiles()
+        parse()
     cmd = "ec2-cancel-spot-instance-requests %s --aws-access-key=%s --aws-secret-key=%s --region us-west-2" %(requestid, accesskey, secretkey)
     ret = sub.Popen(cmd, shell=True, stdout=log, stderr=log)
     if ret.wait() != 0:
@@ -489,7 +490,6 @@ def main():
         launch_tests_patch()
     else:
         # else part is for running nightly\weekly performance regression tests
-        parse()
         setup_regularx265repo()
         launch_tests()
 

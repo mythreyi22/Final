@@ -1,6 +1,6 @@
 # If you want to run performance or quality regression on your new feature then you have to pass this file.
-# available sequences on AWS instance - BasketballDrive_1920x1080_50.y4m, Kimono1_1920x1080_24.y4m, Traffic_4096x2048_30p.y4m, Coastguard_4k.y4m
-# commandline should be like, Kimono1_1920x1080_24.y4m --preset veryfast --bitrate 900
+# available sequences on AWS instance - Johnny_1280x720_60.y4m, KristenAndSara_1280x720_60.y4m, BasketballDrive_1920x1080_50.y4m,ParkScene_1920x1080_24.y4m,  Kimono1_1920x1080_24.y4m, Traffic_4096x2048_30p.y4m, tearsofsteel_4k_1000f_s214.y4m,sintel_4k_600f.y4m, Coastguard_4k.y4m
+# commandline should be like, Kimono1_1920x1080_24.y4m --preset veryslow --bitrate 9000
 
-Kimono1_1920x1080_24.y4m --preset veryfast --bitrate 900 -f 2
-Kimono1_1920x1080_24.y4m --preset veryfast --bitrate 900 -f 2 --pmode
+Kimono1_1920x1080_24.y4m --preset veryfast --bitrate 9000
+Kimono1_1920x1080_24.y4m --preset slow --bitrate 9000 --pmode

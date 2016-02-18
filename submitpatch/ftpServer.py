@@ -63,18 +63,21 @@ while True:
             break
     print(userfiles)
 
-    d, g, n, m, c = userfiles[len(userfiles)-1].split('_')
+    try:
+        d, g, n, m, c = userfiles[len(userfiles)-1].split('_')
 
-    if '.txt' in userfiles[len(userfiles)-1]:
-        p = ' '.join(userfiles[:len(userfiles)-1])
-        cmd = 'python LaunchInstance.py --mailid %s --iter %s --goldentip %s --instance create --commands %s -- %s' %(m, n, g, userfiles[len(userfiles)-1], p)
-    else:
-        p = ' '.join(userfiles[:len(userfiles)])
-        cmd = 'python LaunchInstance.py --mailid %s --iter %s --goldentip %s --instance create -- %s' %(m, n, g, p)
-    os.chdir("..//AWSsetup")
-    ret = sub.Popen(cmd, shell=True)
-    if ret.wait() == 0:
-        print('tests are successful')
+        if '.txt' in userfiles[len(userfiles)-1]:
+            p = ' '.join(userfiles[:len(userfiles)-1])
+            cmd = 'python LaunchInstance.py --mailid %s --iter %s --goldentip %s --instance create --commands %s -- %s' %(m, n, g, userfiles[len(userfiles)-1], p)
+        else:
+            p = ' '.join(userfiles[:len(userfiles)])
+            cmd = 'python LaunchInstance.py --mailid %s --iter %s --goldentip %s --instance create -- %s' %(m, n, g, p)
+        os.chdir("..//AWSsetup")
+        ret = sub.Popen(cmd, shell=True)
+        if ret.wait() == 0:
+            print('tests are successful')
+    except Exception as e:
+        print('failed to parse file name' %e)
 
     for f in userfiles:
         try:

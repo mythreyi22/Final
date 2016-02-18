@@ -67,7 +67,7 @@ def send_patches(test):
             ftp.login(my_FTP_user, my_FTP_pwd)
             ftp.cwd(my_FTPServer_usercontent)
             ftp.storbinary('STOR ' + rename, f)
-            print('patch %s transfered to the Jenkin server....' %file)
+            print('%s transfered to the FTP server....' %file)
         except ftplib.all_errors, e:
             print "ftp failed", e
             sys.exit(1)
@@ -109,6 +109,10 @@ def send_patches(test):
     if test.commands:
         rename = '_'.join([now, test.goldentip, str(test.iter), test.mailid, str(patchcount) + '.txt'])
         transfer(test.commands, rename)
+    print('\n\nyour patches are transfered to FTP server\n'\
+          'FTP server will upload patches on egnyte and launch AWS instance\n'
+          'you can track it on egnyte and AWS dashboard\n'
+          'You will get the results to your mailid\n')
 
 def main():
     # verify the arguments
@@ -122,6 +126,9 @@ def main():
 
     # parse the arguments
     for i in range(len(sys.argv)):
+        if '_' in sys.argv[i] and not i == 0:
+            print('should not use underscore in file names %s' %sys.argv[i])
+            sys.exit(1)
         test.parsearg(sys.argv[i], i)
 		
     # send patches
