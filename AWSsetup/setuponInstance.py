@@ -490,6 +490,7 @@ def main():
         launch_tests_patch()
     else:
         # else part is for running nightly\weekly performance regression tests
+        download_requiredfiles() # download all required files (here instanceid and requestid's are fake so download again later)
         setup_regularx265repo()
         launch_tests()
 
