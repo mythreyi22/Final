@@ -47,7 +47,7 @@ class submit:
                 print '\t-h/--help                   show this help'
                 print '\t   --commands <string>      locate the file which is having additional commandlines (optional)'
                 print '\t   --goldentip <string>     The tip which you want to compare with'
-                print "\t   --instancestate <string> do you want to 'create' the instance or 'terminate'?"
+                print "\t   --instance <string> do you want to 'create' the instance or 'terminate'?"
                 print "\t   --mailid <string>        receiver mail id to get results"
                 print '\t   --iter <N>               N times to run the command line, default 1 (optional)'
                 print '\t   -- <string>              locate the patches with space'
