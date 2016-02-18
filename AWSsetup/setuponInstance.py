@@ -180,6 +180,10 @@ def terminate_instance():
     #get security credentials
     accesskey = my_AWS_ACCESS_KEY_ID
     secretkey = my_AWS_SECRET_ACCESS_KEY
+    os.environ['PATH']='/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin:/opt/aws/bin:/home/ec2-user/bin'
+    if my_patchtest == False:
+        time.sleep(600) # hold 10 minuts before terminating instance to get requestid and instanceid
+        download_requiredfiles()
     cmd = "ec2-cancel-spot-instance-requests %s --aws-access-key=%s --aws-secret-key=%s --region us-west-2" %(requestid, accesskey, secretkey)
     ret = sub.Popen(cmd, shell=True, stdout=log, stderr=log)
     if ret.wait() != 0:
@@ -193,7 +197,6 @@ def cleanup():
     global log
     log.write('\n..........INSTANCE WILL TERMINATING IN 5 MINUTS..........\n')
 
-    time.sleep(300) # hold 5 minuts before terminating instance
     # clean up spot request and terminate the instance
     print('terminating instance....')
     terminate_instance()
@@ -485,7 +488,6 @@ def main():
         launch_tests_patch()
     else:
         # else part is for running nightly\weekly performance regression tests
-        download_requiredfiles()
         parse()
         setup_regularx265repo()
         launch_tests()
