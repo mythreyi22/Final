@@ -303,9 +303,8 @@ def download_requiredfiles():
             print "ftp failed", e
             log.write('\nERROR: ftp failed to download patches from egnyte\n %s \n' %e)
             cleanup()
-
 def parse_patch():
-    global patches, goldentip, iter, requestid, instanceid, log
+    global patches, goldentip, iter, requestid, instanceid, log, my_email_to
     try:
         for file in glob.glob("*.patch"):
             f = file.split('_')
