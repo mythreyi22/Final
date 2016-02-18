@@ -181,6 +181,8 @@ def terminate_instance():
     accesskey = my_AWS_ACCESS_KEY_ID
     secretkey = my_AWS_SECRET_ACCESS_KEY
     os.environ['PATH']='/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin:/opt/aws/bin:/home/ec2-user/bin'
+    os.environ['EC2_HOME']='/opt/aws/apitools/ec2'
+    os.environ['JAVA_HOME']='/usr/lib/jvm/jre'
     if my_patchtest == False:
         time.sleep(600) # hold 10 minuts before terminating instance to get requestid and instanceid
         download_requiredfiles()
