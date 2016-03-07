@@ -1515,6 +1515,26 @@ def checkoutputs(key, seq, command, sum, tmpdir, logs):
     group = my_builds[key][1]
     testhash = testcasehash(seq, command)
 
+    cwd = os.getcwd()
+    if 'analysis-mode=save' in command:
+        savesummary = sum
+        open('savesummary.txt', 'w').write(savesummary)
+        shutil.copy(os.path.join(tmpdir,'bitstream.hevc'), cwd)
+    if 'analysis-mode=load' in command:
+        loadsummary = sum
+        savesummary = open('savesummary.txt','r').read()
+        save = os.path.join(cwd,'bitstream.hevc')
+        load = os.path.join(tmpdir,'bitstream.hevc')
+        comparingoutput= filecmp.cmp(save,load)
+        if comparingoutput == True:
+            print 'no difference'
+        else:
+            logger.writeerr('Analysis save and load output are mismatched')
+            res = 'SAVE: %s\n' % savesummary
+            res += 'LOAD: %s\n\n' % loadsummary
+            table('Outputchange between Analysis save and load', loadsummary, savesummary, logger.build.strip('\n'))
+            logger.testfail('Outputchange between Analysis save and load', res, logs)
+
     opencommits = [] # changing commits without 'no-change' or testfolder
 
     # walk list of ancestor commits which changed outputs until we find the
