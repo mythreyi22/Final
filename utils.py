@@ -1514,26 +1514,27 @@ def parsex265(tmpfolder, stdout, stderr):
 def checkoutputs(key, seq, command, sum, tmpdir, logs):
     group = my_builds[key][1]
     testhash = testcasehash(seq, command)
-
+    # Analysis save/load comparison once encoder success.If encoder crash exist it will not compare the output files.
     cwd = os.getcwd()
-    if 'analysis-mode=save' in command:
-        savesummary = sum
-        open('savesummary.txt', 'w').write(savesummary)
-        shutil.copy(os.path.join(tmpdir,'bitstream.hevc'), cwd)
-    if 'analysis-mode=load' in command:
-        loadsummary = sum
-        savesummary = open('savesummary.txt','r').read()
-        save = os.path.join(cwd,'bitstream.hevc')
-        load = os.path.join(tmpdir,'bitstream.hevc')
-        comparingoutput= filecmp.cmp(save,load)
-        if comparingoutput == True:
-            print 'no difference'
-        else:
-            logger.writeerr('Analysis save and load output are mismatched')
-            res = 'SAVE: %s\n' % savesummary
-            res += 'LOAD: %s\n\n' % loadsummary
-            table('Outputchange between Analysis save and load', loadsummary, savesummary, logger.build.strip('\n'))
-            logger.testfail('Outputchange between Analysis save and load', res, logs)
+    if os.path.isfile(os.path.join(tmpdir,'bitstream.hevc')):
+        if 'analysis-mode=save' in command:
+            savesummary = sum
+            open('savesummary.txt', 'w').write(savesummary)
+            shutil.copy(os.path.join(tmpdir,'bitstream.hevc'), cwd)
+        if 'analysis-mode=load' in command:
+            loadsummary = sum
+            savesummary = open('savesummary.txt','r').read()
+            save = os.path.join(cwd,'bitstream.hevc')
+            load = os.path.join(tmpdir,'bitstream.hevc')
+            comparingoutput= filecmp.cmp(save,load)
+            if comparingoutput == True:
+                print 'no difference'
+            else:
+                logger.writeerr('Analysis save and load output are mismatched')
+                res = 'SAVE: %s\n' % savesummary
+                res += 'LOAD: %s\n\n' % loadsummary
+                table('Outputchange between Analysis save and load', loadsummary, savesummary, logger.build.strip('\n'))
+                logger.testfail('Outputchange between Analysis save and load', res, logs)
 
     opencommits = [] # changing commits without 'no-change' or testfolder
 
