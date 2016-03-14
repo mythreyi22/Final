@@ -12,8 +12,8 @@
 # only test cases which match the string(s) within the braces are
 # allowed to update their golden outputs to this commit
 
-4847da174a41 [sao] QP fix for SAO
-ec98854495f5 [analysis load/save] lowres MV removed
+4847da174a41 QP fix for SAO
+ec98854495f5 [analysis] lowres MV removed
 1efdce65fd9f [pass 2, pass 3] ABR 2-pass bug fix
 95b8b6d90dc4 [vbv] SAO inconsistency fix
 f548abe8eae8 sao output uninitialisation fix
