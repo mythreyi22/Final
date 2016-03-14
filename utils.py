@@ -1635,7 +1635,7 @@ def checkoutputs(key, seq, command, sum, tmpdir, logs):
             if diff > vbv_tolerance:
                 return lastfname, diffmsg
             else:
-                return lastfname, None
+                return lastfname, False
 
     # outputs do not match last good, check for a changing commit that might
     # take credit for this test case being changed
@@ -1849,7 +1849,7 @@ def _test(build, tmpfolder, seq, command, extras):
     # containing the last known good outputs (or for the new ones to be
     # created)
 
-    if errors is None:
+    if errors is None or errors is False:
         # no golden outputs for this test yet
         logger.write('validating with decoder')
         decodeerr = checkdecoder(tmpfolder)
@@ -1864,7 +1864,12 @@ def _test(build, tmpfolder, seq, command, extras):
                 table('Decoder validation failed', empty , empty, logger.build.strip('\n'))
         else:
             logger.write('Decoder validation ok:', sum)
-            newgoldenoutputs(seq, command, lastfname, sum, logs, tmpfolder)
+            if errors is False:
+                # outputs matched golden outputs
+                addpass(testhash, lastfname, logs)
+                logger.write('PASS')
+            else:
+                newgoldenoutputs(seq, command, lastfname, sum, logs, tmpfolder)
     elif errors:
         typeoferror = 'VBV' if '--vbv-bufsize' in command else ''
         # outputs did not match golden outputs
@@ -1890,10 +1895,7 @@ def _test(build, tmpfolder, seq, command, extras):
                 prefix += '\nbitstream hash was %s' % hashbitstream(badfn)
             addfail(testhash, lastfname, logs, errors)
             logger.testfail(prefix, errors, logs)
-    else:
-        # outputs matched golden outputs
-        addpass(testhash, lastfname, logs)
-        logger.write('PASS')
+
 
 def runtest(key, seq, commands, always, extras):
     '''
