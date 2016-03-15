@@ -494,7 +494,8 @@ ignored_x265_warnings = (
     '--cu-lossless disabled, requires --rdlevel 3 or higher',
     'Source height < 720p; disabling lookahead-slices',
     'Limit reference options 2 and 3 are not supported with pmode. Disabling limit reference',
-    'Analysis load/save options works only with cu-tree off, Disabling cu-tree'
+    'Analysis load/save options works only with cu-tree off, Disabling cu-tree',
+    'Rc Grain removes qp fluctuations caused by aq/cutree, Disabling aq,cu-tree'
 )
 
 
