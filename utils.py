@@ -32,6 +32,7 @@ changers = None      # list of all output changing commits which are ancestors
                      # of the revision under test
 changefilter = {}
 vbv_tolerance = .05 # fraction of bitrate difference allowed (5%)
+abr_tolerance = .05 # fraction of abr difference allowed (5%)
 logger = None
 buildObj = {}
 spot_checks = []
@@ -1594,8 +1595,7 @@ def checkoutputs(key, seq, command, sum, tmpdir, logs):
             print 'correcting golden output summary,',
             open(fname, 'w').write(sum)
         return lastfname, False
-
-    if '--vbv-bufsize' in command:
+    if '--vbv-bufsize' in command or '--bitrate' in command:
         # outputs did not match but this is a VBV test case.
         # bitrate difference > vbv tolerance will take credit for the change
         # or an open commmit with the 'vbv' keyword may take credit for the change
@@ -1610,30 +1610,40 @@ def checkoutputs(key, seq, command, sum, tmpdir, logs):
             # VBV encodes are non-deterministic, check that golden output
             # bitrate is within tolerance% of new bitrate. Example summary:
             # 'bitrate: 121.95, SSIM: 20.747, PSNR: 53.359'
+            diffmsg , diff_abr, diff_vbv = ' ', 0, 0
             try:
-                lastbitrate = float(lastsum.split(',')[0].split(' ')[1])
-                newbitrate = float(sum.split(',')[0].split(' ')[1])
-                diff = abs(lastbitrate - newbitrate) / lastbitrate
-                diffmsg = 'VBV OUTPUT CHANGED BY %.2f%%' % (diff * 100)
+                if '--vbv-bufsize' in command:
+                    lastbitrate = float(lastsum.split(',')[0].split(' ')[1])
+                    newbitrate = float(sum.split(',')[0].split(' ')[1])
+                    diff_vbv = abs(lastbitrate - newbitrate) / lastbitrate
+                    if diff_vbv > vbv_tolerance:
+                        diffmsg += 'VBV OUTPUT CHANGED BY %.2f%%' % (diff_vbv * 100)
+                if '--bitrate' in command:
+                    lastbitrate_string = command.split('--bitrate ')[1]
+                    lastbitrate = float(lastbitrate_string)
+                    newbitrate = float(sum.split(',')[0].split(' ')[1])
+                    diff_abr = abs(lastbitrate - newbitrate) / lastbitrate
+                    if diff_abr > abr_tolerance:
+                        diffmsg += ' ABR OUTPUT CHANGED BY %.2f%% compared to Target bitrate' % (diff_abr * 100)
             except (IndexError, ValueError), e:
                 diffmsg = 'Unable to parse bitrates for %s:\n<%s>\n<%s>' % \
                            (testhash, lastsum, sum)
-                diff = vbv_tolerance + 1
-            return diff, diffmsg
-
+                diff_vbv = vbv_tolerance + 1
+                diff_abr = abr_tolerance + 1
+            return diff_vbv, diff_abr, diffmsg
         for oc in opencommits:
             lastfname = '%s-%s-%s' % (hgrevisiondate(oc), group, oc)
-            if 'vbv' in changefilter.get(oc, ''):
+            if 'vbv' in changefilter.get(oc, '') or  'abr' in changefilter.get(oc, ''):
                 return lastfname, None
             else:
-                diff, diffmsg = outputdiff()
-                if diff > vbv_tolerance:
+                diff_vbv, diff_abr, diffmsg = outputdiff()
+                if diff_vbv > vbv_tolerance or diff_abr > abr_tolerance:
                     logger.logfp.write('\n%s\n' % diffmsg)
                     logger.write(diffmsg)
                     return lastfname, None
         else:
-            diff, diffmsg = outputdiff()
-            if diff > vbv_tolerance:
+            diff_vbv, diff_abr, diffmsg = outputdiff()
+            if diff_vbv > vbv_tolerance or diff_abr > abr_tolerance:
                 return lastfname, diffmsg
             else:
                 return lastfname, False
@@ -1872,7 +1882,7 @@ def _test(build, tmpfolder, seq, command, extras):
             else:
                 newgoldenoutputs(seq, command, lastfname, sum, logs, tmpfolder)
     elif errors:
-        typeoferror = 'VBV' if '--vbv-bufsize' in command else ''
+        typeoferror = 'VBV' if '--vbv-bufsize' in command else ('ABR' if '--bitrate' in command else '')
         # outputs did not match golden outputs
         lastsum = open(fname, 'r').read()
         decodeerr = checkdecoder(tmpfolder)
