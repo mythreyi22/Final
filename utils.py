@@ -1619,7 +1619,7 @@ def checkoutputs(key, seq, command, sum, tmpdir, logs):
                     if diff_vbv > vbv_tolerance:
                         diffmsg += 'VBV OUTPUT CHANGED BY %.2f%%' % (diff_vbv * 100)
                 if '--bitrate' in command:
-                    lastbitrate_string = command.split('--bitrate ')[1]
+                    lastbitrate_string = command.split('--bitrate ')[1].split(' ')[0]
                     lastbitrate = float(lastbitrate_string)
                     newbitrate = float(sum.split(',')[0].split(' ')[1])
                     diff_abr = abs(lastbitrate - newbitrate) / lastbitrate
