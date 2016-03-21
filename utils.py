@@ -32,7 +32,7 @@ changers = None      # list of all output changing commits which are ancestors
                      # of the revision under test
 changefilter = {}
 vbv_tolerance = .05 # fraction of bitrate difference allowed (5%)
-abr_tolerance = .05 # fraction of abr difference allowed (5%)
+abr_tolerance = .10 # fraction of abr difference allowed (10%)
 logger = None
 buildObj = {}
 spot_checks = []
