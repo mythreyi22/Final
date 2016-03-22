@@ -12,6 +12,7 @@
 # only test cases which match the string(s) within the braces are
 # allowed to update their golden outputs to this commit
 
+4b0da550a69c correct level
 ed744166c37e [pmode] fix uninitialised chroma flag issue
 4847da174a41 QP fix for SAO
 ec98854495f5 [analysis] lowres MV removed
