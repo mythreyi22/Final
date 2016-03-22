@@ -262,6 +262,12 @@ class Logger():
             self.newoutputs[commit] += 1
         else:
             self.newoutputs[commit] = 1
+			
+    def summaryfile(self, commit):
+        self.write('summary.txt file does not exist for <%s> \n\n' % commit)
+        self.logfp.write(self.test)
+        self.logfp.write('summary.txt file does not exist <%s>\n\n' % commit)
+        self.logfp.flush()			
 
     def writeerr(self, message):
         '''cmake, make, or testbench errors'''
@@ -1575,8 +1581,12 @@ def checkoutputs(key, seq, command, sum, tmpdir, logs):
     golden = os.path.join(testfolder, 'bitstream.hevc')
     test = os.path.join(tmpdir, 'bitstream.hevc')
 
-    fname = os.path.join(my_goldens, testhash, lastfname, 'summary.txt')
-    lastsum = open(fname, 'r').read()
+    if os.path.isfile(os.path.join(my_goldens, testhash, lastfname, 'summary.txt')):
+        fname = os.path.join(my_goldens, testhash, lastfname, 'summary.txt')
+        lastsum = open(fname, 'r').read()
+    else:
+        logger.summaryfile(commit)
+        return lastfname, None
 
     if filecmp.cmp(golden, test):
         # outputs matched last-known good, record no-change status for all
@@ -1837,7 +1847,10 @@ def _test(build, tmpfolder, seq, command, extras):
     # run the encoder, abort early if any errors encountered
     logs, sum, encoder_errors, encoder_error_var = encodeharness(build, tmpfolder, seq, command, extras)
     lastfname, errors = checkoutputs(build, seq, command, sum, tmpfolder, logs)
-    fname = os.path.join(my_goldens, testhash, lastfname, 'summary.txt')
+    if os.path.isfile(os.path.join(my_goldens, testhash, lastfname, 'summary.txt')):
+        fname = os.path.join(my_goldens, testhash, lastfname, 'summary.txt')
+    else:
+        return
     if encoder_errors:
         if (encoder_error_var):
             logger.testfail('encoder error reported', encoder_errors, logs)
