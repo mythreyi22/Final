@@ -1383,19 +1383,32 @@ def encodeharness(key, tmpfolder, sequence, command, inextras):
                    '--fps=%s' % fps,
                    '--input-depth=%s' % depth,
                    '--input-csp=i%s' % csp]
-
     seqfullpath = os.path.join(my_sequences, sequence)
-
     build = buildObj[key]
     x265 = build.exe
-    cmds = [x265]
-    if '--command-file' in command:
-        cmds.append(command)
-    else:
-        cmds.extend([seqfullpath, 'bitstream.hevc'])
-        cmds.extend(shlex.split(command))
+    if 'ffmpeg' in command:
+        pipe = '-|'
+        ffmpeg = 'ffmpeg'
+        ffmpegformat = command.split('-i ')[1].split('-|')[0]
+        options = command.split('-|')[1]
+        cmds = [os.path.join(my_sequences, ffmpeg)]
+        cmds.append('-i')
+        cmds.append(seqfullpath)
+        cmds.extend(shlex.split(ffmpegformat))
+        cmds.append(pipe)
+        cmds.append(x265)
+        cmds.extend(shlex.split(options))
         cmds.extend(extras)
-
+        cmds.append('-o')
+        cmds.append('bitstream.hevc')	
+    else:
+        cmds = [x265]
+        if '--command-file' in command:
+            cmds.append(command)
+        else:
+            cmds.extend([seqfullpath, 'bitstream.hevc'])
+            cmds.extend(shlex.split(command))
+            cmds.extend(extras)
     logs, errors, summary = '', '', ''
     if not os.path.isfile(x265):
         logger.write('x265 executable not found')
@@ -1412,9 +1425,9 @@ def encodeharness(key, tmpfolder, sequence, command, inextras):
         if 'PATH' in build.opts:
             os.environ['PATH'] += os.pathsep + build.opts['PATH']
         if os.name == 'nt':
-            p = Popen(cmds, cwd=tmpfolder, stdout=PIPE, stderr=PIPE)
+            p = Popen(cmds, cwd=tmpfolder, stdout=PIPE, stderr=PIPE, shell = 'TRUE')
         else:
-            p = Popen(cmds, cwd=tmpfolder, stdout=PIPE, stderr=PIPE, preexec_fn=prefn)
+            p = Popen(cmds, cwd=tmpfolder, stdout=PIPE, stderr=PIPE, preexec_fn=prefn, shell = 'TRUE')
         stdout, stderr = p.communicate()
         os.environ['PATH'] = origpath
 
