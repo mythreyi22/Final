@@ -33,13 +33,14 @@ changers = None      # list of all output changing commits which are ancestors
 changefilter = {}
 vbv_tolerance = .05 # fraction of bitrate difference allowed (5%)
 abr_tolerance = .10 # fraction of abr difference allowed (10%)
+fps_tolerance = .10  # fraction of fps difference allowed (10%)
 logger = None
 buildObj = {}
 spot_checks = []
 encoder_binary_name = 'x265'
 
 try:
-    from conf import my_machine_name, my_machine_desc, my_x265_source
+    from conf import my_machine_name, my_machine_desc, my_x265_source, check_binary, check_variable, fps_check_variable
     from conf import my_sequences, my_goldens, option_strings, my_hm_decoder
     from conf import my_pastebin_key, my_progress, my_tempfolder, my_builds
 
@@ -459,7 +460,9 @@ def setup(argv, preferredlist):
     atexit.register(closelog)
 
     testrev = hgversion(my_x265_source)
-    if testrev.endswith('+'):
+    if encoder_binary_name == check_binary:
+        save_results = True
+    elif testrev.endswith('+'):	
         # we do not store golden outputs if uncommitted changes
         save_results = False
         testrev = testrev[:-1]
@@ -1617,8 +1620,9 @@ def checkoutputs(key, seq, command, sum, tmpdir, logs):
         if 'N/A' in lastsum and 'N/A' not in sum:
             print 'correcting golden output summary,',
             open(fname, 'w').write(sum)
-        return lastfname, False
-    if '--vbv-bufsize' in command or '--bitrate' in command:
+            return lastfname, False
+			
+    if '--vbv-bufsize' in command or '--bitrate' in command or fps_check_variable in command:
         # outputs did not match but this is a VBV test case.
         # bitrate difference > vbv tolerance will take credit for the change
         # or an open commmit with the 'vbv' keyword may take credit for the change
@@ -1627,13 +1631,12 @@ def checkoutputs(key, seq, command, sum, tmpdir, logs):
             logger.write('saving new outputs with valid summary:', sum)
             return lastfname, None
 
-
         def outputdiff():
             # golden outputs might have used --log=none, recover from this
             # VBV encodes are non-deterministic, check that golden output
             # bitrate is within tolerance% of new bitrate. Example summary:
             # 'bitrate: 121.95, SSIM: 20.747, PSNR: 53.359'
-            diffmsg , diff_abr, diff_vbv = ' ', 0, 0
+            diffmsg , diff_abr, diff_fps, diff_vbv = ' ', 0, 0, 0
             try:
                 if '--vbv-bufsize' in command:
                     lastbitrate = float(lastsum.split(',')[0].split(' ')[1])
@@ -1648,29 +1651,48 @@ def checkoutputs(key, seq, command, sum, tmpdir, logs):
                     diff_abr = abs(lastbitrate - newbitrate) / lastbitrate
                     if diff_abr > abr_tolerance:
                         diffmsg += ' ABR OUTPUT CHANGED BY %.2f%% compared to Target bitrate' % (diff_abr * 100)
+                if fps_check_variable in command:		
+                    targetfps_string = command.split(fps_check_variable)[1].split(' ')[0]
+                    targetfps = float(targetfps_string)
+                    for line in logs.splitlines():
+                        if line.startswith(check_variable):
+                            frame_line = line
+                            framelevelfps_string = frame_line.split('frames:')[1].split(' fps')[0]
+                            framelevelfps = float(framelevelfps_string)
+                            diff_fps = abs(targetfps - framelevelfps) / targetfps
+                            frames_count_string = line.split(check_variable)[1].split(' frames:')[0]
+                            frame_count = float(frames_count_string)
+                            if frame_count > 100:
+                                if diff_fps > fps_tolerance:
+                                    diffmsg += ' \nFPS TARGET MISSED BY %.2f%% compared to target fps' % (diff_fps * 100)
+                                    diffmsg+= ' for FRAME = %s' %frames_count_string
             except (IndexError, ValueError), e:
                 diffmsg = 'Unable to parse bitrates for %s:\n<%s>\n<%s>' % \
                            (testhash, lastsum, sum)
                 diff_vbv = vbv_tolerance + 1
                 diff_abr = abr_tolerance + 1
-            return diff_vbv, diff_abr, diffmsg
+                diff_fps = fps_tolerance + 1				
+            return diff_vbv, diff_abr, diff_fps, diffmsg
         for oc in opencommits:
             lastfname = '%s-%s-%s' % (hgrevisiondate(oc), group, oc)
-            if 'vbv' in changefilter.get(oc, '') or  'abr' in changefilter.get(oc, ''):
+            if 'vbv' in changefilter.get(oc, '') or   'bitrate' in changefilter.get(oc, '') or 'fps' in changefilter.get(oc, ''):
                 return lastfname, None
             else:
-                diff_vbv, diff_abr, diffmsg = outputdiff()
-                if diff_vbv > vbv_tolerance or diff_abr > abr_tolerance:
+                diff_vbv, diff_abr, diff_fps, diffmsg = outputdiff()
+                if diff_vbv > vbv_tolerance or diff_abr > abr_tolerance or diff_fps > fps_tolerance:
                     logger.logfp.write('\n%s\n' % diffmsg)
                     logger.write(diffmsg)
                     return lastfname, None
         else:
-            diff_vbv, diff_abr, diffmsg = outputdiff()
-            if diff_vbv > vbv_tolerance or diff_abr > abr_tolerance:
+            diff_vbv, diff_abr, diff_fps, diffmsg = outputdiff()
+            if diff_vbv > vbv_tolerance or diff_abr > abr_tolerance or diff_fps > fps_tolerance:
                 return lastfname, diffmsg
             else:
                 return lastfname, False
-
+    
+    if filecmp.cmp(golden, test):
+        return lastfname, None
+		
     # outputs do not match last good, check for a changing commit that might
     # take credit for this test case being changed
     unfiltered = None
@@ -1860,10 +1882,7 @@ def _test(build, tmpfolder, seq, command, extras):
     # run the encoder, abort early if any errors encountered
     logs, sum, encoder_errors, encoder_error_var = encodeharness(build, tmpfolder, seq, command, extras)
     lastfname, errors = checkoutputs(build, seq, command, sum, tmpfolder, logs)
-    if os.path.isfile(os.path.join(my_goldens, testhash, lastfname, 'summary.txt')):
-        fname = os.path.join(my_goldens, testhash, lastfname, 'summary.txt')
-    else:
-        return
+    fname = os.path.join(my_goldens, testhash, lastfname, 'summary.txt')
     if encoder_errors:
         if (encoder_error_var):
             logger.testfail('encoder error reported', encoder_errors, logs)
@@ -1921,8 +1940,12 @@ def _test(build, tmpfolder, seq, command, extras):
             table(failuretype, sum , lastsum, logger.build.strip('\n'))
         else:
             logger.write('FAIL')
-            prefix = '%s OUTPUT CHANGE: <%s> to <%s>' % (typeoferror, lastsum, sum)
-            failuretype = '%s output change' % typeoferror
+            if 'FPS TARGET MISSED' in errors:
+                prefix = '%s FPS TARGET MISSED: <%s> to <%s>' % (typeoferror, lastsum, sum)
+                failuretype = '%s fps target missed' % typeoferror
+            else:
+                prefix = '%s OUTPUT CHANGE: <%s> to <%s>' % (typeoferror, lastsum, sum)
+                failuretype = '%s output change' % typeoferror
             table(failuretype, sum , lastsum, logger.build.strip('\n'))
             if save_changed:
                 hashfname = savebadstream(tmpfolder)
