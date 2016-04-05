@@ -18,6 +18,7 @@ import time
 import urllib
 from subprocess import Popen, PIPE
 from distutils.spawn import find_executable
+import multiprocessing
 
 run_make  = True     # run cmake and make/msbuild
 run_bench = True     # run test benches
@@ -367,7 +368,7 @@ class Logger():
         testname = self.testname.split('-')
         status = self.errors and 'failures' or 'successful'
         branch = hggetbranch(testrev)
-        data = [platform.system(), '-'] + testname + [status, '-', branch]
+        data = [platform.system(), '-'] + testname + [status, '-', branch] + ['-', str(multiprocessing.cpu_count())] + ['core']
         msg['Subject'] = ' '.join(data)
         if self.errors:
             msg.attach(failure_message)
