@@ -1430,8 +1430,10 @@ def encodeharness(key, tmpfolder, sequence, command, inextras):
             os.environ['PATH'] += os.pathsep + build.opts['PATH']
         if os.name == 'nt':
             p = Popen(cmds, cwd=tmpfolder, stdout=PIPE, stderr=PIPE, shell = 'TRUE')
-        else:
+        elif 'ffmpeg' in command:
             p = Popen(cmds, cwd=tmpfolder, stdout=PIPE, stderr=PIPE, preexec_fn=prefn, shell = 'TRUE')
+        else:
+            p = Popen(cmds, cwd=tmpfolder, stdout=PIPE, stderr=PIPE, preexec_fn=prefn)
         stdout, stderr = p.communicate()
         os.environ['PATH'] = origpath
 
