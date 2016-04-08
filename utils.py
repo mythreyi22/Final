@@ -41,7 +41,7 @@ spot_checks = []
 encoder_binary_name = 'x265'
 
 try:
-    from conf import my_machine_name, my_machine_desc, my_x265_source, check_binary, check_variable, fps_check_variable
+    from conf import my_machine_name, my_machine_desc, my_x265_source 
     from conf import my_sequences, my_goldens, option_strings, my_hm_decoder
     from conf import my_pastebin_key, my_progress, my_tempfolder, my_builds
 
@@ -62,6 +62,11 @@ except ImportError, e:
     print e
     print 'Copy conf.py.example to conf.py and edit the file as necessary'
     sys.exit(1)
+
+try:
+    from conf import check_binary, check_variable, fps_check_variable
+except ImportError, e:
+    check_binary, check_variable, fps_check_variable = None, None, None
 
 try:
     from conf import my_make_flags
@@ -1625,7 +1630,7 @@ def checkoutputs(key, seq, command, sum, tmpdir, logs):
             open(fname, 'w').write(sum)
             return lastfname, False
 			
-    if '--vbv-bufsize' in command or '--bitrate' in command or fps_check_variable in command:
+    if '--vbv-bufsize' in command or '--bitrate' in command or (fps_check_variable and (fps_check_variable in command)):
         # outputs did not match but this is a VBV test case.
         # bitrate difference > vbv tolerance will take credit for the change
         # or an open commmit with the 'vbv' keyword may take credit for the change
@@ -1654,7 +1659,7 @@ def checkoutputs(key, seq, command, sum, tmpdir, logs):
                     diff_abr = abs(lastbitrate - newbitrate) / lastbitrate
                     if diff_abr > abr_tolerance:
                         diffmsg += ' ABR OUTPUT CHANGED BY %.2f%% compared to Target bitrate' % (diff_abr * 100)
-                if fps_check_variable in command:		
+                if (fps_check_variable and (fps_check_variable in command)):
                     targetfps_string = command.split(fps_check_variable)[1].split(' ')[0]
                     targetfps = float(targetfps_string)
                     for line in logs.splitlines():
@@ -1674,7 +1679,7 @@ def checkoutputs(key, seq, command, sum, tmpdir, logs):
                            (testhash, lastsum, sum)
                 diff_vbv = vbv_tolerance + 1
                 diff_abr = abr_tolerance + 1
-                diff_fps = fps_tolerance + 1				
+                diff_fps = fps_tolerance + 1
             return diff_vbv, diff_abr, diff_fps, diffmsg
         for oc in opencommits:
             lastfname = '%s-%s-%s' % (hgrevisiondate(oc), group, oc)
