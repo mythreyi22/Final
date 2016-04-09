@@ -11,7 +11,12 @@
 # if a phrase is listed in braces at the start of the description, then
 # only test cases which match the string(s) within the braces are
 # allowed to update their golden outputs to this commit
-
+#
+# add keyword only if that is not set in any presets, ex:
+# 1) [pmode], [vbv], [bitrate], [tskip] etc.., here golden outputs will
+# store for particular commandline which is having this keyword
+# 2) not required [sao], [weightp], [cutree] etc.., because these are
+# already set in presets so golden outputs will store for that preset.
 4b0da550a69c correct level
 ed744166c37e [pmode] fix uninitialised chroma flag issue
 4847da174a41 QP fix for SAO

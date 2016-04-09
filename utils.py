@@ -1663,7 +1663,7 @@ def checkoutputs(key, seq, command, sum, tmpdir, logs):
                     targetfps_string = command.split(fps_check_variable)[1].split(' ')[0]
                     targetfps = float(targetfps_string)
                     for line in logs.splitlines():
-                        if line.startswith(check_variable):
+                        if check_variable and line.startswith(check_variable):
                             frame_line = line
                             framelevelfps_string = frame_line.split('frames:')[1].split(' fps')[0]
                             framelevelfps = float(framelevelfps_string)
