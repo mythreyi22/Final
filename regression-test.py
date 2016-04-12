@@ -46,9 +46,8 @@ try:
 
     # send results to mail
     logger.email_results()
-
-    log = logger.logfname
-    logs = open(log,'r')
+    # rebuild without debug options and upload binaries on egnyte
+    logs = open(os.path.join(utils.encoder_binary_name, logger.logfname),'r')
     fatalerror = False
     for line in logs:
          if 'encoder error reported' in line or 'DECODE ERRORS' in line  or 'Validation failed' in line or 'encoder warning reported' in line:

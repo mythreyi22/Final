@@ -1706,7 +1706,7 @@ def checkoutputs(key, seq, command, sum, tmpdir, logs, testhash):
             diff_vbv, diff_abr, diff_fps, diffmsg = outputdiff()
             if diff_vbv > vbv_tolerance or diff_abr > abr_tolerance or diff_fps > fps_tolerance:
                 return lastfname, diffmsg
-            else:
+            elif diff_vbv < vbv_tolerance:
                 return lastfname, False
     
     if filecmp.cmp(golden, test):
