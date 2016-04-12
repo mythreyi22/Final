@@ -1699,7 +1699,7 @@ def checkoutputs(key, seq, command, sum, tmpdir, logs):
                 return lastfname, False
     
     if filecmp.cmp(golden, test):
-        return lastfname, None
+        return lastfname, False
 		
     # outputs do not match last good, check for a changing commit that might
     # take credit for this test case being changed
