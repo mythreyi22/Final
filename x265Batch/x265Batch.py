@@ -36,11 +36,13 @@ try:
 except ImportError, e:
     print '** `my_email_*` not defined, defaulting to None'
     my_email_from, my_email_to, my_smtp_pwd = None, None, None
+
 try:
-    from paths_cfg import Decodebitstream, regeneratecsv
+    from paths_cfg import Decodebitstream
 except ImportError, e:
     print '** `Decodebitstream*` not defined, defaulting to None'
-    Decodebitstream, regeneratecsv = None, None
+    Decodebitstream = None
+
 try:
     from paths_cfg import my_ftp_url, my_ftp_user, my_ftp_pass, my_ftp_path_stable, my_ftp_path_default, my_ftp_path_stableold, my_ftp_path_defaultold
 except ImportError, e:
@@ -462,7 +464,7 @@ def main():
     # close the encoder log file
     test.logfp.close()
     # add extra columns for video, preset and rate control options in csv
-    if regeneratecsv == True:
+    if not Decodebitstream:
         regeneratecsv(test)
     # compare current test results with golden(previous) test results
     if my_compareFPS == True:
