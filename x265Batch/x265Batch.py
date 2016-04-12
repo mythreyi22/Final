@@ -10,8 +10,6 @@ import shutil
 import glob
 import sys
 import platform
-import xlrd
-
 header = {}
 CWD = os.getcwd()
 path = {}
@@ -475,6 +473,7 @@ def main():
         upload_csv(test)
     # Decoding and comparing the ssim value
     if Decodebitstream == True:
+        import xlrd
         global headerhandle
         global header_numberofrows
         for folder in ["decodedfiles","log"]:
