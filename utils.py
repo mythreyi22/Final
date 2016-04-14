@@ -1653,12 +1653,11 @@ def checkoutputs(key, seq, command, sum, tmpdir, logs):
                     if diff_vbv > vbv_tolerance:
                         diffmsg += 'VBV OUTPUT CHANGED BY %.2f%%' % (diff_vbv * 100)
                 if '--bitrate' in command:
-                    lastbitrate_string = command.split('--bitrate ')[1].split(' ')[0]
-                    lastbitrate = float(lastbitrate_string)
+                    lastbitrate = float(lastsum.split('bitrate: ')[1].split(',')[0])
                     newbitrate = float(sum.split(',')[0].split(' ')[1])
                     diff_abr = abs(lastbitrate - newbitrate) / lastbitrate
                     if diff_abr > abr_tolerance:
-                        diffmsg += ' ABR OUTPUT CHANGED BY %.2f%% compared to Target bitrate' % (diff_abr * 100)
+                        diffmsg += ' ABR OUTPUT CHANGED BY %.2f%%' % (diff_abr * 100)
                 if (fps_check_variable and (fps_check_variable in command)):
                     targetfps_string = command.split(fps_check_variable)[1].split(' ')[0]
                     targetfps = float(targetfps_string)
