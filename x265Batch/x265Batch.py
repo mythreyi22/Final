@@ -10,8 +10,11 @@ import shutil
 import glob
 import sys
 import platform
+import xlrd
 
-
+header = {}
+CWD = os.getcwd()
+path = {}
 try:
     from paths_cfg import my_sequences, my_bitstreams
     from paths_cfg import my_RAMDISK, my_compareFPS, my_csvupload
@@ -35,7 +38,11 @@ try:
 except ImportError, e:
     print '** `my_email_*` not defined, defaulting to None'
     my_email_from, my_email_to, my_smtp_pwd = None, None, None
-
+try:
+    from paths_cfg import Decodebitstream, regeneratecsv
+except ImportError, e:
+    print '** `Decodebitstream*` not defined, defaulting to None'
+    Decodebitstream, regeneratecsv = None, None
 try:
     from paths_cfg import my_ftp_url, my_ftp_user, my_ftp_pass, my_ftp_path_stable, my_ftp_path_default, my_ftp_path_stableold, my_ftp_path_defaultold
 except ImportError, e:
@@ -399,9 +406,36 @@ def upload_csv(test):
             ftp.storbinary('STOR ' +'_'.join([now, test.finalcsv]),fp)
     except ftplib.all_errors, e:
         print "ftp failed", e
+def Decodebitstreams_runssim(self):
+    global headerhandle
+    global header_numberofrows
+    global header
+    global path
+
+    ssim_log=open(os.getcwd()+"//log//ssimlog.txt","w")
+    hevcfiles = os.listdir(self.my_bitstreams)
+    for bitstream in hevcfiles:
+            dirpath = os.path.join(os.getcwd(),"decodedfiles")
+            rename=bitstream.replace(".hevc", ".yuv")
+            for n in range(header_numberofrows):
+                    if headerhandle.cell(n, 0).value in bitstream:
+                        header['video']=str(headerhandle.cell(n, 0).value)
+                        header['width']=str(headerhandle.cell(n, 1).value)
+                        header['height']=str(headerhandle.cell(n, 2).value)
+                        header['fps']=str(headerhandle.cell(n, 3).value)
+                        header['frames']=str(headerhandle.cell(n, 4).value)
+            if 'ultrafast' in rename or 'superfast' in rename:
+                command = path['ssim']+" "+ path['UHDcode']+" "+"-b "+os.path.join(self.my_bitstreams,bitstream)+" -o "+os.path.join(os.getcwd(),"decodedfiles","out.yuv")+" --parallel 4 -el "+"--input"+" "+path['input_sequences']+"//"+header['video']+".yuv "+"--frames "+header['frames']+" "+"--maxcusize 64"+" "+"--csv "+dirpath+"/"+rename+"_ssim.csv "+"--width "+header['width']+" "+"--height "+header['height']
+            else:
+                command = path['ssim']+" "+ path['UHDcode']+" "+"-b "+os.path.join(self.my_bitstreams,bitstream)+" -o "+os.path.join(os.getcwd(),"decodedfiles","out.yuv")+" --parallel 4 -el "+"--input"+" "+path['input_sequences']+"//"+header['video']+".yuv "+"--frames "+header['frames']+" "+"--maxcusize 32"+" "+"--csv "+dirpath+"/"+rename+"_ssim.csv "+"--width "+header['width']+" "+"--height "+header['height']
+            print command
+            ret=sub.Popen(command, shell=True, stderr=ssim_log, stdout=ssim_log)
+            if ret.wait()!=0:
+                print("error while running ssim tool")
+    ssim_log.close()
+    shutil.copy(os.path.join(self.resultdir,'x265Benchmark.csv'),'../plotgraphs')
 
 def main():
-
     # create object
     test = Test()
     test.cwd = os.getcwd()
@@ -429,10 +463,9 @@ def main():
 
     # close the encoder log file
     test.logfp.close()
-
     # add extra columns for video, preset and rate control options in csv
-    regeneratecsv(test)
-
+    if regeneratecsv == True:
+        regeneratecsv(test)
     # compare current test results with golden(previous) test results
     if my_compareFPS == True:
         compare(test)
@@ -440,6 +473,34 @@ def main():
     # upload csv file on egnyte
     if my_csvupload == True:
         upload_csv(test)
+    # Decoding and comparing the ssim value
+    if Decodebitstream == True:
+        global headerhandle
+        global header_numberofrows
+        for folder in ["decodedfiles","log"]:
+            if os.path.exists(folder):
+                if not os.path.exists(folder+"//older"):
+                    os.mkdir(folder+"//older")
+            else:
+                os.mkdir(folder)
+        if not os.path.exists(os.path.join(os.getcwd(),"HeaderInfo.xls")):
+            print "HeaderInfo.xls is missing"
+            exit(0)
+        wb = xlrd.open_workbook(test.cwd+"//HeaderInfo.xls")
+        config = wb.sheet_by_name('Configuration')
+        config_numberofrows=config.nrows
+        headerhandle = wb.sheet_by_name('HeaderInfo')
+        header_numberofrows=headerhandle.nrows
+        for i in range(config_numberofrows):
+            if config.cell(i, 0).value=='input_sequences':
+                path['input_sequences']=str(config.cell(i, 1).value)
+            elif config.cell(i, 0).value=='ssim':
+                path['ssim']=str(config.cell(i, 1).value)
+            elif config.cell(i, 0).value=='UHDcode':
+                path['UHDcode']=str(config.cell(i, 1).value)
+        Decodebitstreams_runssim(test)
+        os.chdir('../plotgraphs')
+        os.system("python plot.py")
 
 if __name__ == "__main__":
     main()
