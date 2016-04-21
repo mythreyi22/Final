@@ -1019,30 +1019,38 @@ def isancestor(ancestor):
         raise Exception('Unable to determine ancestry: ' + err)
     return bool(out)
 
-
 def getcommits():
     fname = 'output-changing-commits.txt'
-
+    def testrev(lines):
+        for line in lines[::-1]:
+            if len(line) < 12 or line[0] == '#': continue
+            rev = line[:12]
+            cmds = ['hg', 'log', '-r', '%s' % (rev)]
+            out, err = Popen(cmds, stdout=PIPE, stderr=PIPE, cwd=my_x265_source).communicate()
+            if not 'abort: unknown revision' in err:
+                return lines
+            else:
+                return open(os.path.abspath(os.path.join(my_x265_source, 'test', fname))).readlines()
     out = Popen(['hg', 'status', fname], stdout=PIPE).communicate()[0]
     if 'M' in out:
         if my_local_changers:
             print 'local %s is modified, disabling download' % fname
-            return open(fname).readlines()
+            l = testrev(open(fname).readlines())
+            return l
         else:
             print 'changes in %s ignored, my_local_changers is false' % fname
-
     try:
         print 'Downloading most recent list of output changing commits...',
         l = urllib.urlopen('https://bitbucket.org/sborho/test-harness/raw/tip/' + \
                           fname).readlines()
         print 'done\n'
+        l = testrev(l)
         return l
     except EnvironmentError:
         print 'failed\nWARNING: using local copy of', fname
         print '         it may not be up to date\n'
-        return open(fname).readlines()
-
-
+        l = testrev(open(fname).readlines())
+        return l
 def findchangeancestors():
     '''
     output-changing-commits.txt must contain the hashes (12-bytes) of
@@ -1928,10 +1936,10 @@ def _test(build, tmpfolder, seq, command,  always, extras):
                 logger.write('Decoder validation ok:', sum)
                 if errors is False:
                     # outputs matched golden outputs
-                    addpass(testhash, lastfname, logs)
+                    addpass(hash, lastfname, logs)
                     logger.write('PASS')
                 else:
-                    newgoldenoutputs(seq, command, lastfname, sum, logs, tmpfolder)
+                    newgoldenoutputs(seq, command, lastfname, sum, logs, tmpfolder, hash)
         elif errors:
             typeoferror = 'VBV' if '--vbv-bufsize' in command else ('ABR' if '--bitrate' in command else '')
             # outputs did not match golden outputs
@@ -1957,9 +1965,9 @@ def _test(build, tmpfolder, seq, command,  always, extras):
                     hashfname = savebadstream(tmpfolder)
                     prefix += '\nThis bitstream was saved to %s' % hashfname
                 else:
-                    badfn = os.path.join(tmpfolder, 'bitstream.hevc')
+                    badfn = os.path.join(tmpfolder, bitstream)
                     prefix += '\nbitstream hash was %s' % hashbitstream(badfn)
-                addfail(testhash, lastfname, logs, errors)
+                addfail(hash, lastfname, logs, errors)
                 logger.testfail(prefix, errors, logs)
     testhashlist = []
 

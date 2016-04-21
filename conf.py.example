@@ -1,9 +1,8 @@
 # Copy this conf.py.example to conf.py and configure all the variables
 # beginning with my_, then you will be able run the various test scripts
-
 my_machine_name = ''  # short name to identify encodes made on this machine
 my_machine_desc = ''  # description of hardware, CPU(s), memory, etc
-my_x265_source  = r'C:\projects\x265\source'
+my_x265_source  = r'C:\projects\x265\source' # location of CMakeLists.txt
 my_sequences    = r'\\bigdata\sequences'
 my_goldens      = r'\\bigdata\golden'
 my_hm_decoder   = r'C:\projects\hm\bin\TAppDecoderStatic'
