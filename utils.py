@@ -19,7 +19,7 @@ import urllib
 from subprocess import Popen, PIPE
 from distutils.spawn import find_executable
 import multiprocessing
-
+import wrapper
 run_make  = True     # run cmake and make/msbuild
 run_bench = True     # run test benches
 rebuild   = False    # delete build folders prior to build
@@ -39,6 +39,8 @@ logger = None
 buildObj = {}
 spot_checks = []
 encoder_binary_name = 'x265'
+bitstream = 'bitstream.hevc'
+testhashlist = []
 
 try:
     from conf import my_machine_name, my_machine_desc, my_x265_source 
@@ -361,7 +363,7 @@ class Logger():
         duration = str(datetime.datetime.now() - self.start_time).split('.')[0]
         logger.table.append('</table>')
         tableMsg = ''.join(logger.table)
-        textMsg = "<br> Test Duration(H:M:S) = " + duration + "<br>" + open(self.logfname, 'r').read()+ "<br><br>"
+        textMsg = "<br> Test Duration(H:M:S) = " + duration + "<br>" + open(os.path.join(encoder_binary_name, self.logfname), 'r').read()+ "<br><br>"
         if type(my_email_to) is str:
             msg['To'] = my_email_to
         else:
@@ -373,7 +375,7 @@ class Logger():
         testname = self.testname.split('-')
         status = self.errors and 'failures' or 'successful'
         branch = hggetbranch(testrev)
-        data = [platform.system(), '-'] + testname + [status, '-', branch] + ['-', str(multiprocessing.cpu_count())] + ['core']
+        data = [encoder_binary_name, ': '] + [platform.system(), '-'] + testname + [status, '-', branch] + ['-', str(multiprocessing.cpu_count())] + ['core']
         msg['Subject'] = ' '.join(data)
         if self.errors:
             msg.attach(failure_message)
@@ -1369,9 +1371,7 @@ def testharness():
             _test.failuretype = 'testbench failure'
             table(_test.failuretype, empty, empty, logger.build.strip('\n'))
             logger.writeerr(prefix + err)
-
-
-def encodeharness(key, tmpfolder, sequence, command, inextras):
+def encodeharness(key, tmpfolder, sequence, command, always, inextras):
     '''
     Perform a single test encode within a tempfolder
      * key      is the shortname for the build to use, ex: 'gcc'
@@ -1409,13 +1409,18 @@ def encodeharness(key, tmpfolder, sequence, command, inextras):
         cmds.extend(shlex.split(options))
         cmds.extend(extras)
         cmds.append('-o')
-        cmds.append('bitstream.hevc')	
+        cmds.append(bitstream)
     else:
         cmds = [x265]
-        if '--command-file' in command:
+        if '[' in command:
+            command = wrapper.arrangecli(seqfullpath, command, always)
+            cmds.append(seqfullpath)
+            cmds.extend(shlex.split(command))
+            cmds.extend(extras)
+        elif '--command-file' in command:
             cmds.append(command)
         else:
-            cmds.extend([seqfullpath, 'bitstream.hevc'])
+            cmds.extend([seqfullpath, bitstream])
             cmds.extend(shlex.split(command))
             cmds.extend(extras)
     logs, errors, summary = '', '', ''
@@ -1541,23 +1546,21 @@ def parsex265(tmpfolder, stdout, stderr):
             encoder_error_var = False
 	
     return summary, errors, encoder_error_var
-
-
-def checkoutputs(key, seq, command, sum, tmpdir, logs):
+def checkoutputs(key, seq, command, sum, tmpdir, logs, testhash):
+    global bitstream
     group = my_builds[key][1]
-    testhash = testcasehash(seq, command)
     # Analysis save/load comparison once encoder success.If encoder crash exist it will not compare the output files.
     cwd = os.getcwd()
-    if os.path.isfile(os.path.join(tmpdir,'bitstream.hevc')):
+    if os.path.isfile(os.path.join(tmpdir,bitstream)):
         if 'analysis-mode=save' in command:
             savesummary = sum
             open('savesummary.txt', 'w').write(savesummary)
-            shutil.copy(os.path.join(tmpdir,'bitstream.hevc'), cwd)
+            shutil.copy(os.path.join(tmpdir,bitstream), cwd)
         if 'analysis-mode=load' in command:
             loadsummary = sum
             savesummary = open('savesummary.txt','r').read()
-            save = os.path.join(cwd,'bitstream.hevc')
-            load = os.path.join(tmpdir,'bitstream.hevc')
+            save = os.path.join(cwd,bitstream)
+            load = os.path.join(tmpdir,bitstream)
             comparingoutput= filecmp.cmp(save,load)
             if comparingoutput == True:
                 print 'no difference'
@@ -1569,9 +1572,9 @@ def checkoutputs(key, seq, command, sum, tmpdir, logs):
                 logger.testfail('Outputchange between Analysis save and load', res, logs)
 
     opencommits = [] # changing commits without 'no-change' or testfolder
-
     # walk list of ancestor commits which changed outputs until we find the
     # most recent output bitstream we are expected to match
+
     for commit in changers:
         nc = 'no-change-%s-%s.txt' % (group, commit)
         nochange = os.path.join(my_goldens, testhash, nc)
@@ -1601,10 +1604,8 @@ def checkoutputs(key, seq, command, sum, tmpdir, logs):
         # encode outputs pass validations
         print 'no golden outputs for this test case,',
         return lastfname, None
-
-    golden = os.path.join(testfolder, 'bitstream.hevc')
-    test = os.path.join(tmpdir, 'bitstream.hevc')
-
+    golden = os.path.join(testfolder, bitstream)
+    test = os.path.join(tmpdir, bitstream)
     if os.path.isfile(os.path.join(my_goldens, testhash, lastfname, 'summary.txt')):
         fname = os.path.join(my_goldens, testhash, lastfname, 'summary.txt')
         lastsum = open(fname, 'r').read()
@@ -1730,10 +1731,7 @@ def checkoutputs(key, seq, command, sum, tmpdir, logs):
     else:
         print 'summary.txt file does not exist'
         return lastfname, None
-
-
-
-def newgoldenoutputs(seq, command, lastfname, sum, logs, tmpdir):
+def newgoldenoutputs(seq, command, lastfname, sum, logs, tmpdir, testhash):
     '''
     A test was run and the outputs are good (match the last known good or if
     no last known good is available, these new results are taken
@@ -1748,9 +1746,6 @@ def newgoldenoutputs(seq, command, lastfname, sum, logs, tmpdir):
             print 'allowing new golden outputs because of change keyword filter'
         else:
             return
-
-    testhash = testcasehash(seq, command)
-
     # create golden folder if necessary
     if not os.path.isdir(my_goldens):
         os.mkdir(my_goldens)
@@ -1767,9 +1762,8 @@ def newgoldenoutputs(seq, command, lastfname, sum, logs, tmpdir):
     lastgoodfolder = os.path.join(testfolder, lastfname)
     if not os.path.isdir(lastgoodfolder):
         os.mkdir(lastgoodfolder)
-        shutil.copy(os.path.join(tmpdir, 'bitstream.hevc'), lastgoodfolder)
+        shutil.copy(os.path.join(tmpdir, bitstream), lastgoodfolder)
         open(os.path.join(lastgoodfolder, 'summary.txt'), 'w').write(sum)
-
     addpass(testhash, lastfname, logs)
     logger.newgolden(commit)
 
@@ -1808,22 +1802,19 @@ def hashbitstream(badfn):
     m = md5.new()
     m.update(open(badfn, 'rb').read())
     return m.hexdigest()
-
-
 def savebadstream(tmpdir):
+    global bitstream
     badbitstreamfolder = os.path.join(my_goldens, 'bad-streams')
     if not os.path.exists(badbitstreamfolder):
         os.mkdir(badbitstreamfolder)
-
-    badfn = os.path.join(tmpdir, 'bitstream.hevc')
+    badfn = os.path.join(tmpdir, bitstream)
     hashname = hashbitstream(badfn)
     hashfname = os.path.join(badbitstreamfolder, hashname + '.hevc')
     shutil.copy(badfn, hashfname)
     return hashfname
-
-
 def checkdecoder(tmpdir):
-    cmds = [my_hm_decoder, '-b', 'bitstream.hevc']
+    global bitstream
+    cmds = [my_hm_decoder, '-b', bitstream]
     proc = Popen(cmds, stdout=PIPE, stderr=PIPE, cwd=tmpdir)
     stdout, errors = async_poll_process(proc, True)
     hashErrors = [l for l in stdout.splitlines() if '***ERROR***' in l]
@@ -1876,93 +1867,100 @@ def table(failuretype, sum , lastsum, build_info):
                                         currValue.split(",")[2].split(":")[1]))
             
 
-def _test(build, tmpfolder, seq, command, extras):
+def _test(build, tmpfolder, seq, command,  always, extras):
     '''
     Run a test encode within the specified temp folder
     Check to see if golden outputs exist:
         If they exist, verify bit-exactness or report divergence
         If not, validate new bitstream with decoder then save
     '''
+    global bitstream, testhashlist
     empty = True
     testhash = testcasehash(seq, command)
 
     # run the encoder, abort early if any errors encountered
-    logs, sum, encoder_errors, encoder_error_var = encodeharness(build, tmpfolder, seq, command, extras)
-    lastfname, errors = checkoutputs(build, seq, command, sum, tmpfolder, logs)
-    fname = os.path.join(my_goldens, testhash, lastfname, 'summary.txt')
-    if encoder_errors:
-        if (encoder_error_var):
-            logger.testfail('encoder error reported', encoder_errors, logs)
-            if os.path.exists(fname):
-                lastsum = open(fname, 'r').read()
-                table('encoder error', 'encodererror' , lastsum, logger.build.strip('\n'))
-            else:
-                table('encoder error', empty , empty, logger.build.strip('\n'))
-        else:
-            logger.testfail('encoder warning reported', encoder_errors, logs)
-            if os.path.exists(fname):
-                lastsum = open(fname, 'r').read()
-                table('encoder warning', sum , lastsum, logger.build.strip('\n'))
-            else:
-                table('encoder warning', empty , empty, logger.build.strip('\n'))
-			
-        return
+    logs, sum, encoder_errors, encoder_error_var = encodeharness(build, tmpfolder, seq, command,  always, extras)
+    if not testhashlist:
+        testhashlist.append(testhash)
 
-    # check against last known good outputs - lastfname is the folder
-    # containing the last known good outputs (or for the new ones to be
-    # created)
+    for hash in testhashlist:
+        if '[' in command:
+            bitstream = hash + '.hevc'
+        lastfname, errors = checkoutputs(build, seq, command, sum, tmpfolder, logs, hash)
+        fname = os.path.join(my_goldens, hash, lastfname, 'summary.txt')
 
-    if errors is None or errors is False:
-        # no golden outputs for this test yet
-        logger.write('validating with decoder')
-        decodeerr = checkdecoder(tmpfolder)
-        if decodeerr:
-            hashfname = savebadstream(tmpfolder)
-            decodeerr += '\nThis bitstream was saved to %s' % hashfname
-            logger.testfail('Decoder validation failed', decodeerr, logs)
-            if os.path.exists(fname):
-                lastsum = open(fname, 'r').read()
-                table('Decoder validation failed', sum , lastsum, logger.build.strip('\n'))
+        if encoder_errors:
+            if (encoder_error_var):
+                logger.testfail('encoder error reported', encoder_errors, logs)
+                if os.path.exists(fname):
+                    lastsum = open(fname, 'r').read()
+                    table('encoder error', 'encodererror' , lastsum, logger.build.strip('\n'))
+                else:
+                    table('encoder error', empty , empty, logger.build.strip('\n'))
             else:
-                table('Decoder validation failed', empty , empty, logger.build.strip('\n'))
-        else:
-            logger.write('Decoder validation ok:', sum)
-            if errors is False:
-                # outputs matched golden outputs
-                addpass(testhash, lastfname, logs)
-                logger.write('PASS')
+                logger.testfail('encoder warning reported', encoder_errors, logs)
+                if os.path.exists(fname):
+                    lastsum = open(fname, 'r').read()
+                    table('encoder warning', sum , lastsum, logger.build.strip('\n'))
+                else:
+                    table('encoder warning', empty , empty, logger.build.strip('\n'))                            
+            return
+
+        # check against last known good outputs - lastfname is the folder
+        # containing the last known good outputs (or for the new ones to be
+        # created)
+
+        if errors is None or errors is False:
+            # no golden outputs for this test yet
+            logger.write('validating with decoder')
+            decodeerr = checkdecoder(tmpfolder)
+            if decodeerr:
+                hashfname = savebadstream(tmpfolder)
+                decodeerr += '\nThis bitstream was saved to %s' % hashfname
+                logger.testfail('Decoder validation failed', decodeerr, logs)
+                if os.path.exists(fname):
+                    lastsum = open(fname, 'r').read()
+                    table('Decoder validation failed', sum , lastsum, logger.build.strip('\n'))
+                else:
+                    table('Decoder validation failed', empty , empty, logger.build.strip('\n'))
             else:
-                newgoldenoutputs(seq, command, lastfname, sum, logs, tmpfolder)
-    elif errors:
-        typeoferror = 'VBV' if '--vbv-bufsize' in command else ('ABR' if '--bitrate' in command else '')
-        # outputs did not match golden outputs
-        lastsum = open(fname, 'r').read()
-        decodeerr = checkdecoder(tmpfolder)
-        if decodeerr:
-            prefix = '%s OUTPUT CHANGE WITH DECODE ERRORS' % typeoferror
-            hashfname = savebadstream(tmpfolder)
-            prefix += '\nThis bitstream was saved to %s' % hashfname
-            logger.testfail(prefix, errors + decodeerr, logs)
-            failuretype = '%s output change with decode errors ' % typeoferror
-            table(failuretype, sum , lastsum, logger.build.strip('\n'))
-        else:
-            logger.write('FAIL')
-            if 'FPS TARGET MISSED' in errors:
-                prefix = '%s FPS TARGET MISSED: <%s> to <%s>' % (typeoferror, lastsum, sum)
-                failuretype = '%s fps target missed' % typeoferror
-            else:
-                prefix = '%s OUTPUT CHANGE: <%s> to <%s>' % (typeoferror, lastsum, sum)
-                failuretype = '%s output change' % typeoferror
-            table(failuretype, sum , lastsum, logger.build.strip('\n'))
-            if save_changed:
+                logger.write('Decoder validation ok:', sum)
+                if errors is False:
+                    # outputs matched golden outputs
+                    addpass(testhash, lastfname, logs)
+                    logger.write('PASS')
+                else:
+                    newgoldenoutputs(seq, command, lastfname, sum, logs, tmpfolder)
+        elif errors:
+            typeoferror = 'VBV' if '--vbv-bufsize' in command else ('ABR' if '--bitrate' in command else '')
+            # outputs did not match golden outputs
+            lastsum = open(fname, 'r').read()
+            decodeerr = checkdecoder(tmpfolder)
+            if decodeerr:
+                prefix = '%s OUTPUT CHANGE WITH DECODE ERRORS' % typeoferror
                 hashfname = savebadstream(tmpfolder)
                 prefix += '\nThis bitstream was saved to %s' % hashfname
+                logger.testfail(prefix, errors + decodeerr, logs)
+                failuretype = '%s output change with decode errors ' % typeoferror
+                table(failuretype, sum , lastsum, logger.build.strip('\n'))
             else:
-                badfn = os.path.join(tmpfolder, 'bitstream.hevc')
-                prefix += '\nbitstream hash was %s' % hashbitstream(badfn)
-            addfail(testhash, lastfname, logs, errors)
-            logger.testfail(prefix, errors, logs)
-
+                logger.write('FAIL')
+                if 'FPS TARGET MISSED' in errors:
+                    prefix = '%s FPS TARGET MISSED: <%s> to <%s>' % (typeoferror, lastsum, sum)
+                    failuretype = '%s fps target missed' % typeoferror
+                else:
+                    prefix = '%s OUTPUT CHANGE: <%s> to <%s>' % (typeoferror, lastsum, sum)
+                    failuretype = '%s output change' % typeoferror
+                table(failuretype, sum , lastsum, logger.build.strip('\n'))
+                if save_changed:
+                    hashfname = savebadstream(tmpfolder)
+                    prefix += '\nThis bitstream was saved to %s' % hashfname
+                else:
+                    badfn = os.path.join(tmpfolder, 'bitstream.hevc')
+                    prefix += '\nbitstream hash was %s' % hashbitstream(badfn)
+                addfail(testhash, lastfname, logs, errors)
+                logger.testfail(prefix, errors, logs)
+    testhashlist = []
 
 def runtest(key, seq, commands, always, extras):
     '''
@@ -1986,18 +1984,20 @@ def runtest(key, seq, commands, always, extras):
             if not [True for f in matchers if only_string in f]:
                 return True
         return False
-
     logger.testcount += 1
     cmds = []
-    for command in commands.split(','):
-        command = command.strip()
-        if always:
-            command = command + ' ' + always
-        testhash = testcasehash(seq, command)
-        if skip(seq, command, testhash):
-            return
-        cmds.append((command, testhash))
-
+    if not '[' in commands:
+        for command in commands.split(','):
+            command = command.strip()
+            if always:
+                command = command + ' ' + always
+            testhash = testcasehash(seq, command)
+            if skip(seq, command, testhash):
+                return
+            cmds.append((command, testhash))
+    else:
+        testhash = testcasehash(seq, commands)
+        cmds.append((commands, testhash))
     tmpfolder = tempfile.mkdtemp(prefix='x265-temp')
     try:
 
@@ -2010,9 +2010,7 @@ def runtest(key, seq, commands, always, extras):
             build = buildObj[key]
             if '--output-depth' in command and ('add-depths' in build.opts or not my_libpairs):
                 continue
-            _test(key, tmpfolder, seq, command, extras)
-
+            _test(key, tmpfolder, seq, command, always, extras)
         logger.write('')
-
     finally:
         shutil.rmtree(tmpfolder)
