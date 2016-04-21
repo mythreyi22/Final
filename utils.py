@@ -38,7 +38,15 @@ fps_tolerance = .10  # fraction of fps difference allowed (10%)
 logger = None
 buildObj = {}
 spot_checks = []
-encoder_binary_name = 'x265'
+
+try:
+    from conf import encoder_binary_name
+except ImportError, e:
+    encoder_binary_name = 'x265'
+
+if not os.path.exists(encoder_binary_name):
+    os.mkdir(encoder_binary_name)
+
 bitstream = 'bitstream.hevc'
 testhashlist = []
 
@@ -155,15 +163,14 @@ class Build():
                 self.target = 'RelWithDebInfo'
             else:
                 self.target = 'Release'
-            self.exe = os.path.abspath(os.path.join(self.folder, 'default', self.target, encoder_binary_name + exe_ext))
-            self.dll = os.path.abspath(os.path.join(self.folder, 'default', self.target, 'libx265' + dll_ext))
-            self.testbench = os.path.abspath(os.path.join(self.folder, 'default', 'test', self.target, 'TestBench' + exe_ext))
+            self.exe = os.path.abspath(os.path.join(encoder_binary_name, self.folder, 'default', self.target, encoder_binary_name + exe_ext))
+            self.dll = os.path.abspath(os.path.join(encoder_binary_name, self.folder, 'default', self.target, 'libx265' + dll_ext))
+            self.testbench = os.path.abspath(os.path.join(encoder_binary_name, self.folder, 'default', 'test', self.target, 'TestBench' + exe_ext))
         else:
             self.target = ''
-            self.exe = os.path.abspath(os.path.join(self.folder, 'default', encoder_binary_name + exe_ext))
-            self.dll = os.path.abspath(os.path.join(self.folder, 'default', 'libx265' + dll_ext))
-            self.testbench = os.path.abspath(os.path.join(self.folder, 'default', 'test', 'TestBench' + exe_ext))
-
+            self.exe = os.path.abspath(os.path.join(encoder_binary_name, self.folder, 'default', encoder_binary_name + exe_ext))
+            self.dll = os.path.abspath(os.path.join(encoder_binary_name, self.folder, 'default', 'libx265' + dll_ext))
+            self.testbench = os.path.abspath(os.path.join(encoder_binary_name, self.folder, 'default', 'test', 'TestBench' + exe_ext))
     def cmakeoptions(self, cmakeopts, prof):
         for o in self.cmakeopts.split():
             if o in option_strings:
@@ -224,7 +231,7 @@ class Logger():
         self.testcount = 0
         self.totaltests = 0
         self.newoutputs = {}
-        self.logfp = open(self.logfname, 'wb')        
+        self.logfp = open(os.path.join(encoder_binary_name, self.logfname), 'wb')
         self.header  = '\nsystem:      %s\n' % my_machine_name
         self.header += 'hardware:    %s\n' % my_machine_desc
         self.header += 'testharness: %s\n' % hgversion(testharnesspath)
@@ -673,10 +680,9 @@ def upload_binaries():
         if buildopts & debugopts:
             print 'debug option(s) %s detected, skipping build %s' % (buildopts & debugopts, key)
             continue
-        if not os.path.exists(build.folder):
-            print '%s buildfolder does not exist' % build.folder
+        if not os.path.exists(encoder_binary_name) and not os.path.exists(os.path.join(encoder_binary_name, build.folder)):
+            print '%s %s buildfolders does not exist' % encoder_binary_name % build.folder
             continue
-
         branch = hggetbranch(testrev)
         tagdistance = hggettagdistance(testrev)
 
@@ -1235,22 +1241,20 @@ def buildall(prof=None, buildoptions=None):
         logger.setbuild(key)
         logger.write('building %s...'% key)
         build = buildObj[key]
-
-        if rebuild and os.path.exists(build.folder):
-            shutil.rmtree(build.folder)
+        if rebuild and os.path.exists(os.path.join(encoder_binary_name, build.folder)):
+            shutil.rmtree(os.path.join(encoder_binary_name, build.folder))
         if os.name == 'nt': time.sleep(1)
-        if not os.path.exists(build.folder):
-            os.mkdir(build.folder)
-        if not os.path.exists(os.path.join(build.folder, 'default')):
-            os.mkdir(os.path.join(build.folder, 'default'))
+        if not os.path.exists(os.path.join(encoder_binary_name,build.folder)):
+            os.mkdir(os.path.join(encoder_binary_name,build.folder))
+        if not os.path.exists(os.path.join(encoder_binary_name, build.folder, 'default')):
+            os.mkdir(os.path.join(encoder_binary_name, build.folder, 'default'))
         else:
             generator = None
-
         defaultco = []
         extra_libs = []
         for bitdepthfolder in build.opts.get('add-depths', []):
-            if not os.path.exists(os.path.join(build.folder, bitdepthfolder)):
-                os.mkdir(os.path.join(build.folder, bitdepthfolder))
+            if not os.path.exists(os.path.join(encoder_binary_name, build.folder, bitdepthfolder)):
+                os.mkdir(os.path.join(encoder_binary_name, build.folder, bitdepthfolder))
             subco = []
             subco.append('-DENABLE_SHARED=OFF')
             subco.append('-DENABLE_CLI=OFF')
@@ -1261,32 +1265,29 @@ def buildall(prof=None, buildoptions=None):
                 defaultco.append('-DLINKED_12BIT=ON')
                 extra_libs.append(lib_main12)
                 build.cmakeoptions(subco, prof)
-                build.cmake_build(key, subco, os.path.join(build.folder, bitdepthfolder))
-                shutil.copy(os.path.join(build.folder, bitdepthfolder, build.target, static_lib),
-                            os.path.join(build.folder, 'default', lib_main12))
+                build.cmake_build(key, subco, os.path.join(encoder_binary_name, build.folder, bitdepthfolder))
+                shutil.copy(os.path.join(encoder_binary_name, build.folder, bitdepthfolder, build.target, static_lib),
+                            os.path.join(encoder_binary_name, build.folder, 'default', lib_main12))
             elif '10bit' == bitdepthfolder:
                 subco.append('-DHIGH_BIT_DEPTH=ON')
                 defaultco.append('-DLINKED_10BIT=ON')
                 extra_libs.append(lib_main10)
                 build.cmakeoptions(subco, prof)
-                build.cmake_build(key, subco, os.path.join(build.folder, bitdepthfolder))
-                shutil.copy(os.path.join(build.folder, bitdepthfolder, build.target, static_lib),
-                            os.path.join(build.folder, 'default', lib_main10))
+                build.cmake_build(key, subco, os.path.join(encoder_binary_name, build.folder, bitdepthfolder))
+                shutil.copy(os.path.join(encoder_binary_name, build.folder, bitdepthfolder, build.target, static_lib),
+                            os.path.join(encoder_binary_name, build.folder, 'default', lib_main10))
             else:
                 defaultco.append('-DLINKED_8BIT=ON')
                 extra_libs.append(lib_main)
                 build.cmakeoptions(subco, prof)
-                build.cmake_build(key, subco, os.path.join(build.folder, bitdepthfolder))
-                shutil.copy(os.path.join(build.folder, bitdepthfolder, build.target, static_lib),
-                            os.path.join(build.folder, 'default', lib_main))
-
+                build.cmake_build(key, subco, os.path.join(encoder_binary_name, build.folder, bitdepthfolder))
+                shutil.copy(os.path.join(encoder_binary_name, build.folder, bitdepthfolder, build.target, static_lib),
+                            os.path.join(encoder_binary_name, build.folder, 'default', lib_main))
         if extra_libs:
             defaultco.append('-DEXTRA_LIB=' + ';'.join(extra_libs))
             if extra_link_flag: defaultco.append(extra_link_flag)
-
         build.cmakeoptions(defaultco, prof)
-        build.cmake_build(key, defaultco, os.path.join(build.folder, 'default'))
-
+        build.cmake_build(key, defaultco, os.path.join(encoder_binary_name, build.folder, 'default'))
     if 'add-depths' in build.opts or not my_libpairs:
         return
     # output depth support: to bind libx265_main, main10, main12 for 8, 10, 12 bit encoders
