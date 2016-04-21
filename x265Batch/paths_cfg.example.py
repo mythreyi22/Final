@@ -11,6 +11,9 @@ my_RAMDiskpath   = r'/mnt/RAMDISK'
 # compare current test performance results with golden (previous) test results
 my_compareFPS = False
 
+# compare current test quality metrics with golden (previous) metrics by calculaying BD-Rate, BD-SSIM 
+my_comparequalitymetrics = False
+
 # email the compared test results
 my_email_from   = ''
 my_email_to     = ''

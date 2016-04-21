@@ -1,0 +1,216 @@
+crowd_run_1080p50.y4m --preset ultrafast --bitrate 8000
+crowd_run_1080p50.y4m --preset ultrafast --bitrate 12000
+crowd_run_1080p50.y4m --preset ultrafast --bitrate 16000
+crowd_run_1080p50.y4m --preset ultrafast --bitrate 20000
+crowd_run_1080p50.y4m --preset superfast --bitrate 8000
+crowd_run_1080p50.y4m --preset superfast --bitrate 12000
+crowd_run_1080p50.y4m --preset superfast --bitrate 16000
+crowd_run_1080p50.y4m --preset superfast --bitrate 20000
+crowd_run_1080p50.y4m --preset veryfast --bitrate 8000
+crowd_run_1080p50.y4m --preset veryfast --bitrate 12000
+crowd_run_1080p50.y4m --preset veryfast --bitrate 16000
+crowd_run_1080p50.y4m --preset veryfast --bitrate 20000
+crowd_run_1080p50.y4m --preset faster --bitrate 8000
+crowd_run_1080p50.y4m --preset faster --bitrate 12000
+crowd_run_1080p50.y4m --preset faster --bitrate 16000
+crowd_run_1080p50.y4m --preset faster --bitrate 20000
+crowd_run_1080p50.y4m --preset fast --bitrate 8000
+crowd_run_1080p50.y4m --preset fast --bitrate 12000
+crowd_run_1080p50.y4m --preset fast --bitrate 16000
+crowd_run_1080p50.y4m --preset fast --bitrate 20000
+crowd_run_1080p50.y4m --preset medium --bitrate 8000
+crowd_run_1080p50.y4m --preset medium --bitrate 12000
+crowd_run_1080p50.y4m --preset medium --bitrate 16000
+crowd_run_1080p50.y4m --preset medium --bitrate 20000
+crowd_run_1080p50.y4m --preset slow --bitrate 8000
+crowd_run_1080p50.y4m --preset slow --bitrate 12000
+crowd_run_1080p50.y4m --preset slow --bitrate 16000
+crowd_run_1080p50.y4m --preset slow --bitrate 20000
+crowd_run_1080p50.y4m --preset slower --bitrate 8000
+crowd_run_1080p50.y4m --preset slower --bitrate 12000
+crowd_run_1080p50.y4m --preset slower --bitrate 16000
+crowd_run_1080p50.y4m --preset slower --bitrate 20000
+crowd_run_1080p50.y4m --preset veryslow --bitrate 8000
+crowd_run_1080p50.y4m --preset veryslow --bitrate 12000
+crowd_run_1080p50.y4m --preset veryslow --bitrate 16000
+crowd_run_1080p50.y4m --preset veryslow --bitrate 20000
+park_joy_1080p50.y4m  --preset ultrafast --bitrate 8000
+park_joy_1080p50.y4m  --preset ultrafast --bitrate 12000
+park_joy_1080p50.y4m  --preset ultrafast --bitrate 16000
+park_joy_1080p50.y4m  --preset ultrafast --bitrate 20000
+park_joy_1080p50.y4m  --preset superfast --bitrate 8000
+park_joy_1080p50.y4m  --preset superfast --bitrate 12000
+park_joy_1080p50.y4m  --preset superfast --bitrate 16000
+park_joy_1080p50.y4m  --preset superfast --bitrate 20000
+park_joy_1080p50.y4m  --preset veryfast --bitrate 8000
+park_joy_1080p50.y4m  --preset veryfast --bitrate 12000
+park_joy_1080p50.y4m  --preset veryfast --bitrate 16000
+park_joy_1080p50.y4m  --preset veryfast --bitrate 20000
+park_joy_1080p50.y4m  --preset faster --bitrate 8000
+park_joy_1080p50.y4m  --preset faster --bitrate 12000
+park_joy_1080p50.y4m  --preset faster --bitrate 16000
+park_joy_1080p50.y4m  --preset faster --bitrate 20000
+park_joy_1080p50.y4m  --preset fast --bitrate 8000
+park_joy_1080p50.y4m  --preset fast --bitrate 12000
+park_joy_1080p50.y4m  --preset fast --bitrate 16000
+park_joy_1080p50.y4m  --preset fast --bitrate 20000
+park_joy_1080p50.y4m  --preset medium --bitrate 8000
+park_joy_1080p50.y4m  --preset medium --bitrate 12000
+park_joy_1080p50.y4m  --preset medium --bitrate 16000
+park_joy_1080p50.y4m  --preset medium --bitrate 20000
+park_joy_1080p50.y4m  --preset slow --bitrate 8000
+park_joy_1080p50.y4m  --preset slow --bitrate 12000
+park_joy_1080p50.y4m  --preset slow --bitrate 16000
+park_joy_1080p50.y4m  --preset slow --bitrate 20000
+park_joy_1080p50.y4m  --preset slower --bitrate 8000
+park_joy_1080p50.y4m  --preset slower --bitrate 12000
+park_joy_1080p50.y4m  --preset slower --bitrate 16000
+park_joy_1080p50.y4m  --preset slower --bitrate 20000
+park_joy_1080p50.y4m  --preset veryslow --bitrate 8000
+park_joy_1080p50.y4m  --preset veryslow --bitrate 12000
+park_joy_1080p50.y4m  --preset veryslow --bitrate 16000
+park_joy_1080p50.y4m  --preset veryslow --bitrate 20000
+Traffic_4096x2048_30.y4m --preset ultrafast --bitrate 16000
+Traffic_4096x2048_30.y4m --preset ultrafast --bitrate 20000
+Traffic_4096x2048_30.y4m --preset ultrafast --bitrate 24000
+Traffic_4096x2048_30.y4m --preset ultrafast --bitrate 28000
+Traffic_4096x2048_30.y4m --preset superfast --bitrate 16000
+Traffic_4096x2048_30.y4m --preset superfast --bitrate 20000
+Traffic_4096x2048_30.y4m --preset superfast --bitrate 24000
+Traffic_4096x2048_30.y4m --preset superfast --bitrate 28000
+Traffic_4096x2048_30.y4m --preset veryfast --bitrate 16000
+Traffic_4096x2048_30.y4m --preset veryfast --bitrate 20000
+Traffic_4096x2048_30.y4m --preset veryfast --bitrate 24000
+Traffic_4096x2048_30.y4m --preset veryfast --bitrate 28000
+Traffic_4096x2048_30.y4m --preset faster --bitrate 16000
+Traffic_4096x2048_30.y4m --preset faster --bitrate 20000
+Traffic_4096x2048_30.y4m --preset faster --bitrate 24000
+Traffic_4096x2048_30.y4m --preset faster --bitrate 28000
+Traffic_4096x2048_30.y4m --preset fast --bitrate 16000
+Traffic_4096x2048_30.y4m --preset fast --bitrate 20000
+Traffic_4096x2048_30.y4m --preset fast --bitrate 24000
+Traffic_4096x2048_30.y4m --preset fast --bitrate 28000
+Traffic_4096x2048_30.y4m --preset medium --bitrate 16000
+Traffic_4096x2048_30.y4m --preset medium --bitrate 20000
+Traffic_4096x2048_30.y4m --preset medium --bitrate 24000
+Traffic_4096x2048_30.y4m --preset medium --bitrate 28000
+Traffic_4096x2048_30.y4m --preset slow --bitrate 16000
+Traffic_4096x2048_30.y4m --preset slow --bitrate 20000
+Traffic_4096x2048_30.y4m --preset slow --bitrate 24000
+Traffic_4096x2048_30.y4m --preset slow --bitrate 28000
+Traffic_4096x2048_30.y4m --preset slower --bitrate 16000
+Traffic_4096x2048_30.y4m --preset slower --bitrate 20000
+Traffic_4096x2048_30.y4m --preset slower --bitrate 24000
+Traffic_4096x2048_30.y4m --preset slower --bitrate 28000
+Traffic_4096x2048_30.y4m --preset veryslow --bitrate 16000
+Traffic_4096x2048_30.y4m --preset veryslow --bitrate 20000
+Traffic_4096x2048_30.y4m --preset veryslow --bitrate 24000
+Traffic_4096x2048_30.y4m --preset veryslow --bitrate 28000
+tearsofsteel-4k-1000f-s214.y4m --preset ultrafast --bitrate 16000
+tearsofsteel-4k-1000f-s214.y4m --preset ultrafast --bitrate 20000
+tearsofsteel-4k-1000f-s214.y4m --preset ultrafast --bitrate 24000
+tearsofsteel-4k-1000f-s214.y4m --preset ultrafast --bitrate 28000
+tearsofsteel-4k-1000f-s214.y4m --preset superfast --bitrate 16000
+tearsofsteel-4k-1000f-s214.y4m --preset superfast --bitrate 20000
+tearsofsteel-4k-1000f-s214.y4m --preset superfast --bitrate 24000
+tearsofsteel-4k-1000f-s214.y4m --preset superfast --bitrate 28000
+tearsofsteel-4k-1000f-s214.y4m --preset veryfast --bitrate 16000
+tearsofsteel-4k-1000f-s214.y4m --preset veryfast --bitrate 20000
+tearsofsteel-4k-1000f-s214.y4m --preset veryfast --bitrate 24000
+tearsofsteel-4k-1000f-s214.y4m --preset veryfast --bitrate 28000
+tearsofsteel-4k-1000f-s214.y4m --preset faster --bitrate 16000
+tearsofsteel-4k-1000f-s214.y4m --preset faster --bitrate 20000
+tearsofsteel-4k-1000f-s214.y4m --preset faster --bitrate 24000
+tearsofsteel-4k-1000f-s214.y4m --preset faster --bitrate 28000
+tearsofsteel-4k-1000f-s214.y4m --preset fast --bitrate 16000
+tearsofsteel-4k-1000f-s214.y4m --preset fast --bitrate 20000
+tearsofsteel-4k-1000f-s214.y4m --preset fast --bitrate 24000
+tearsofsteel-4k-1000f-s214.y4m --preset fast --bitrate 28000
+tearsofsteel-4k-1000f-s214.y4m --preset medium --bitrate 16000
+tearsofsteel-4k-1000f-s214.y4m --preset medium --bitrate 20000
+tearsofsteel-4k-1000f-s214.y4m --preset medium --bitrate 24000
+tearsofsteel-4k-1000f-s214.y4m --preset medium --bitrate 28000
+tearsofsteel-4k-1000f-s214.y4m --preset slow --bitrate 16000
+tearsofsteel-4k-1000f-s214.y4m --preset slow --bitrate 20000
+tearsofsteel-4k-1000f-s214.y4m --preset slow --bitrate 24000
+tearsofsteel-4k-1000f-s214.y4m --preset slow --bitrate 28000
+tearsofsteel-4k-1000f-s214.y4m --preset slower --bitrate 16000
+tearsofsteel-4k-1000f-s214.y4m --preset slower --bitrate 20000
+tearsofsteel-4k-1000f-s214.y4m --preset slower --bitrate 24000
+tearsofsteel-4k-1000f-s214.y4m --preset slower --bitrate 28000
+tearsofsteel-4k-1000f-s214.y4m --preset veryslow --bitrate 16000
+tearsofsteel-4k-1000f-s214.y4m --preset veryslow --bitrate 20000
+tearsofsteel-4k-1000f-s214.y4m --preset veryslow --bitrate 24000
+tearsofsteel-4k-1000f-s214.y4m --preset veryslow --bitrate 28000
+tos_10bit_215to815_4096x1714_24fps.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset ultrafast --output-depth 10 --bitrate 16000
+tos_10bit_215to815_4096x1714_24fps.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset ultrafast --output-depth 10 --bitrate 20000
+tos_10bit_215to815_4096x1714_24fps.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset ultrafast --output-depth 10 --bitrate 24000
+tos_10bit_215to815_4096x1714_24fps.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset ultrafast --output-depth 10 --bitrate 28000
+tos_10bit_215to815_4096x1714_24fps.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset superfast --output-depth 10 --bitrate 16000
+tos_10bit_215to815_4096x1714_24fps.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset superfast --output-depth 10 --bitrate 20000
+tos_10bit_215to815_4096x1714_24fps.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset superfast --output-depth 10 --bitrate 24000
+tos_10bit_215to815_4096x1714_24fps.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset superfast --output-depth 10 --bitrate 28000
+tos_10bit_215to815_4096x1714_24fps.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset veryfast --output-depth 10 --bitrate 16000
+tos_10bit_215to815_4096x1714_24fps.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset veryfast --output-depth 10 --bitrate 20000
+tos_10bit_215to815_4096x1714_24fps.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset veryfast --output-depth 10 --bitrate 24000
+tos_10bit_215to815_4096x1714_24fps.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset veryfast --output-depth 10 --bitrate 28000
+tos_10bit_215to815_4096x1714_24fps.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset faster --output-depth 10 --bitrate 16000
+tos_10bit_215to815_4096x1714_24fps.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset faster --output-depth 10 --bitrate 20000
+tos_10bit_215to815_4096x1714_24fps.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset faster --output-depth 10 --bitrate 24000
+tos_10bit_215to815_4096x1714_24fps.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset faster --output-depth 10 --bitrate 28000
+tos_10bit_215to815_4096x1714_24fps.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset fast --output-depth 10 --bitrate 16000
+tos_10bit_215to815_4096x1714_24fps.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset fast --output-depth 10 --bitrate 20000
+tos_10bit_215to815_4096x1714_24fps.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset fast --output-depth 10 --bitrate 24000
+tos_10bit_215to815_4096x1714_24fps.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset fast --output-depth 10 --bitrate 28000
+tos_10bit_215to815_4096x1714_24fps.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset medium --output-depth 10 --bitrate 16000
+tos_10bit_215to815_4096x1714_24fps.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset medium --output-depth 10 --bitrate 20000
+tos_10bit_215to815_4096x1714_24fps.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset medium --output-depth 10 --bitrate 24000
+tos_10bit_215to815_4096x1714_24fps.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset medium --output-depth 10 --bitrate 28000
+tos_10bit_215to815_4096x1714_24fps.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset slow --output-depth 10 --bitrate 16000
+tos_10bit_215to815_4096x1714_24fps.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset slow --output-depth 10 --bitrate 20000
+tos_10bit_215to815_4096x1714_24fps.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset slow --output-depth 10 --bitrate 24000
+tos_10bit_215to815_4096x1714_24fps.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset slow --output-depth 10 --bitrate 28000
+tos_10bit_215to815_4096x1714_24fps.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset slower --output-depth 10 --bitrate 16000
+tos_10bit_215to815_4096x1714_24fps.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset slower --output-depth 10 --bitrate 20000
+tos_10bit_215to815_4096x1714_24fps.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset slower --output-depth 10 --bitrate 24000
+tos_10bit_215to815_4096x1714_24fps.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset slower --output-depth 10 --bitrate 28000
+tos_10bit_215to815_4096x1714_24fps.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset veryslow --output-depth 10 --bitrate 16000
+tos_10bit_215to815_4096x1714_24fps.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset veryslow --output-depth 10 --bitrate 20000
+tos_10bit_215to815_4096x1714_24fps.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset veryslow --output-depth 10 --bitrate 24000
+tos_10bit_215to815_4096x1714_24fps.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset veryslow --output-depth 10 --bitrate 28000
+ElFuente_3840x2160_5994fps_100to700f_420_10bit.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset ultrafast --output-depth 10 --bitrate 16000
+ElFuente_3840x2160_5994fps_100to700f_420_10bit.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset ultrafast --output-depth 10 --bitrate 20000
+ElFuente_3840x2160_5994fps_100to700f_420_10bit.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset ultrafast --output-depth 10 --bitrate 24000
+ElFuente_3840x2160_5994fps_100to700f_420_10bit.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset ultrafast --output-depth 10 --bitrate 28000
+ElFuente_3840x2160_5994fps_100to700f_420_10bit.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset superfast --output-depth 10 --bitrate 16000
+ElFuente_3840x2160_5994fps_100to700f_420_10bit.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset superfast --output-depth 10 --bitrate 20000
+ElFuente_3840x2160_5994fps_100to700f_420_10bit.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset superfast --output-depth 10 --bitrate 24000
+ElFuente_3840x2160_5994fps_100to700f_420_10bit.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset superfast --output-depth 10 --bitrate 28000
+ElFuente_3840x2160_5994fps_100to700f_420_10bit.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset veryfast --output-depth 10 --bitrate 16000
+ElFuente_3840x2160_5994fps_100to700f_420_10bit.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset veryfast --output-depth 10 --bitrate 20000
+ElFuente_3840x2160_5994fps_100to700f_420_10bit.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset veryfast --output-depth 10 --bitrate 24000
+ElFuente_3840x2160_5994fps_100to700f_420_10bit.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset veryfast --output-depth 10 --bitrate 28000
+ElFuente_3840x2160_5994fps_100to700f_420_10bit.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset faster --output-depth 10 --bitrate 16000
+ElFuente_3840x2160_5994fps_100to700f_420_10bit.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset faster --output-depth 10 --bitrate 20000
+ElFuente_3840x2160_5994fps_100to700f_420_10bit.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset faster --output-depth 10 --bitrate 24000
+ElFuente_3840x2160_5994fps_100to700f_420_10bit.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset faster --output-depth 10 --bitrate 28000
+ElFuente_3840x2160_5994fps_100to700f_420_10bit.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset fast --output-depth 10 --bitrate 16000
+ElFuente_3840x2160_5994fps_100to700f_420_10bit.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset fast --output-depth 10 --bitrate 20000
+ElFuente_3840x2160_5994fps_100to700f_420_10bit.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset fast --output-depth 10 --bitrate 24000
+ElFuente_3840x2160_5994fps_100to700f_420_10bit.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset fast --output-depth 10 --bitrate 28000
+ElFuente_3840x2160_5994fps_100to700f_420_10bit.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset medium --output-depth 10 --bitrate 16000
+ElFuente_3840x2160_5994fps_100to700f_420_10bit.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset medium --output-depth 10 --bitrate 20000
+ElFuente_3840x2160_5994fps_100to700f_420_10bit.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset medium --output-depth 10 --bitrate 24000
+ElFuente_3840x2160_5994fps_100to700f_420_10bit.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset medium --output-depth 10 --bitrate 28000
+ElFuente_3840x2160_5994fps_100to700f_420_10bit.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset slow --output-depth 10 --bitrate 16000
+ElFuente_3840x2160_5994fps_100to700f_420_10bit.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset slow --output-depth 10 --bitrate 20000
+ElFuente_3840x2160_5994fps_100to700f_420_10bit.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset slow --output-depth 10 --bitrate 24000
+ElFuente_3840x2160_5994fps_100to700f_420_10bit.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset slow --output-depth 10 --bitrate 28000
+ElFuente_3840x2160_5994fps_100to700f_420_10bit.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset slower --output-depth 10 --bitrate 16000
+ElFuente_3840x2160_5994fps_100to700f_420_10bit.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset slower --output-depth 10 --bitrate 20000
+ElFuente_3840x2160_5994fps_100to700f_420_10bit.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset slower --output-depth 10 --bitrate 24000
+ElFuente_3840x2160_5994fps_100to700f_420_10bit.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset slower --output-depth 10 --bitrate 28000
+ElFuente_3840x2160_5994fps_100to700f_420_10bit.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset veryslow --output-depth 10 --bitrate 16000
+ElFuente_3840x2160_5994fps_100to700f_420_10bit.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset veryslow --output-depth 10 --bitrate 20000
+ElFuente_3840x2160_5994fps_100to700f_420_10bit.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset veryslow --output-depth 10 --bitrate 24000
+ElFuente_3840x2160_5994fps_100to700f_420_10bit.yuv --input-res 4096x1714 --fps 24 --input-depth 10 --preset veryslow --output-depth 10 --bitrate 28000

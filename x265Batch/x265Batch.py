@@ -44,6 +44,12 @@ except ImportError, e:
     Decodebitstream = None
 
 try:
+    from paths_cfg import my_comparequalitymetrics
+except ImportError, e:
+    print '** `my_comparequalitymetrics*` not defined, defaulting to None'
+    my_comparequalitymetrics = None
+
+try:
     from paths_cfg import my_ftp_url, my_ftp_user, my_ftp_pass, my_ftp_path_stable, my_ftp_path_default, my_ftp_path_stableold, my_ftp_path_defaultold
 except ImportError, e:
     print '** `my_email_*` not defined, defaulting to None'
@@ -104,6 +110,19 @@ class Test:
                                    'harmonicmean of golden FPS',
                                    'harmonicmean of current FPS', 
                                    '% of increase with current FPS')
+
+        self.tableheaderforQuality = r'<tr><th>{0}</th><th>{1}</th><th>{2}</th><th>{3}</th><th>{4}</th><th>{5}</th><th>{6}</th><th>{7}</th><th>{8}</th><th>{9}</th><th>{10}</th></tr>'\
+                                   .format('Video',
+                                   'Preset',
+                                   'ABR',
+                                   'golden tip',
+                                   'current tip',
+                                   'previous bitrate',
+                                   'previous SSIM(db)',
+                                   'current bitrate',
+                                   'current SSIM(db)',
+                                   '(BD-SSIM)average difference in ssim',
+                                   '(BD-Rate)percentage of bit rate saved')
 
         self.table = ['<htm><body><table border="1">']
 
@@ -229,6 +248,64 @@ class Test:
             self.vbvmaxrate = cmdline[index + 1]
 
 
+def Bjontegaardmetric(ssim1,bitrate1,ssim2,bitrate2):
+        import math
+        import numpy
+        R1 = []
+        R2 = []
+        SSIM1 = []
+        SSIM2 = []
+        string1 = "" 
+        string2 = ""
+        plot1 = []
+        plot2 = []
+
+        bitrate1 = [float(field) for field in bitrate1]
+        bitrate2 = [float(field) for field in bitrate2]
+        ssim1 = [float(field) for field in ssim1]
+        ssim2 = [float(field) for field in ssim2]
+        
+
+        R1=[math.log(num) for num in bitrate1]
+        R2=[math.log(num) for num in bitrate2]
+        
+        #dssim mode
+        p1 = numpy.polyfit(R1,ssim1,3)
+        p2 = numpy.polyfit(R2,ssim2,3)
+
+        min_int = max([min(R1),min(R2)])
+        max_int = min([max(R1),max(R2)])
+
+        p_int1 = numpy.polyint(p1)
+        p_int2 = numpy.polyint(p2)
+
+        int1 = numpy.polyval(p_int1, max_int) - numpy.polyval(p_int1, min_int)
+        int2 = numpy.polyval(p_int2, max_int) - numpy.polyval(p_int2, min_int)
+
+        #calculates the average difference in ssim
+        avg_diff = (int2 - int1) / (max_int - min_int)
+        print 'RESULT DSSIM:',avg_diff
+
+        #rate mode
+        p1 = numpy.polyfit(ssim1,R1,3);
+        p2 = numpy.polyfit(ssim2,R2,3);
+
+        min_int = max([ min(ssim1), min(ssim2) ]);
+        max_int = min([ max(ssim1), max(ssim2) ]);
+
+        p_int1 = numpy.polyint(p1);
+        p_int2 = numpy.polyint(p2);
+
+        int1 = numpy.polyval(p_int1, max_int) - numpy.polyval(p_int1, min_int);
+        int2 = numpy.polyval(p_int2, max_int) - numpy.polyval(p_int2, min_int);
+
+        #calculates the percentage of bit rate saved
+        avg_exp_diff = (int2-int1)/(max_int-min_int);
+        avg_diff1 = (math.exp(avg_exp_diff)-1)*100;
+        print 'RESULT RATE:',avg_diff1
+        
+        return avg_diff, avg_diff1
+
 def harmonic_mean(nums):
     geomean = reduce(lambda x, y: x*y, nums)**(1.0/len(nums))
     arithmean = float(sum(nums)/len(nums))
@@ -261,7 +338,7 @@ def email_results(test, f1, f2):
         msg['To'] = ", ".join(my_email_to)
     
     msg['From'] = my_email_from
-    data = [platform.system(), '-', test.tag, 'Performance Regression']
+    data = [platform.system(), '-', test.tag, 'Quality Regression' if my_comparequalitymetrics else 'Performance Regression']
     msg['Subject'] = ' '.join(data)
 
     session = smtplib.SMTP(my_smtp_host, my_smtp_port)
@@ -381,6 +458,78 @@ def compare(test):
     os.remove(os.path.join(test.cwd, test.goldendir, test.finalcsv))
     shutil.copy(os.path.join(test.resultdir, test.finalcsv), os.path.join(test.cwd, test.goldendir, test.finalcsv))
 
+
+def comparequality(test):
+    if not os.path.exists(os.path.join(test.resultdir, test.finalcsv)) or not os.path.exists(os.path.join(test.cwd, test.goldendir, test.finalcsv)):
+        print('csv file does not exist to compare', os.path.join(test.resultdir, test.finalcsv), os.path.exists(os.path.join(test.cwd, test.goldendir, test.finalcsv)))
+        if os.path.exists(os.path.join(test.resultdir, test.finalcsv)):
+            shutil.copy(os.path.join(test.resultdir, test.finalcsv), os.path.join(test.cwd, test.goldendir, test.finalcsv))
+        return
+
+    import operator
+    temp_list = []
+    temp_dict = {}
+    ssim1 = []
+    ssim2 = []
+    bitrate1 = []
+    bitrate2 = []
+    abr = []
+    current = open(os.path.join(test.resultdir, test.finalcsv), 'r')
+    golden = open(os.path.join(test.goldendir, test.finalcsv), 'r')
+    current_csvlines = current.readlines()
+    golden_csvlines = golden.readlines()
+    if len(current_csvlines) == len(golden_csvlines):
+        test.table.append(test.tableheaderforQuality)
+        for i in range(1, len(golden_csvlines), 4):
+            tok = golden_csvlines[i].split(',')
+            version_len = len(tok)
+            test.video, test.preset, test.rev = tok[0], tok[1], tok[version_len-1]
+            for j in range(4):
+                tok = golden_csvlines[i+j].split(',')
+                ssim1.append(float(tok[17]))
+                bitrate1.append(float(tok[11]))
+                abr.append(tok[2])
+
+            tok = current_csvlines[i].split(',')
+            if tok[0] == test.video and tok[1] == test.preset:
+                for j in range(4):
+                    tok = current_csvlines[i+j].split(',')
+                    ssim2.append(float(tok[17]))
+                    bitrate2.append(float(tok[11]))
+
+                dssim, rate = Bjontegaardmetric(ssim1,bitrate1,ssim2,bitrate2)
+                
+                temp_dict['cmd'] = r'<tr><th>{0}</th><th>{1}</th><th>{2}</th><th>{3}</th><th>{4}</th><th>{5}</th><th>{6}</th><th>{7}</th><th>{8}</th><th>{9}</th><th>{10}</th></tr>'\
+                                    .format(test.video, 
+                                            test.preset, 
+                                            abr, 
+                                            test.rev.strip('\r\n'), 
+                                            tok[version_len-1].strip('\r\n'), 
+                                            str(bitrate1), 
+                                            str(ssim1),
+                                            str(bitrate2), 
+                                            str(ssim2),
+                                            dssim,
+                                            rate)
+                temp_list.append(temp_dict)
+                temp_dict = {}
+                test.preset = ''
+                abr = []
+                ssim1 = []
+                bitrate1 = []
+                ssim2 = []
+                bitrate2 = []
+
+        for list in temp_list:
+            test.table.append(list['cmd'])
+        test.table.append('</table></body></html>')
+        email_results(test, os.path.join(test.resultdir, test.finalcsv), os.path.join(test.cwd, test.goldendir, test.finalcsv))
+
+    current.close()
+    golden.close()
+    os.remove(os.path.join(test.cwd, test.goldendir, test.finalcsv))
+    shutil.copy(os.path.join(test.resultdir, test.finalcsv), os.path.join(test.cwd, test.goldendir, test.finalcsv))
+
 def upload_csv(test):
     if not (my_ftp_url and my_ftp_user and my_ftp_pass and my_ftp_path_stable and my_ftp_path_default and my_ftp_path_defaultold and my_ftp_path_stableold):
         return
@@ -463,12 +612,15 @@ def main():
 
     # close the encoder log file
     test.logfp.close()
+
     # add extra columns for video, preset and rate control options in csv
     if not Decodebitstream:
         regeneratecsv(test)
-    # compare current test results with golden(previous) test results
+
     if my_compareFPS == True:
-        compare(test)
+        compare(test)    # compare current test results with golden(previous) test results
+    elif my_comparequalitymetrics == True:
+        comparequality(test) # compare current test quality metrics with golden (previous) metrics by calculaying BD-Rate, BD-SSIM
 
     # upload csv file on egnyte
     if my_csvupload == True:

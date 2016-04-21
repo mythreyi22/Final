@@ -435,7 +435,11 @@ def setup_regularx265repo():
 
     except Exception as e:
         log.write('\nERROR: failed to setup x265 repo\n %s \n' %e)
-    build(orig_repo)
+    #build(orig_repo)
+    d = os.getcwd()
+    os.chdir("..")
+    os.system("python smoke-test.py")
+    os.chdir(d)
 
 def launch_tests_patch():
     global orig_repo, patches_repo, log
@@ -455,9 +459,11 @@ def launch_tests():
     global buildfolder
 
     branch = hgbranch(os.path.join(os.getcwd(), 'x265repo'))
-    binary = os.path.join(buildfolder, 'x265')
-    os.chdir("..//x265Batch")
-    cmd = 'python x265Batch.py --branch %s --tag %s --cfg commands.conf.txt --iter 3 -- %s --psnr --ssim' % (branch.strip('\r\n'), my_tag, binary)
+    #binary = os.path.join(buildfolder, 'x265')
+    os.chdir("..")
+    binary = os.path.join(os.getcwd(), "x265","gcc","default","x265")
+    os.chdir("x265Batch")
+    cmd = 'python x265Batch.py --branch %s --tag %s --cfg commands_quality.conf.txt -- %s --psnr --ssim' % (branch.strip('\r\n'), my_tag, binary)
     ret = sub.Popen(cmd, shell=True, stdout=log, stderr=log)
     if ret.wait() != 0:
         print("\n x265Batch run failed: %s \n" %cmd)
