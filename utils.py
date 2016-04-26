@@ -1969,7 +1969,6 @@ def _test(build, tmpfolder, seq, command,  always, extras):
                     prefix += '\nbitstream hash was %s' % hashbitstream(badfn)
                 addfail(hash, lastfname, logs, errors)
                 logger.testfail(prefix, errors, logs)
-    testhashlist = []
 
 def runtest(key, seq, commands, always, extras):
     '''
