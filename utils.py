@@ -1394,7 +1394,7 @@ def encodeharness(key, tmpfolder, sequence, command, always, inextras):
        summary - bitrate, psnr, ssim
        error   - full description of encoder warnings and errors
     '''
-
+    global bitstream
     extras = inextras[:] # make copy so we can append locally
     if sequence.lower().endswith('.yuv'):
         (width, height, fps, depth, csp) = parseYuvFilename(sequence)
@@ -1584,7 +1584,6 @@ def checkoutputs(key, seq, command, sum, tmpdir, logs, testhash):
     opencommits = [] # changing commits without 'no-change' or testfolder
     # walk list of ancestor commits which changed outputs until we find the
     # most recent output bitstream we are expected to match
-
     for commit in changers:
         nc = 'no-change-%s-%s.txt' % (group, commit)
         nochange = os.path.join(my_goldens, testhash, nc)
@@ -1746,6 +1745,7 @@ def newgoldenoutputs(seq, command, lastfname, sum, logs, tmpdir, testhash):
     A test was run and the outputs are good (match the last known good or if
     no last known good is available, these new results are taken
     '''
+    global bitstream
     commit = lastfname.split('-')[-1]
     if not save_results:
         # only save results if the testrev is a keyword change commit
@@ -1887,7 +1887,8 @@ def _test(build, tmpfolder, seq, command,  always, extras):
     global bitstream, testhashlist
     empty = True
     testhash = testcasehash(seq, command)
-
+    bitstream = 'bitstream.hevc'
+    testhashlist = []
     # run the encoder, abort early if any errors encountered
     logs, sum, encoder_errors, encoder_error_var = encodeharness(build, tmpfolder, seq, command,  always, extras)
     if not testhashlist:

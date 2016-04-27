@@ -38,7 +38,6 @@ def arrangecli(seq, command, always):
             vbvmaxrates.append(l)
         cmd_string = cmd_string.replace('--vbv-maxrate', '')
         cmd_string = cmd_string.replace(list, '')
-    utils.testhashlist = []
     for i in range(len(bitrates)):
         command = '--bitrate '
         command += str(bitrates[i])
