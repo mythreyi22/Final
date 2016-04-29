@@ -1396,9 +1396,10 @@ def encodeharness(key, tmpfolder, sequence, command, always, inextras):
     '''
     global bitstream
     extras = inextras[:] # make copy so we can append locally
+    seq_details         = []
     if sequence.lower().endswith('.yuv'):
         (width, height, fps, depth, csp) = parseYuvFilename(sequence)
-        extras += ['--input-res=%sx%s' % (width, height),
+        seq_details += ['--input-res=%sx%s' % (width, height),
                    '--fps=%s' % fps,
                    '--input-depth=%s' % depth,
                    '--input-csp=i%s' % csp]
@@ -1423,16 +1424,17 @@ def encodeharness(key, tmpfolder, sequence, command, always, inextras):
     else:
         cmds = [x265]
         if '[' in command:
-            command = wrapper.arrangecli(seqfullpath, command, always)
+            command = wrapper.arrangecli(seqfullpath, command, always, extras)
             cmds.append(seqfullpath)
             cmds.extend(shlex.split(command))
-            cmds.extend(extras)
+            cmds.extend(seq_details)
         elif '--command-file' in command:
             cmds.append(command)
         else:
             cmds.extend([seqfullpath, bitstream])
             cmds.extend(shlex.split(command))
             cmds.extend(extras)
+            cmds.extend(seq_details)
     logs, errors, summary = '', '', ''
     if not os.path.isfile(x265):
         logger.write('x265 executable not found')

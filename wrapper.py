@@ -9,11 +9,8 @@
 import os
 import sys
 import utils
-
-
-def arrangecli(seq, command, always):
+def arrangecli(seq, command, always, extras):
     cmd_string = str(command)
-
     f = cmd_string.split('[')[0]
     cmd = cmd_string.split('[')[1].split(']')[0]
     commandslist = []
@@ -63,4 +60,28 @@ def arrangecli(seq, command, always):
     final_command += ' -o '
     final_command += '.hevc,'.join(utils.testhashlist)
     final_command += '.hevc'
+    if '--csv=test.csv' in extras:
+        csv_filenames = ''
+        for i in utils.testhashlist:
+            csv_filenames += i
+            csv_filenames += '.csv,'
+        csv_filenames = csv_filenames[:-1]
+        final_command += ' --csv '
+        final_command += csv_filenames
+    elif '--recon=recon.y4m' in extras:
+        recon_filenames = ''
+        for i in utils.testhashlist:
+            recon_filenames += i
+            recon_filenames += '.y4m,'
+        recon_filenames = recon_filenames[:-1]
+        final_command += ' --recon='
+        final_command += recon_filenames
+    elif '--recon=recon.yuv' in extras:
+        recon_filenames = ''
+        for i in utils.testhashlist:
+            recon_filenames += i
+            recon_filenames += '.yuv,'
+        recon_filenames = recon_filenames[:-1]
+        final_command += ' --recon='
+        final_command += recon_filenames
     return final_command
