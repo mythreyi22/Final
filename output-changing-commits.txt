@@ -19,6 +19,7 @@
 # already set in presets so golden outputs will store for that preset.
 
 
+34a3d35c5f97 SAO refactor; output changing only for linux
 4b0da550a69c correct level
 ed744166c37e [pmode] fix uninitialised chroma flag issue
 4847da174a41 QP fix for SAO
