@@ -77,6 +77,12 @@ def arrangecli(seq, command, always, extras, ffmpegpath, build):
     final_command += ' -o '
     final_command += '.hevc,'.join(utils.testhashlist)
     final_command += '.hevc'
+    if '--csv=test.csv' in extras or '--recon=recon.y4m' in extras or '--recon=recon.yuv' in extras:
+        return final_command
+    else:
+        final_command += ' '
+        final_command += ' '.join(extras)
+
     if '--csv=test.csv' in extras:
         csv_filenames = ''
         for i in utils.testhashlist:
