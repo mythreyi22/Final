@@ -9,7 +9,24 @@
 import os
 import sys
 import utils
-def arrangecli(seq, command, always, extras):
+import shlex
+def arrangecli(seq, command, always, extras, ffmpegpath, build):
+    if 'ffmpeg' in command:
+        pipe = '-|'
+        ffmpeg = 'ffmpeg'
+        ffmpegformat = command.split('-i ')[1].split('-|')[0]
+        options = command.split('-|')[1]
+        final_command = [ffmpegpath]
+        final_command.append('-i')
+        final_command.append(seq)
+        final_command.extend(shlex.split(ffmpegformat))
+        final_command.append(pipe)
+        final_command.append(build)
+        final_command.extend(shlex.split(options))
+        final_command.extend(extras)
+        final_command.append('-o')
+        return final_command
+
     cmd_string = str(command)
     f = cmd_string.split('[')[0]
     cmd = cmd_string.split('[')[1].split(']')[0]

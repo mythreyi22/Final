@@ -1406,35 +1406,27 @@ def encodeharness(key, tmpfolder, sequence, command, always, inextras):
     seqfullpath = os.path.join(my_sequences, sequence)
     build = buildObj[key]
     x265 = build.exe
-    if 'ffmpeg' in command:
-        pipe = '-|'
-        ffmpeg = 'ffmpeg'
-        ffmpegformat = command.split('-i ')[1].split('-|')[0]
-        options = command.split('-|')[1]
-        cmds = [os.path.join(my_sequences, ffmpeg)]
-        cmds.append('-i')
+    cmds = [x265]
+    if '[' in command:
+        command = wrapper.arrangecli(seqfullpath, command, always, extras, None, None)
         cmds.append(seqfullpath)
-        cmds.extend(shlex.split(ffmpegformat))
-        cmds.append(pipe)
-        cmds.append(x265)
-        cmds.extend(shlex.split(options))
-        cmds.extend(extras)
-        cmds.append('-o')
-        cmds.append(bitstream)
+        cmds.extend(shlex.split(command))
+        cmds.extend(seq_details)
+    elif '--command-file' in command:
+        cmds.append(command)
+    elif 'ffmpeg' in command:
+        ffmpeg = 'ffmpeg'
+        ffmpegfullpath = os.path.join(my_sequences, ffmpeg)
+        command = wrapper.arrangecli(seqfullpath, command, always, extras, ffmpegfullpath, x265)
+        cmds = []
+        cmds.extend(command)
+        cmds.extend(seq_details)
+        cmds.extend([bitstream])
     else:
-        cmds = [x265]
-        if '[' in command:
-            command = wrapper.arrangecli(seqfullpath, command, always, extras)
-            cmds.append(seqfullpath)
-            cmds.extend(shlex.split(command))
-            cmds.extend(seq_details)
-        elif '--command-file' in command:
-            cmds.append(command)
-        else:
-            cmds.extend([seqfullpath, bitstream])
-            cmds.extend(shlex.split(command))
-            cmds.extend(extras)
-            cmds.extend(seq_details)
+        cmds.extend([seqfullpath, bitstream])
+        cmds.extend(shlex.split(command))
+        cmds.extend(extras)
+        cmds.extend(seq_details)
     logs, errors, summary = '', '', ''
     if not os.path.isfile(x265):
         logger.write('x265 executable not found')
