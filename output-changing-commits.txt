@@ -18,6 +18,7 @@
 # 2) not required [sao], [weightp], [cutree] etc.., because these are
 # already set in presets so golden outputs will store for that preset.
 
+e5b5bdc3c154 disable recursion depth in veryslow & placebo presets
 d2de32f15de0 level: correct reference buffer initialisations
 34a3d35c5f97 SAO refactor; output changing only for linux
 4b0da550a69c correct level
