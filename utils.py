@@ -1445,6 +1445,7 @@ def encodeharness(key, tmpfolder, sequence, command, always, inextras):
         if os.name == 'nt':
             p = Popen(cmds, cwd=tmpfolder, stdout=PIPE, stderr=PIPE, shell = 'TRUE')
         elif 'ffmpeg' in command:
+            cmds = ' '.join(cmds)
             p = Popen(cmds, cwd=tmpfolder, stdout=PIPE, stderr=PIPE, preexec_fn=prefn, shell = 'TRUE')
         else:
             p = Popen(cmds, cwd=tmpfolder, stdout=PIPE, stderr=PIPE, preexec_fn=prefn)
