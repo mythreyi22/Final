@@ -16,7 +16,6 @@ path = {}
 try:
     from paths_cfg import my_sequences, my_bitstreams
     from paths_cfg import my_RAMDISK, my_compareFPS, my_csvupload
-    from paths_cfg import feature
 	
     # support ~/repos/x265 syntax
     my_sequences = os.path.expanduser(my_sequences)
@@ -24,6 +23,11 @@ try:
 except ImportError, e:
     print 'Copy paths_cfg.py.example to paths_cfg.py and edit the file as necessary'
     sys.exit(1)
+
+try:
+    from paths_cfg import feature
+except ImportError, e:
+    feature = ''
 
 try:
     from paths_cfg import my_RAMDiskpath
