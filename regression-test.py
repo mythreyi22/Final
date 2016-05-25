@@ -58,7 +58,7 @@ try:
             buildoption.append(v[0])
             buildoption.append(v[1])
             buildoption.append(v[2])
-            buildoption.append(v[3].replace('debug', '').replace('checked', '').replace('tests', '').replace('warn', '').replace('reldeb', '').replace('noasm',''))
+            buildoption.append(v[3].replace('debug', '').replace('checked', '').replace('tests', '').replace('warn', '').replace('reldeb', '').replace('noasm','').replace('static',''))
             buildoption.append(v[4])
             my_builds[key] = tuple(buildoption)
         utils.buildall(None, my_builds)

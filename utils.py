@@ -38,12 +38,11 @@ fps_tolerance = .10  # fraction of fps difference allowed (10%)
 logger = None
 buildObj = {}
 spot_checks = []
-
 try:
-    from conf import encoder_binary_name
+    from conf import encoder_binary_name, encoder_library_name
 except ImportError, e:
     encoder_binary_name = 'x265'
-
+    encoder_library_name = 'libx265'
 if not os.path.exists(encoder_binary_name):
     os.mkdir(encoder_binary_name)
 
@@ -164,12 +163,12 @@ class Build():
             else:
                 self.target = 'Release'
             self.exe = os.path.abspath(os.path.join(encoder_binary_name, self.folder, 'default', self.target, encoder_binary_name + exe_ext))
-            self.dll = os.path.abspath(os.path.join(encoder_binary_name, self.folder, 'default', self.target, 'libx265' + dll_ext))
+            self.dll = os.path.abspath(os.path.join(encoder_binary_name, self.folder, 'default', self.target, encoder_library_name + dll_ext))
             self.testbench = os.path.abspath(os.path.join(encoder_binary_name, self.folder, 'default', 'test', self.target, 'TestBench' + exe_ext))
         else:
             self.target = ''
             self.exe = os.path.abspath(os.path.join(encoder_binary_name, self.folder, 'default', encoder_binary_name + exe_ext))
-            self.dll = os.path.abspath(os.path.join(encoder_binary_name, self.folder, 'default', 'libx265' + dll_ext))
+            self.dll = os.path.abspath(os.path.join(encoder_binary_name, self.folder, 'default', encoder_library_name + dll_ext))
             self.testbench = os.path.abspath(os.path.join(encoder_binary_name, self.folder, 'default', 'test', 'TestBench' + exe_ext))
     def cmakeoptions(self, cmakeopts, prof):
         for o in self.cmakeopts.split():
@@ -672,9 +671,8 @@ def upload_binaries():
 
     import ftplib
     from collections import defaultdict
-
     debugopts = set(['reldeb', 'ftrapv', 'noasm', 'ppa', 'debug', 'stats', 'static'])
-
+    date = datetime.datetime.strftime(datetime.datetime.now(),'%Y_%m_%d')
     for key in my_binaries_upload:
         build = buildObj[key]
         buildopts = set(build.cmakeopts.split())
@@ -696,11 +694,18 @@ def upload_binaries():
                 folder = 'Stable'
 
         ftp_path = '/'.join([my_ftp_folder, osname, folder, build.profile])
-
         # open x265 binary & library files and give appropriate names for them to upload
         # ex: Darwin - x265-1.5+365-887ac5e457e0, libx265-1.5+365-887ac5e457e0.dylib
-        exe_name = '-'.join(['x265', tagdistance, testrev]) + exe_ext
-        dll_name = '-'.join(['libx265', tagdistance, testrev]) + dll_ext
+        if encoder_binary_name == 'x265':
+            exe_name = '-'.join([encoder_binary_name, tagdistance, testrev]) + exe_ext
+            dll_name = '-'.join([encoder_library_name, tagdistance, testrev]) + dll_ext
+        else:
+            if build.profile == 'main':
+                exe_name = '_'.join([encoder_binary_name,'8bit', date, testrev]) + exe_ext
+                dll_name = '_'.join([encoder_library_name,'8bit', date, testrev]) + dll_ext
+            else:
+                exe_name = '_'.join([encoder_binary_name,'10bit', date, testrev]) + exe_ext
+                dll_name = '_'.join([encoder_library_name,'10bit', date, testrev]) + dll_ext
         try:
             x265 = open(build.exe, 'rb')
             dll = open(build.dll, 'rb')
