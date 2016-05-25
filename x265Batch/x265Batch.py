@@ -27,7 +27,7 @@ except ImportError, e:
 try:
     from paths_cfg import feature
 except ImportError, e:
-    feature = ''
+    feature = 'empty'
 
 try:
     from paths_cfg import my_RAMDiskpath
