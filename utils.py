@@ -799,7 +799,7 @@ def parseYuvFilename(fname):
     if words[-1] == 'crop':
         words.pop()
 
-    if words[-1] in ('422','444'):
+    if words[-1] in ('400','422','444'):
         csp = words.pop()
 
     if words[-1] == '10bit':
