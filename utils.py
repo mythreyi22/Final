@@ -743,6 +743,9 @@ def upload_binaries():
         except ftplib.all_errors, e:
             print "ftp failed", e
             return
+        
+        if not encoder_binary_name == 'x265':
+            return
 
         if folder == 'Release': # never delete tagged builds
             continue
