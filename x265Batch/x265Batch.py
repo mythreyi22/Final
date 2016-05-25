@@ -253,6 +253,10 @@ class Test:
 
 
 def Bjontegaardmetric(ssim1,bitrate1,ssim2,bitrate2):
+        # temporary check
+        os.system("sudo yum install -y numpy")
+        time.sleep(60)
+
         import math
         import numpy
         R1 = []
