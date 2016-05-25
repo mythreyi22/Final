@@ -745,7 +745,7 @@ def upload_binaries():
             return
         
         if not encoder_binary_name == 'x265':
-            return
+            continue
 
         if folder == 'Release': # never delete tagged builds
             continue
