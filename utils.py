@@ -1786,6 +1786,9 @@ def addpass(testhash, lastfname, logs):
     if not save_results:
         return
 
+    folder = os.path.join(my_goldens, testhash, lastfname)
+    if not os.path.isdir(folder):
+        os.mkdir(folder)
     folder = os.path.join(my_goldens, testhash, lastfname, 'passed')
     if not os.path.isdir(folder):
         os.mkdir(folder)
@@ -1801,6 +1804,9 @@ def addfail(testhash, lastfname, logs, errors):
     if not save_results:
         return
 
+    folder = os.path.join(my_goldens, testhash, lastfname)
+    if not os.path.isdir(folder):
+        os.mkdir(folder)
     folder = os.path.join(my_goldens, testhash, lastfname, 'failed')
     if not os.path.isdir(folder):
         os.mkdir(folder)
@@ -1949,7 +1955,6 @@ def _test(build, tmpfolder, seq, command,  always, extras):
         elif errors:
             typeoferror = 'VBV' if '--vbv-bufsize' in command else ('ABR' if '--bitrate' in command else '')
             # outputs did not match golden outputs
-            lastsum = open(fname, 'r').read()
             decodeerr = checkdecoder(tmpfolder)
             if decodeerr:
                 prefix = '%s OUTPUT CHANGE WITH DECODE ERRORS' % typeoferror
@@ -1957,16 +1962,32 @@ def _test(build, tmpfolder, seq, command,  always, extras):
                 prefix += '\nThis bitstream was saved to %s' % hashfname
                 logger.testfail(prefix, errors + decodeerr, logs)
                 failuretype = '%s output change with decode errors ' % typeoferror
-                table(failuretype, sum , lastsum, logger.build.strip('\n'))
+                if os.path.exists(fname):
+                    lastsum = open(fname, 'r').read()
+                    table(failuretype, sum , lastsum, logger.build.strip('\n'))
+                else:
+                    table(failuretype, empty , empty, logger.build.strip('\n'))
             else:
                 logger.write('FAIL')
                 if 'FPS TARGET MISSED' in errors:
-                    prefix = '%s FPS TARGET MISSED: <%s> to <%s>' % (typeoferror, lastsum, sum)
+                    if os.path.exists(fname):
+                        lastsum = open(fname, 'r').read()
+                        prefix = '%s FPS TARGET MISSED: <%s> to <%s>' % (typeoferror, lastsum, sum)
+                    else:
+                        prefix = '%s FPS TARGET MISSED:' % (typeoferror)
                     failuretype = '%s fps target missed' % typeoferror
                 else:
-                    prefix = '%s OUTPUT CHANGE: <%s> to <%s>' % (typeoferror, lastsum, sum)
+                    if os.path.exists(fname):
+                        lastsum = open(fname, 'r').read()
+                        prefix = '%s OUTPUT CHANGE: <%s> to <%s>' % (typeoferror, lastsum, sum)
+                    else:
+                        prefix = '%s OUTPUT CHANGE:' % (typeoferror)
                     failuretype = '%s output change' % typeoferror
-                table(failuretype, sum , lastsum, logger.build.strip('\n'))
+                if os.path.exists(fname):
+                    lastsum = open(fname, 'r').read()
+                    table(failuretype, sum , lastsum, logger.build.strip('\n'))
+                else:
+                    table(failuretype, empty , empty, logger.build.strip('\n'))
                 if save_changed:
                     hashfname = savebadstream(tmpfolder)
                     prefix += '\nThis bitstream was saved to %s' % hashfname
