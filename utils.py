@@ -38,10 +38,14 @@ fps_tolerance = .10  # fraction of fps difference allowed (10%)
 logger = None
 buildObj = {}
 spot_checks = []
+
 try:
-    from conf import encoder_binary_name, encoder_library_name
+    from conf import encoder_binary_name
 except ImportError, e:
     encoder_binary_name = 'x265'
+try:
+    from conf import encoder_library_name
+except ImportError, e:
     encoder_library_name = 'libx265'
 if not os.path.exists(encoder_binary_name):
     os.mkdir(encoder_binary_name)
