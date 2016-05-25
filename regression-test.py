@@ -17,6 +17,11 @@ utils.setup(sys.argv, 'regression-tests.txt')
 from conf import my_builds, my_machine_name, my_sequences
 from utils import logger, find_executable
 
+try:
+    from conf import my_upload
+except ImportError, e:
+    print 'failed to import my_upload'
+
 # do not use debug builds for long-running tests
 debugs = [key for key in my_builds if 'debug' in my_builds[key][3]]
 for k in debugs:
@@ -52,16 +57,17 @@ try:
     for line in logs:
          if 'encoder error reported' in line or 'DECODE ERRORS' in line  or 'Validation failed' in line or 'encoder warning reported' in line:
              fatalerror = True
-    if fatalerror == False:
-        for key, v in my_builds.iteritems():
+
+    if fatalerror == False and my_upload:
+        for key, v in my_upload.iteritems():
             buildoption = []
             buildoption.append(v[0])
             buildoption.append(v[1])
             buildoption.append(v[2])
             buildoption.append(v[3].replace('debug', '').replace('checked', '').replace('tests', '').replace('warn', '').replace('reldeb', '').replace('noasm','').replace('static',''))
             buildoption.append(v[4])
-            my_builds[key] = tuple(buildoption)
-        utils.buildall(None, my_builds)
+            my_upload[key] = tuple(buildoption)
+        utils.buildall(None, my_upload)
         utils.upload_binaries()
 
 except KeyboardInterrupt:

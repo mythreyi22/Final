@@ -102,6 +102,9 @@ my_builds = {
     #           {'PATH' : r'C:\mingw64\bin'}),
 }
 
+# these builds are for uploading binaries on egnyte for sharing
+my_upload = {}
+
 # Many builds of x265 will produce the same outputs given the same input
 # sequence and command line. The 'build group' string identifies these
 # groups of encoder builds which are expected to match outputs
