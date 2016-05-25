@@ -560,7 +560,7 @@ def comparequality(test):
                                             str(bitrate2), 
                                             str(ssim2),
                                             "{0:.4f}".format(dssim),
-                                            repr("{0:.2%}".format(rate)))
+                                            repr("{0:.2f}".format(rate)))
                 temp_list.append(temp_dict)
                 temp_dict = {}
                 test.preset = ''
