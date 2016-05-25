@@ -277,9 +277,6 @@ class Test:
 
 
 def Bjontegaardmetric(ssim1,bitrate1,ssim2,bitrate2):
-        # temporary check
-        os.system("sudo yum install -y numpy")
-        time.sleep(60)
 
         import math
         import numpy
@@ -669,6 +666,10 @@ def main():
     if my_compareFPS == True:
         compare(test)    # compare current test results with golden(previous) test results
     elif my_comparequalitymetrics == True:
+        try:
+            import numpy
+        except ImportError, e:
+            os.system("yum install -y numpy")
         comparequality(test) # compare current test quality metrics with golden (previous) metrics by calculaying BD-Rate, BD-SSIM
 
     # upload csv file on egnyte
