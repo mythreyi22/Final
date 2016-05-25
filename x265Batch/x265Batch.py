@@ -170,7 +170,7 @@ class Test:
             sys.exit(1)
 
     def setup_workingdir(self):
-        if my_compareFPS == True:
+        if my_compareFPS == True or my_comparequalitymetrics == True:
             self.goldendir = 'goldencsv' + self.branch
             if not os.path.exists(os.path.join(self.cwd, self.goldendir)):
                 os.mkdir(os.path.join(self.cwd, self.goldendir))

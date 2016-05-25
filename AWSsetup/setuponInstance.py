@@ -495,6 +495,7 @@ def main():
 
         launch_tests_patch()
     else:
+        os.system("sudo yum install -y numpy")
         # else part is for running nightly\weekly performance regression tests
         download_requiredfiles() # download all required files (here instanceid and requestid's are fake so download again later)
         setup_regularx265repo()
