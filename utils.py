@@ -1779,8 +1779,8 @@ def newgoldenoutputs(seq, command, lastfname, sum, logs, tmpdir, testhash):
     lastgoodfolder = os.path.join(testfolder, lastfname)
     if not os.path.isdir(lastgoodfolder):
         os.mkdir(lastgoodfolder)
-        shutil.copy(os.path.join(tmpdir, bitstream), lastgoodfolder)
-        open(os.path.join(lastgoodfolder, 'summary.txt'), 'w').write(sum)
+    shutil.copy(os.path.join(tmpdir, bitstream), lastgoodfolder)
+    open(os.path.join(lastgoodfolder, 'summary.txt'), 'w').write(sum)
     addpass(testhash, lastfname, logs)
     logger.newgolden(commit)
 
