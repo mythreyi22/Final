@@ -535,16 +535,16 @@ def comparequality(test):
             test.video, test.feature, test.preset, test.rev = tok[0], tok[1], tok[2], tok[version_len-1]
             for j in range(4):
                 tok = golden_csvlines[i+j].split(',')
-                ssim1.append(float("{0:.2f}".format(tok[18])))
-                bitrate1.append(float("{0:.2f}".format(tok[12])))
+                ssim1.append("{0:.4f}".format(float(tok[18])))
+                bitrate1.append("{0:.2f}".format(float(tok[12])))
                 abr.append(tok[3])
 
             tok = current_csvlines[i].split(',')
             if tok[0] == test.video and tok[2] == test.preset and tok[1] == test.feature:
                 for j in range(4):
                     tok = current_csvlines[i+j].split(',')
-                    ssim2.append(float("{0:.2f}".format(tok[18])))
-                    bitrate2.append(float("{0:.2f}".format(tok[12])))
+                    ssim2.append("{0:.4f}".format(float(tok[18])))
+                    bitrate2.append("{0:.2f}".format(float(tok[12])))
 
                 dssim, rate = Bjontegaardmetric(ssim1,bitrate1,ssim2,bitrate2)
                 
@@ -554,13 +554,13 @@ def comparequality(test):
                                             test.preset, 
                                             abr, 
                                             test.rev.strip('\r\n'), 
-                                            tok[version_len-1].strip('\r\n'), 
+                                            tok[version_len-1].strip('\r\n'),
                                             str(bitrate1), 
                                             str(ssim1),
                                             str(bitrate2), 
                                             str(ssim2),
-                                            float("{0:.3f}".format(dssim)),
-                                            repr("{0:.2}".format(rate)))
+                                            "{0:.4f}".format(dssim),
+                                            repr("{0:.2%}".format(rate)))
                 temp_list.append(temp_dict)
                 temp_dict = {}
                 test.preset = ''
