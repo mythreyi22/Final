@@ -97,8 +97,10 @@ class Test:
         self.fps = ''
         self.avg = []
         self.rev = ''
-        self.tableheader = r'<tr><th>{0}</th><th>{1}</th><th>{2}</th><th>{3}</th><th>{4}</th><th>{5}</th><th>{6}</th><th>{7}</th><th>{8}</th><th>{9}</th><th>{10}</th><th>{11}</th></tr>'\
+        self.feature = ''
+        self.tableheader = r'<tr><th>{0}</th><th>{1}</th><th>{2}</th><th>{3}</th><th>{4}</th><th>{5}</th><th>{6}</th><th>{7}</th><th>{8}</th><th>{9}</th><th>{10}</th><th>{11}</th><th>{12}</th></tr>'\
                                    .format('Video',
+                                   'Feature',
                                    'Preset',
                                    'ABR',
                                    'CQP',
@@ -246,6 +248,8 @@ class Test:
             self.vbvbufsize = cmdline[index + 1]
         elif tok == '--vbv-maxrate':
             self.vbvmaxrate = cmdline[index + 1]
+        elif tok == '--feature':
+            self.feature = cmdline[index + 1]
 
 
 def Bjontegaardmetric(ssim1,bitrate1,ssim2,bitrate2):
@@ -375,7 +379,7 @@ def regeneratecsv(test):
                 cmdline = tokens[0].split()
                 if cmdline[0] == 'Command':
                     if csvheader == True:
-                        final.write('Video,Preset,ABR,CQP,CRF,vbv-bufsize,vbv-maxrate')
+                        final.write('Video,Feature,Preset,ABR,CQP,CRF,vbv-bufsize,vbv-maxrate')
                         csvheader = False
                     else:
                         continue
@@ -386,8 +390,8 @@ def regeneratecsv(test):
                         test.preset = 'medium'
                     if test.abr == '' and test.cqp == '' and test.crf == '':
                         test.crf = '28'
-                    final.write(''.join(','.join([test.video, test.preset, test.abr, test.cqp, test.crf, test.vbvbufsize, test.vbvmaxrate])))
-                    test.preset = test.abr = test.cqp = test.crf = test.vbvbufsize = test.vbvmaxrate = ''
+                    final.write(''.join(','.join([test.video, test.feature,test.preset, test.abr, test.cqp, test.crf, test.vbvbufsize, test.vbvmaxrate])))
+                    test.preset = test.abr = test.cqp = test.crf = test.vbvbufsize = test.vbvmaxrate = test.feature = ''
 
                 for j in range(len(tokens)):
                     final.write(',')
@@ -414,15 +418,15 @@ def compare(test):
         for i in range(1, len(golden_csvlines), test.iter):
             tok = golden_csvlines[i].split(',')
             version_len = len(tok)
-            test.video, test.preset, test.abr, test.cqp, test.rev, test.crf, test.vbvbufsize, test.vbvmaxrate = tok[0], tok[1], tok[2], tok[3], tok[version_len-1], tok[4], tok[5], tok[6]
+            test.video, test.feature, test.preset, test.abr, test.cqp, test.rev, test.crf, test.vbvbufsize, test.vbvmaxrate = tok[0], tok[1], tok[2], tok[3], tok[4], tok[version_len-1], tok[5], tok[6], tok[7]
             for j in range(test.iter):
                 tok = golden_csvlines[i+j].split(',')
-                test.avg.append(float(tok[10]))
+                test.avg.append(float(tok[11]))
             test.fps = "%.2f" % harmonic_mean(test.avg)
             test.avg = []
 
             tok = current_csvlines[i].split(',')
-            if tok[0] == test.video and tok[1] == test.preset and tok[2] == test.abr and tok[3] == test.cqp and tok[4] == test.crf and tok[5] == test.vbvbufsize and tok[6] == test.vbvmaxrate:
+            if tok[0] == test.video and tok[1] == test.feature and tok[2] == test.preset and tok[3] == test.abr and tok[4] == test.cqp and tok[5] == test.crf and tok[6] == test.vbvbufsize and tok[7] == test.vbvmaxrate:
                 for j in range(test.iter):
                     tok = current_csvlines[i+j].split(',')
                     test.avg.append(float(tok[10]))
@@ -430,8 +434,9 @@ def compare(test):
                 test.avg = []
                 perc_increase = float("%.2f" %(100 * ((float(fps) - float(test.fps)) / float(test.fps))))
                 temp_dict['fps'] = perc_increase
-                temp_dict['cmd'] = r'<tr><th>{0}</th><th>{1}</th><th>{2}</th><th>{3}</th><th>{4}</th><th>{5}</th><th>{6}</th><th>{7}</th><th>{8}</th><th>{9}</th><th>{10}</th><th>{11}</th></tr>'\
+                temp_dict['cmd'] = r'<tr><th>{0}</th><th>{1}</th><th>{2}</th><th>{3}</th><th>{4}</th><th>{5}</th><th>{6}</th><th>{7}</th><th>{8}</th><th>{9}</th><th>{10}</th><th>{11}</th><th>{12}</th></tr>'\
                                     .format(test.video, 
+                                            test.feature,
                                             test.preset, 
                                             test.abr, 
                                             test.cqp, 
