@@ -113,8 +113,9 @@ class Test:
                                    'harmonicmean of current FPS', 
                                    '% of increase with current FPS')
 
-        self.tableheaderforQuality = r'<tr><th>{0}</th><th>{1}</th><th>{2}</th><th>{3}</th><th>{4}</th><th>{5}</th><th>{6}</th><th>{7}</th><th>{8}</th><th>{9}</th><th>{10}</th></tr>'\
+        self.tableheaderforQuality = r'<tr><th>{0}</th><th>{1}</th><th>{2}</th><th>{3}</th><th>{4}</th><th>{5}</th><th>{6}</th><th>{7}</th><th>{8}</th><th>{9}</th><th>{10}</th><th>{11}</th></tr>'\
                                    .format('Video',
+                                   'Feature',
                                    'Preset',
                                    'ABR',
                                    'golden tip',
@@ -433,7 +434,7 @@ def compare(test):
             if tok[0] == test.video and tok[1] == test.feature and tok[2] == test.preset and tok[3] == test.abr and tok[4] == test.cqp and tok[5] == test.crf and tok[6] == test.vbvbufsize and tok[7] == test.vbvmaxrate:
                 for j in range(test.iter):
                     tok = current_csvlines[i+j].split(',')
-                    test.avg.append(float(tok[10]))
+                    test.avg.append(float(tok[11]))
                 fps = "%.2f" % harmonic_mean(test.avg)
                 test.avg = []
                 perc_increase = float("%.2f" %(100 * ((float(fps) - float(test.fps)) / float(test.fps))))
@@ -492,24 +493,25 @@ def comparequality(test):
         for i in range(1, len(golden_csvlines), 4):
             tok = golden_csvlines[i].split(',')
             version_len = len(tok)
-            test.video, test.preset, test.rev = tok[0], tok[1], tok[version_len-1]
+            test.video, test.feature, test.preset, test.rev = tok[0], tok[1], tok[2], tok[version_len-1]
             for j in range(4):
                 tok = golden_csvlines[i+j].split(',')
-                ssim1.append(float(tok[17]))
-                bitrate1.append(float(tok[11]))
+                ssim1.append(float(tok[18]))
+                bitrate1.append(float(tok[12]))
                 abr.append(tok[2])
 
             tok = current_csvlines[i].split(',')
-            if tok[0] == test.video and tok[1] == test.preset:
+            if tok[0] == test.video and tok[2] == test.preset and tok[1] == test.feature:
                 for j in range(4):
                     tok = current_csvlines[i+j].split(',')
-                    ssim2.append(float(tok[17]))
-                    bitrate2.append(float(tok[11]))
+                    ssim2.append(float(tok[18]))
+                    bitrate2.append(float(tok[12]))
 
                 dssim, rate = Bjontegaardmetric(ssim1,bitrate1,ssim2,bitrate2)
                 
-                temp_dict['cmd'] = r'<tr><th>{0}</th><th>{1}</th><th>{2}</th><th>{3}</th><th>{4}</th><th>{5}</th><th>{6}</th><th>{7}</th><th>{8}</th><th>{9}</th><th>{10}</th></tr>'\
-                                    .format(test.video, 
+                temp_dict['cmd'] = r'<tr><th>{0}</th><th>{1}</th><th>{2}</th><th>{3}</th><th>{4}</th><th>{5}</th><th>{6}</th><th>{7}</th><th>{8}</th><th>{9}</th><th>{10}</th><th>{11}</th></tr>'\
+                                    .format(test.video,
+                                            test.feature,
                                             test.preset, 
                                             abr, 
                                             test.rev.strip('\r\n'), 
