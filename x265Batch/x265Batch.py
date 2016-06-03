@@ -16,7 +16,8 @@ path = {}
 try:
     from paths_cfg import my_sequences, my_bitstreams
     from paths_cfg import my_RAMDISK, my_compareFPS, my_csvupload
-
+    from paths_cfg import feature
+	
     # support ~/repos/x265 syntax
     my_sequences = os.path.expanduser(my_sequences)
     my_bitstreams = os.path.expanduser(my_bitstreams)
@@ -190,11 +191,31 @@ class Test:
         with open(self.cfg) as f:
             for cmd in f:
                 for i in range(self.iter):
-                    self.commands.write(' '.join([self.cli,\
-                                                '--input', os.path.join(self.inputsequences_path, cmd.strip('\r\n')), 
-                                                '--csv',  os.path.join(self.resultdir, (self.tag if self.tag != '' else 'x265Benchmark') + '.csv'), 
-                                                '-o ', os.path.join(self.outputfile_path, ''.join(cmd.strip('\r\n').split(' '))) + self.tag + '.hevc', 
-                                                '\n']))
+                    if feature in cmd:
+                        commandline = cmd.split('[')[0]
+                        commandline += cmd.split('[')[1].split(']')[0]
+                        bitrates = cmd.split('--bitrate ')[1].split(']')[0]
+                        bitrate_list = []
+                        bitrate_list = bitrates.split(',')
+                        no_of_bitrates = len(bitrate_list)
+                        csv_files = ''
+                        output_files = ''
+                        for i  in bitrate_list:
+                            csv_files += os.path.join(self.resultdir,(self.tag if self.tag != '' else 'x265Benchmark')+'.csv,')
+                            output_files += os.path.join(self.outputfile_path, self.tag + i + '.hevc,')
+                        csv_files = csv_files[:-1]							
+                        output_files =  output_files[:-1]
+                        self.commands.write(' '.join([self.cli,\
+                                                    '--input', os.path.join(self.inputsequences_path, commandline), 
+                                                    '--csv',  csv_files, 
+                                                    '-o ', output_files, 
+                                                    '\n']))
+                    else:
+                        self.commands.write(' '.join([self.cli,\
+                                                    '--input', os.path.join(self.inputsequences_path, cmd.strip('\r\n')), 
+                                                    '--csv',  os.path.join(self.resultdir, (self.tag if self.tag != '' else 'x265Benchmark') + '.csv'), 
+                                                    '-o ', os.path.join(self.outputfile_path, ''.join(cmd.strip('\r\n').split(' '))) + self.tag + '.hevc', 
+                                                    '\n']))
                 self.sequences.add(cmd.split(' ')[0])
 
         for file in glob.glob("..//AWSsetup//*.txt"):
@@ -251,6 +272,8 @@ class Test:
             self.vbvmaxrate = cmdline[index + 1]
         elif tok == '--feature':
             self.feature = cmdline[index + 1]
+        elif tok == '--preset':
+            self.preset = cmdline[index + 1]			
 
 
 def Bjontegaardmetric(ssim1,bitrate1,ssim2,bitrate2):
@@ -379,12 +402,13 @@ def regeneratecsv(test):
     final = open(os.path.join(test.resultdir, test.finalcsv), 'w')
     for csv in csvlist:
         with open(csv) as lines:
+            bitrates, maxrates, bufsizes = [], [], [] 
             for line in lines:
-                tokens = line.split(',')
+                tokens = line.split(' ,')
                 cmdline = tokens[0].split()
-                if cmdline[0] == 'Command':
+                if cmdline[0] == 'Command,':
                     if csvheader == True:
-                        final.write('Video,Feature,Preset,ABR,CQP,CRF,vbv-bufsize,vbv-maxrate')
+                        final.write(' Video, Feature, Preset, ABR, CQP, CRF, vbv-bufsize, vbv-maxrate')
                         csvheader = False
                     else:
                         continue
@@ -395,7 +419,21 @@ def regeneratecsv(test):
                         test.preset = 'medium'
                     if test.abr == '' and test.cqp == '' and test.crf == '':
                         test.crf = '28'
-                    final.write(''.join(','.join([test.video, test.feature,test.preset, test.abr, test.cqp, test.crf, test.vbvbufsize, test.vbvmaxrate])))
+                    if test.feature == feature:
+                        if not bitrates:
+                            bitrates = (test.abr).split(",")
+                            if '--vbv-bufsize' in cmdline:
+                                bufsizes = (test.vbvbufsize).split(",")
+                            if '--vbv-maxrate' in cmdline:
+                                maxrates = (test.vbvmaxrate).split(",")								
+                        if bitrates:
+                            if bufsizes and maxrates:				
+                                final.write(''.join(','.join([test.video, test.feature, test.preset, bitrates.pop(0), test.cqp, test.crf, bufsizes.pop(0), maxrates.pop(0)])))
+                            else:
+                                final.write(''.join(','.join([test.video, test.feature, test.preset, bitrates.pop(0), test.cqp, test.crf, test.vbvbufsize, test.vbvmaxrate])))								
+                    else:						
+                        final.write(''.join(','.join([test.video, test.feature, test.preset, test.abr, test.cqp, test.crf, test.vbvbufsize, test.vbvmaxrate])))						   
+
                     test.preset = test.abr = test.cqp = test.crf = test.vbvbufsize = test.vbvmaxrate = test.feature = ''
 
                 for j in range(len(tokens)):
