@@ -31,9 +31,7 @@ def arrangecli(seq, command, always, extras, ffmpegpath, build):
     f = cmd_string.split('[')[0]
     cmd = cmd_string.split('[')[1].split(']')[0]
     commandslist = []
-
-    bitrates, vbvmaxrates, vbvbufsizes = [], [], []
-
+    bitrates, vbvmaxrates, vbvbufsizes, crf, crfmax, crfmin = [], [], [], [], [], []
     if '--bitrate ' in cmd:
         list = cmd.split('--bitrate ')[1].split(' ')[0]
         for l in list.split (','):
@@ -52,23 +50,64 @@ def arrangecli(seq, command, always, extras, ffmpegpath, build):
             vbvmaxrates.append(l)
         cmd_string = cmd_string.replace('--vbv-maxrate', '')
         cmd_string = cmd_string.replace(list, '')
-    for i in range(len(bitrates)):
-        command = '--bitrate '
-        command += str(bitrates[i])
-        if vbvbufsizes and vbvbufsizes[i]:
-            command +=  ' --vbv-bufsize '
-            command +=  str(vbvbufsizes[i])
-        if vbvmaxrates and vbvmaxrates[i]:
-            command +=  ' --vbv-maxrate '
-            command +=  str(vbvmaxrates[i])
-        command += ' '
-        command += cmd_string.strip(';').strip('[').strip(']')
-        command += ' '
-        command += always
-        commandslist.append(command)
-        testhash = utils.testcasehash(seq, command)
-        utils.testhashlist.append(testhash)
-
+    if '--crf' in cmd:
+        list = cmd.split('--crf ')[1].split(' ')[0]
+        for l in list.split (','):
+            crf.append(l)
+        cmd_string = cmd_string.replace('--crf', '')
+        cmd_string = cmd_string.replace(list, '')
+    if '--crf-max' in cmd:
+        list =  cmd.split('--crf-max ')[1].split(' ')[0]
+        for l in list.split (','):
+            crfmax.append(l)
+        cmd_string = cmd_string.replace('--crf-max', '')
+        cmd_string = cmd_string.replace(list, '')
+    if '--crf-min' in cmd:
+        list =  cmd.split('--crf-min ')[1].split(' ')[0]
+        for l in list.split (','):
+            crfmin.append(l)
+        cmd_string = cmd_string.replace('--crf-min', '')
+        cmd_string = cmd_string.replace(list, '')
+    if '--bitrate' in cmd:
+        for i in range(len(bitrates)):
+            command = '--bitrate '
+            command += str(bitrates[i])
+            if vbvbufsizes and vbvbufsizes[i]:
+                command +=  ' --vbv-bufsize '
+                command +=  str(vbvbufsizes[i])
+            if vbvmaxrates and vbvmaxrates[i]:
+                command +=  ' --vbv-maxrate '
+                command +=  str(vbvmaxrates[i])
+            command += ' '
+            command += cmd_string.strip(';').strip('[').strip(']')
+            command += ' '
+            command += always
+            commandslist.append(command)
+            testhash = utils.testcasehash(seq, command)
+            utils.testhashlist.append(testhash)
+    if '--crf' in cmd:
+        for i in range(len(crf)):
+            command = '--crf '
+            command += str(crf[i])
+            if crfmax and crfmax[i]:
+                command +=  ' --crf-max '
+                command +=  str(crfmax[i])
+            if crfmin and crfmin[i]:
+                command +=  ' --crf-min '
+                command +=  str(crfmin[i])
+            if vbvbufsizes and vbvbufsizes[i]:
+                command +=  ' --vbv-bufsize '
+                command +=  str(vbvbufsizes[i])
+            if vbvmaxrates and vbvmaxrates[i]:
+                command +=  ' --vbv-maxrate '
+                command +=  str(vbvmaxrates[i])
+            command += ' '
+            command += cmd_string.strip(';').strip('[').strip(']')
+            command += ' '
+            command += always
+            commandslist.append(command)
+            testhash = utils.testcasehash(seq, command)
+            utils.testhashlist.append(testhash)
     final_command = f
     final_command += ' '
     final_command += cmd.replace(';', '').strip('[').strip(']')
