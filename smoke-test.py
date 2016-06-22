@@ -12,22 +12,27 @@ import utils
 
 # setup will call sys.exit() if it determines the tests are unable to continue
 utils.setup(sys.argv, 'smoke-tests.txt')
-
 from conf import my_builds, my_sequences
 from utils import logger
+
+try:
+    from conf import encoder_binary_name
+except ImportError, e:
+    print 'failed to import encoder_binary_name'
+    encoder_binary_name = 'x265'
 
 utils.buildall()
 if logger.errors:
     # send results to mail
     logger.email_results()
     sys.exit(1)
-
 # run testbenches
 utils.testharness()
-
-always = '-f50 --hash=1 --no-info'
+if encoder_binary_name == 'x265':
+    always = '-f50 --hash=1 --no-info'
+else:
+    always = '-f100 --hash=1 --no-info'
 extras = ['--psnr', '--ssim']
-
 try:
 
     tests = utils.parsetestfile()
