@@ -22,6 +22,12 @@ try:
 except ImportError, e:
     print 'failed to import my_upload'
 
+try:
+    from conf import encoder_binary_name
+except ImportError, e:
+    print 'failed to import encoder_binary_name'	
+    encoder_binary_name = 'x265'
+	
 # do not use debug builds for long-running tests
 debugs = [key for key in my_builds if 'debug' in my_builds[key][3]]
 for k in debugs:
@@ -46,7 +52,10 @@ try:
         for seq, command in tests:
             if 'ffplay' in command and not hasffplay:
                 continue
-            extras = ['--psnr', '--ssim', utils.getspotcheck(command)]
+            if encoder_binary_name == 'x265':
+                extras = ['--psnr', '--ssim', utils.getspotcheck(command)]
+            else:
+                extras = ['--psnr', '--ssim']
             utils.runtest(build, seq, command, always, extras)
 
     # send results to mail
