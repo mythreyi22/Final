@@ -19,7 +19,7 @@
 # already set in presets so golden outputs will store for that preset.
 
 
-
+626fcbac7ffb rd: determine CU complexity to skip analysis of higher depths
 ad961f5bb4ff SAO: convert sao rdo cost calculation from float to int
 e5b5bdc3c154 disable recursion depth in veryslow & placebo presets
 d2de32f15de0 level: correct reference buffer initialisations
