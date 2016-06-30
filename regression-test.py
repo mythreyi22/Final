@@ -8,19 +8,32 @@
 import os
 import sys
 import shutil
-
+from subprocess import Popen, PIPE
 import utils
 
 # setup will call sys.exit() if it determines the tests are unable to continue
 utils.setup(sys.argv, 'regression-tests.txt')
 
-from conf import my_builds, my_machine_name, my_sequences
+from conf import my_builds, my_machine_name, my_sequences, my_x265_source
 from utils import logger, find_executable
 
 try:
     from conf import my_upload
 except ImportError, e:
     print 'failed to import my_upload'
+    my_upload = False
+
+try:
+    from conf import csv_feature
+except ImportError, e:
+    print 'failed to import csv_feature'
+    csv_feature = False
+
+try:
+    from conf import my_patchlocation, my_patchrevision, my_ftp_location
+except ImportError, e:
+    print 'failed to import  my_patchlocation, my_patchrevision, my_ftp_location'
+
 
 try:
     from conf import encoder_binary_name
@@ -79,6 +92,22 @@ try:
         utils.buildall(None, my_upload)
         utils.upload_binaries()
 
+        # here it applies specific patch and shares libraries
+        if csv_feature == True:
+            cmd = ''.join(["hg import ", my_patchlocation])
+            p = Popen(cmd, cwd=my_x265_source, stdout=PIPE, stderr=PIPE)
+            if p.returncode:
+                logger.write('\nfailed to apply patch\n')
+            else:
+                utils.buildall(None, my_upload)
+                extras = ['--psnr', '--ssim', '--csv-log-level=3', '--csv=test.csv', '--frames=10']
+                cmd = ''.join(["hg strip ", my_patchrevision])
+                p = Popen(cmd, cwd=my_x265_source, stdout=PIPE, stderr=PIPE)
+                for build in my_upload:
+                    logger.setbuild(build)
+                    for seq, command in tests:
+                        utils.runtest(build, seq, command, always, extras)
+            utils.upload_binaries(my_ftp_location)
 except KeyboardInterrupt:
     print 'Caught CTRL+C, exiting'
 

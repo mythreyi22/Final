@@ -669,7 +669,7 @@ else:
             return errors
 
 # ftp upload x265 binaries
-def upload_binaries():
+def upload_binaries(ftpfolder=None):
     if not (my_ftp_url and my_ftp_user and my_ftp_pass):
         return
 
@@ -696,7 +696,8 @@ def upload_binaries():
                 tagdistance = tagdistance[:-2]
             else:
                 folder = 'Stable'
-
+        if ftpfolder:
+            my_ftp_folder = ftpfolder
         ftp_path = '/'.join([my_ftp_folder, osname, folder, build.profile])
         # open x265 binary & library files and give appropriate names for them to upload
         # ex: Darwin - x265-1.5+365-887ac5e457e0, libx265-1.5+365-887ac5e457e0.dylib

@@ -18,6 +18,12 @@ my_smtp_pwd     = ''
 my_smtp_host    = 'smtp.gmail.com'
 my_smtp_port    = 587
 
+# It is for applying patches and sharing library
+csv_feature      = False
+my_patchlocation = ''
+my_patchrevision = ''
+my_ftp_location  = ''
+
 # --output-depth test support:
 # declare pairs of compatible (main, main10, main12) builds which can provide
 # shared libraries for each other using key pairs from my_builds. For
