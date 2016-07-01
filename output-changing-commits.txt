@@ -19,6 +19,8 @@
 # already set in presets so golden outputs will store for that preset.
 
 
+1b154ad27f61 Merge from default to prep for 2.0
+a0947989bd2b multi-level recursion skip introduction
 626fcbac7ffb rd: determine CU complexity to skip analysis of higher depths
 ad961f5bb4ff SAO: convert sao rdo cost calculation from float to int
 e5b5bdc3c154 disable recursion depth in veryslow & placebo presets
