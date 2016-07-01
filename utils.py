@@ -1911,25 +1911,18 @@ def _test(build, tmpfolder, seq, command,  always, extras):
     for hash in testhashlist:
         if '[' in command:
             bitstream = hash + '.hevc'
-        lastfname, errors = checkoutputs(build, seq, command, sum, tmpfolder, logs, hash)
-        fname = os.path.join(my_goldens, hash, lastfname, 'summary.txt')
-
+      
         if encoder_errors:
             if (encoder_error_var):
                 logger.testfail('encoder error reported', encoder_errors, logs)
-                if os.path.exists(fname):
-                    lastsum = open(fname, 'r').read()
-                    table('encoder error', 'encodererror' , lastsum, logger.build.strip('\n'))
-                else:
-                    table('encoder error', empty , empty, logger.build.strip('\n'))
+                table('encoder error', empty , empty, logger.build.strip('\n'))
             else:
                 logger.testfail('encoder warning reported', encoder_errors, logs)
-                if os.path.exists(fname):
-                    lastsum = open(fname, 'r').read()
-                    table('encoder warning', sum , lastsum, logger.build.strip('\n'))
-                else:
-                    table('encoder warning', empty , empty, logger.build.strip('\n'))                            
+                table('encoder warning', empty , empty, logger.build.strip('\n'))
             return
+
+        lastfname, errors = checkoutputs(build, seq, command, sum, tmpfolder, logs, hash)
+        fname = os.path.join(my_goldens, hash, lastfname, 'summary.txt')
 
         # check against last known good outputs - lastfname is the folder
         # containing the last known good outputs (or for the new ones to be
