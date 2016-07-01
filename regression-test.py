@@ -98,6 +98,9 @@ try:
             p = Popen(cmd, cwd=my_x265_source, stdout=PIPE, stderr=PIPE)
             if p.returncode:
                 logger.write('\nfailed to apply patch\n')
+                p = Popen("hg clean", cwd=my_x265_source, stdout=PIPE, stderr=PIPE)
+                cmd = ''.join(["hg strip ", my_patchrevision])
+                p = Popen(cmd, cwd=my_x265_source, stdout=PIPE, stderr=PIPE)
             else:
                 utils.buildall(None, my_upload)
                 extras = ['--psnr', '--ssim', '--csv-log-level=3', '--csv=test.csv', '--frames=10']
