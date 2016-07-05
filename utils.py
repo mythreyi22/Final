@@ -1457,7 +1457,7 @@ def encodeharness(key, tmpfolder, sequence, command, always, inextras):
             os.environ['PATH'] += os.pathsep + build.opts['PATH']
         if os.name == 'nt':
             p = Popen(cmds, cwd=tmpfolder, stdout=PIPE, stderr=PIPE, shell = 'TRUE')
-        elif 'ffmpeg' in command:
+        elif 'ffmpeg' in ''.join(command):
             cmds = ' '.join(cmds)
             p = Popen(cmds, cwd=tmpfolder, stdout=PIPE, stderr=PIPE, preexec_fn=prefn, shell = 'TRUE')
         else:
