@@ -98,6 +98,7 @@ try:
             p = Popen(cmd, cwd=my_x265_source, stdout=PIPE, stderr=PIPE)
             if p.returncode:
                 logger.write('\nfailed to apply patch\n')
+                p = Popen("hg revert --all", cwd=my_x265_source, stdout=PIPE, stderr=PIPE)
                 p = Popen("hg clean", cwd=my_x265_source, stdout=PIPE, stderr=PIPE)
                 cmd = ''.join(["hg strip ", my_patchrevision])
                 p = Popen(cmd, cwd=my_x265_source, stdout=PIPE, stderr=PIPE)
@@ -113,4 +114,8 @@ try:
             utils.upload_binaries(my_ftp_location)
 except KeyboardInterrupt:
     print 'Caught CTRL+C, exiting'
-
+finally:
+    p = Popen("hg revert --all", cwd=my_x265_source, stdout=PIPE, stderr=PIPE)
+    p = Popen("hg clean", cwd=my_x265_source, stdout=PIPE, stderr=PIPE)
+    cmd = ''.join(["hg strip ", my_patchrevision])
+    p = Popen(cmd, cwd=my_x265_source, stdout=PIPE, stderr=PIPE)

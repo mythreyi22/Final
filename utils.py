@@ -111,7 +111,7 @@ try:
     from conf import my_ftp_url, my_ftp_user, my_ftp_pass, my_ftp_folder
     from conf import my_binaries_upload
 except ImportError, e:
-    my_ftp_url, my_ftp_user, my_ftp_pass = None, None, None
+    my_ftp_url, my_ftp_user, my_ftp_pass, my_ftp_folder = None, None, None, None
     my_binaries_upload = []
 
 try:
@@ -670,7 +670,8 @@ else:
 
 # ftp upload x265 binaries
 def upload_binaries(ftpfolder=None):
-    if not (my_ftp_url and my_ftp_user and my_ftp_pass):
+    global my_ftp_folder
+    if not (my_ftp_url and my_ftp_user and my_ftp_pass and my_ftp_folder):
         return
 
     import ftplib
