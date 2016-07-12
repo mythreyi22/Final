@@ -371,7 +371,7 @@ def email_results(test, f1, f2):
         msg['To'] = ", ".join(my_email_to)
     
     msg['From'] = my_email_from
-    data = [platform.system(), '-', test.tag, 'Quality Regression' if my_comparequalitymetrics else 'Performance Regression']
+    data = [platform.system(), '-', test.tag, 'Quality Regression' if my_comparequalitymetrics else 'Performance Regression', '-', test.branch]
     msg['Subject'] = ' '.join(data)
 
     session = smtplib.SMTP(my_smtp_host, my_smtp_port)
