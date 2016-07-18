@@ -115,7 +115,9 @@ try:
 except KeyboardInterrupt:
     print 'Caught CTRL+C, exiting'
 finally:
-    p = Popen("hg revert --all", cwd=my_x265_source, stdout=PIPE, stderr=PIPE)
-    p = Popen("hg clean", cwd=my_x265_source, stdout=PIPE, stderr=PIPE)
-    cmd = ''.join(["hg strip ", my_patchrevision])
-    p = Popen(cmd, cwd=my_x265_source, stdout=PIPE, stderr=PIPE)
+    print 'clean the repo'
+    if csv_feature == True:
+        p = Popen("hg revert --all", cwd=my_x265_source, stdout=PIPE, stderr=PIPE)
+        p = Popen("hg clean", cwd=my_x265_source, stdout=PIPE, stderr=PIPE)
+        cmd = ''.join(["hg strip ", my_patchrevision])
+        p = Popen(cmd, cwd=my_x265_source, stdout=PIPE, stderr=PIPE)
