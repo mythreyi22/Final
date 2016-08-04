@@ -1426,6 +1426,13 @@ def encodeharness(key, tmpfolder, sequence, command, always, inextras):
         cmds.append(seqfullpath)
         cmds.extend(shlex.split(command))
         cmds.extend(seq_details)
+    elif '(' in command:
+        command1 = command.split('(')[0]
+        command1 += command.split('(')[1].split(')')[0]
+        cmds.extend([seqfullpath, bitstream])
+        cmds.extend(shlex.split(command1))
+        cmds.extend(extras)
+        cmds.extend(seq_details)		
     elif '--command-file' in command:
         cmds.append(command)
     elif 'ffmpeg' in command:
@@ -2019,7 +2026,10 @@ def runtest(key, seq, commands, always, extras):
         return False
     logger.testcount += 1
     cmds = []
-    if not '[' in commands:
+    if ('(' in commands or '[' in commands):
+        testhash = testcasehash(seq, commands)
+        cmds.append((commands, testhash))	
+    else:       	
         for command in commands.split(','):
             command = command.strip()
             if always:
@@ -2027,10 +2037,7 @@ def runtest(key, seq, commands, always, extras):
             testhash = testcasehash(seq, command)
             if skip(seq, command, testhash):
                 return
-            cmds.append((command, testhash))
-    else:
-        testhash = testcasehash(seq, commands)
-        cmds.append((commands, testhash))
+            cmds.append((command, testhash))			
     tmpfolder = tempfile.mkdtemp(prefix='x265-temp')
     try:
 
@@ -2042,7 +2049,7 @@ def runtest(key, seq, commands, always, extras):
 
             build = buildObj[key]
             if '--output-depth' in command and ('add-depths' in build.opts or not my_libpairs):
-                continue
+                continue				
             _test(key, tmpfolder, seq, command, always, extras)
         logger.write('')
     finally:
