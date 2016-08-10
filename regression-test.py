@@ -30,10 +30,10 @@ except ImportError, e:
     csv_feature = False
 
 try:
-    from conf import my_patchlocation, my_patchrevision, my_ftp_location
+    from conf import my_patchlocation, my_ftp_location
 except ImportError, e:
-    print 'failed to import  my_patchlocation, my_patchrevision, my_ftp_location'
-
+    print 'failed to import  my_patchlocation, my_ftp_location'
+my_patchrevision = ''
 
 try:
     from conf import encoder_binary_name
@@ -96,6 +96,7 @@ try:
         if csv_feature == True:
             cmd = ''.join(["hg import ", my_patchlocation])
             p = Popen(cmd, cwd=my_x265_source, stdout=PIPE, stderr=PIPE)
+            my_patchrevision = utils.hgversion(my_x265_source)
             if p.returncode:
                 logger.write('\nfailed to apply patch\n')
                 p = Popen("hg revert --all", cwd=my_x265_source, stdout=PIPE, stderr=PIPE)
