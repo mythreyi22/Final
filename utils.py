@@ -1522,21 +1522,36 @@ def parsex265(tmpfolder, stdout, stderr):
     def scansummary(output):
         ssim, psnr, bitrate = 'N/A', 'N/A', 'N/A'
         for line in output.splitlines():
-            if not line.startswith('encoded '):
-                continue
-            words = line.split()
-            if 'fps),' in words:
-                index = words.index('fps),')
-                bitrate = words[index + 1]
-            if 'SSIM' in words:
-                ssim = words[-2]
-                if ssim.startswith('('): ssim = ssim[1:]
-            if 'PSNR:' in words:
-                index = words.index('PSNR:')
-                psnr = words[index + 1]
-                if psnr.endswith(','): psnr = psnr[:-1]
-            if bitrate:
-                return bitrate, ssim, psnr
+            if line.startswith('Cumulatively encoded '):
+                words = line.split()
+                if 'fps),' in words:
+                    index = words.index('fps),')
+                    bitrate = words[index + 1]
+                if 'SSIM' in words:
+                    ssim = words[-2]
+                    if ssim.startswith('('): ssim = ssim[1:]
+                if 'PSNR:' in words:
+                    index = words.index('PSNR:')
+                    psnr = words[index + 1]
+                    if psnr.endswith(','): psnr = psnr[:-1]
+                if bitrate:
+                    return bitrate, ssim, psnr		
+            elif line.startswith('encoded '):
+                words = line.split()
+                if 'fps),' in words:
+                    index = words.index('fps),')
+                    bitrate = words[index + 1]
+                if 'SSIM' in words:
+                    ssim = words[-2]
+                    if ssim.startswith('('): ssim = ssim[1:]
+                if 'PSNR:' in words:
+                    index = words.index('PSNR:')
+                    psnr = words[index + 1]
+                    if psnr.endswith(','): psnr = psnr[:-1]
+                if bitrate:
+                    return bitrate, ssim, psnr
+            else:
+                continue			
         return None
 
     # parse summary from last line of stdout
