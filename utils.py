@@ -901,8 +901,8 @@ def initspotchecks():
         '--recon=recon.y4m',
         '--csv=test.csv',
         '--no-progress',
-        '--log=debug',
-        '--log=full',
+        '--log-level=debug',
+        '--log-level=full',
     ]
     if isancestor('63fe043f739c'):
         # these have no effect without --csv=[fname] which is
@@ -922,7 +922,7 @@ def initspotchecks():
 def getspotcheck(cmd):
     '''pick a random spot check, but don't allow some combinations'''
     forbiddens = {
-        '--log=none': ['vbv'],
+        '--log-level=none': ['vbv'],
         '--no-asm'  : ['veryslow', 'placebo'],
     }
     global spot_checks
@@ -1662,7 +1662,7 @@ def checkoutputs(key, seq, command, sum, tmpdir, logs, testhash):
             open(nochange, 'w').write(commit)
             print 'not changed by %s,' % oc,
 
-        # if the test run which created the golden outputs used a --log=none
+        # if the test run which created the golden outputs used a --log-level=none
         # spot-check or something similar, the summary will have some unknowns
         # in it. Replace it with the current summary if it is complete
 
@@ -1681,7 +1681,7 @@ def checkoutputs(key, seq, command, sum, tmpdir, logs, testhash):
             return lastfname, None
 
         def outputdiff():
-            # golden outputs might have used --log=none, recover from this
+            # golden outputs might have used --log-level=none, recover from this
             # VBV encodes are non-deterministic, check that golden output
             # bitrate is within tolerance% of new bitrate. Example summary:
             # 'bitrate: 121.95, SSIM: 20.747, PSNR: 53.359'
