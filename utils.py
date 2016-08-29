@@ -43,6 +43,12 @@ try:
     from conf import encoder_binary_name
 except ImportError, e:
     encoder_binary_name = 'x265'
+	
+try:
+    from conf import feature, feature_value
+except ImportError, e:
+    feature = False, feature_value = ''
+	
 try:
     from conf import encoder_library_name
 except ImportError, e:
@@ -385,7 +391,10 @@ class Logger():
         testname = self.testname.split('-')
         status = self.errors and 'failures' or 'successful'
         branch = hggetbranch(testrev)
-        data = [encoder_binary_name, ': '] + [platform.system(), '-'] + testname + [status, '-', branch] + ['-', str(multiprocessing.cpu_count())] + ['core']
+        if feature:
+            data = [feature_value, ': '] + [platform.system(), '-'] + testname + [status, '-', branch] + ['-', str(multiprocessing.cpu_count())] + ['core']		
+        else:
+            data = [encoder_binary_name, ': '] + [platform.system(), '-'] + testname + [status, '-', branch] + ['-', str(multiprocessing.cpu_count())] + ['core']
         msg['Subject'] = ' '.join(data)
         if self.errors:
             msg.attach(failure_message)
