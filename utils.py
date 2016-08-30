@@ -47,7 +47,7 @@ except ImportError, e:
 try:
     from conf import feature, feature_value
 except ImportError, e:
-    feature = False, feature_value = ''
+    feature, feature_value = False, ''
 	
 try:
     from conf import encoder_library_name
