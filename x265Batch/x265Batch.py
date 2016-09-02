@@ -405,7 +405,7 @@ def regeneratecsv(test):
         with open(csv) as lines:
             bitrates, maxrates, bufsizes = [], [], [] 
             for line in lines:
-                tokens = line.split(' ,')
+                tokens = line.split(', ')
                 cmdline = tokens[0].split()
                 if cmdline[0] == 'Command,':
                     if csvheader == True:
@@ -438,8 +438,9 @@ def regeneratecsv(test):
                     test.preset = test.abr = test.cqp = test.crf = test.vbvbufsize = test.vbvmaxrate = test.feature = ''
 
                 for j in range(len(tokens)):
+                    a = tokens[j].replace(",",".")
                     final.write(',')
-                    final.write(tokens[j])
+                    final.write(a)
 
     final.close()
 
@@ -464,7 +465,7 @@ def compare(test):
             version_len = len(tok)
             test.video, test.feature, test.preset, test.abr, test.cqp, test.rev, test.crf, test.vbvbufsize, test.vbvmaxrate = tok[0], tok[1], tok[2], tok[3], tok[4], tok[version_len-1], tok[5], tok[6], tok[7]
             for j in range(test.iter):
-                tok = golden_csvlines[i+j].split(',')
+                tok = golden_csvlines[i+j].split(',')		
                 test.avg.append(float(tok[11]))
             test.fps = "%.2f" % harmonic_mean(test.avg)
             test.avg = []
