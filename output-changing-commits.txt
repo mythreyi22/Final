@@ -18,7 +18,8 @@
 # 2) not required [sao], [weightp], [cutree] etc.., because these are
 # already set in presets so golden outputs will store for that preset.
 
-
+d20b78d6d138 Merge with stable - pull-in 981e3bfef16a 
+981e3bfef16a Remove clipping of min-keyint
 1b154ad27f61 Merge from default to prep for 2.0
 a0947989bd2b multi-level recursion skip introduction
 626fcbac7ffb rd: determine CU complexity to skip analysis of higher depths
