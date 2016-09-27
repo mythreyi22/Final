@@ -135,9 +135,12 @@ class Test:
         self.table = ['<htm><body><table border="1">']
 
     def ramdisk(self):
+        osname = platform.system()
         if self.my_RAMDISK == True:
             self.inputsequences_path = self.my_RAMDiskpath
             self.outputfile_path = self.my_RAMDiskpath
+            if osname == 'Linux':
+                os.system("sudo rm -rf " + self.my_RAMDiskpath)
         else:
             self.inputsequences_path = self.my_sequences
             self.outputfile_path = self.my_bitstreams
