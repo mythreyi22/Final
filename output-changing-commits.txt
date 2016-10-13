@@ -18,6 +18,7 @@
 # 2) not required [sao], [weightp], [cutree] etc.., because these are
 # already set in presets so golden outputs will store for that preset.
 
+0e9fb7dfba5a Bug fix for QP change in PPS from different number of frame threads
 a3d4e3b13c6c Set PPS delta QP with a best value to save bits
 d20b78d6d138 Merge with stable - pull-in 981e3bfef16a 
 981e3bfef16a Remove clipping of min-keyint
