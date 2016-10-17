@@ -105,7 +105,7 @@ try:
             if err:
                 logger.writeerr('\nfailed to import patch\n' + err)
                 p = Popen("hg up -c", cwd=my_x265_source, stdout=PIPE, stderr=PIPE)
-            else
+            else:
                 utils.buildall(None, my_upload)
                 extras = ['--psnr', '--ssim', '--csv-log-level=3', '--csv=test.csv']
                 for build in my_upload:
@@ -128,7 +128,6 @@ except KeyboardInterrupt:
     print 'Caught CTRL+C, exiting'
 
 finally:
-    print 'clean the repo'
     if csv_feature == True:
         out, err = Popen(['hg', 'strip', my_patchrevision], cwd=my_x265_source, stdout=PIPE, stderr=PIPE).communicate()
         if err:
