@@ -1032,7 +1032,7 @@ def hgrevisioninfo(rev):
 
     if addstatus:
         if hg:
-            out_changes, err = Popen(['hg', 'status'], stdout=PIPE, stderr=PIPE,
+            out_changes = Popen(['hg', 'status'], stdout=PIPE, stderr=PIPE,
                                 cwd=my_x265_source).communicate()[0]
         else:
             out_changes, err = Popen(['git' ,'show', '-s', rev], stdout=PIPE, stderr=PIPE,
