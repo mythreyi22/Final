@@ -39,6 +39,7 @@ logger = None
 buildObj = {}
 spot_checks = []
 
+
 try:
     from conf import encoder_binary_name
 except ImportError, e:
@@ -56,7 +57,13 @@ except ImportError, e:
 if not os.path.exists(encoder_binary_name):
     os.mkdir(encoder_binary_name)
 
-bitstream = 'bitstream.hevc'
+try:
+    from conf import version_control
+except ImportError, e:
+    version_control = 'hg'
+hg = True if version_control == 'hg' else False
+
+bitstream = 'bitstream.hevc' if hg else 'bitstream.h264'
 testhashlist = []
 
 try:
@@ -126,6 +133,11 @@ except ImportError, e:
     my_local_changers = False
 
 try:
+    from conf import my_shellpath
+except ImportError, e:
+    my_shellpath = ''
+
+try:
     from conf import my_libpairs
 except ImportError, e:
     my_libpairs = []
@@ -133,7 +145,10 @@ except ImportError, e:
 osname = platform.system()
 if osname == 'Windows':
     exe_ext         = '.exe'
-    dll_ext         = '.dll'
+    if my_shellpath:
+        dll_ext         = '.a'
+    else:
+        dll_ext         = '.dll'
     static_lib      = 'x265-static.lib'
     lib_main        = 'x265-static-main.lib'
     lib_main10      = 'x265-static-main10.lib'
@@ -198,12 +213,12 @@ class Build():
         elif prof is 'use':
             cmakeopts.append('-DFPROFILE_GENERATE=OFF')
             cmakeopts.append('-DFPROFILE_USE=ON')
-        else:
+        elif hg:
             cmakeopts.append('-DFPROFILE_GENERATE=OFF')
             cmakeopts.append('-DFPROFILE_USE=OFF')
 
         # force the default of release build if not already specified
-        if '-DCMAKE_BUILD_TYPE=' not in ' '.join(cmakeopts):
+        if '-DCMAKE_BUILD_TYPE=' not in ' '.join(cmakeopts) and hg:
             cmakeopts.append('-DCMAKE_BUILD_TYPE=Release')
 
     def cmake_build(self, key, cmakeopts, buildfolder):
@@ -243,7 +258,7 @@ class Logger():
         self.logfp = open(os.path.join(encoder_binary_name, self.logfname), 'wb')
         self.header  = '\nsystem:      %s\n' % my_machine_name
         self.header += 'hardware:    %s\n' % my_machine_desc
-        self.header += 'testharness: %s\n' % hgversion(testharnesspath)
+        self.header += 'testharness: %s\n' % hgversion(testharnesspath, True)
         self.header += '%s\n' % hgrevisioninfo(hgversion(my_x265_source))
         htmltable = "style='font-size:15px; font-family: Times New Roman'"
         self.tableheader = r'<tr><th rowspan = "2">{0}</th><th rowspan = "2">{1}</th><th rowspan = "2">{2}</th><th rowspan = "2">{3}</th><th colspan = "3">{4}</th><th rowspan = "2">{5}</th><th colspan = "3">{6}</th></tr>'.format('Failure Type','Failure Commands','Build','Previous Good Revision','Previous Values','Current Revision','Current Values',)
@@ -417,13 +432,13 @@ class Logger():
             session.quit()
 
 def setup(argv, preferredlist):
-    if not find_executable('hg'):
-        raise Exception('Unable to find Mercurial executable (hg)')
+    if not find_executable(version_control):
+        raise Exception('Unable to find Mercurial executable %s' %version_control)
     if not find_executable('cmake'):
         raise Exception('Unable to find cmake executable')
     if not find_executable(my_hm_decoder):
         raise Exception('Unable to find HM decoder')
-    if not os.path.exists(os.path.join(my_x265_source, 'CMakeLists.txt')):
+    if not os.path.exists(os.path.join(my_x265_source, 'CMakeLists.txt')) and not os.path.exists(os.path.join(my_x265_source, 'configure')):
         raise Exception('my_x265_source does not point to x265 source/ folder')
 
     global run_make, run_bench, rebuild, save_results, test_file, skip_string
@@ -972,9 +987,13 @@ def pastebin(content):
         return 'pastebin failed <%s> paste contents:\n%s' % (url, content)
 
 
-def hgversion(reporoot):
-    out, err = Popen(['hg', 'id', '-i'], stdout=PIPE, stderr=PIPE,
-                     cwd=reporoot).communicate()
+def hgversion(reporoot, ishg=False):
+    if hg or ishg:
+        out, err = Popen(['hg', 'id', '-i'], stdout=PIPE, stderr=PIPE,
+                         cwd=reporoot).communicate()
+    else:
+        out, err = Popen(['git', 'rev-parse', 'HEAD'], stdout=PIPE, stderr=PIPE,
+                        cwd=reporoot).communicate()
     if err:
         raise Exception('Unable to determine source version: ' + err)
     # note, if the ID ends with '+' it means the user's repository has
@@ -984,42 +1003,72 @@ def hgversion(reporoot):
 
 
 def hgsummary():
-    out, err = Popen(['hg', 'summary'], stdout=PIPE, stderr=PIPE,
-                     cwd=my_x265_source).communicate()
+    if hg:
+        out, err = Popen(['hg', 'summary'], stdout=PIPE, stderr=PIPE,
+                        cwd=my_x265_source).communicate()
+    else:
+        out, err = Popen(['git', 'show', '--summary'], stdout=PIPE, stderr=PIPE,
+                    cwd=my_x265_source).communicate()
     if err:
-        raise Exception('Unable to determine repo summary: ' + err)
+            raise Exception('Unable to determine repo summary: ' + err)
     return out
 
 
 def hgrevisioninfo(rev):
     addstatus = False
-    if rev.endswith('+'):
-        rev = rev[:-1]
-        addstatus = True
-    out, err = Popen(['hg', 'log', '-r', rev], stdout=PIPE, stderr=PIPE,
-                     cwd=my_x265_source).communicate()
-    if err:
-        raise Exception('Unable to determine revision info: ' + err)
-    if addstatus:
-        out += 'Uncommitted changes in the working directory:\n'
-        out += Popen(['hg', 'status'], stdout=PIPE,
+    if hg:
+        if rev.endswith('+'):
+            rev = rev[:-1]
+            addstatus = True
+        out, err = Popen(['hg', 'log', '-r', rev], stdout=PIPE, stderr=PIPE,
+                        cwd=my_x265_source).communicate()
+        if err:
+            raise Exception('Unable to determine revision info: ' + err)
+        out_changes, err = Popen(['hg', 'status'], stdout=PIPE, stderr=PIPE,
                      cwd=my_x265_source).communicate()[0]
+    else:
+        out, err = Popen(['git', 'diff-index', '--name-status', '--exit-code', 'HEAD'], stdout=PIPE, stderr=PIPE,
+                        cwd=my_x265_source).communicate()
+        if err:
+            raise Exception('Unable to determine revision info: ' + err)
+        if out:
+            addstatus = True
+        out_changes, err = Popen(['git' ,'show', '-s', rev], stdout=PIPE, stderr=PIPE,
+                        cwd=my_x265_source).communicate()
+    if addstatus:
+        out += 'Uncommitted changes in the working directory:\n' + out_changes
     return out
 
 
 def hggetphase(rev):
-    if rev.endswith('+'): rev = rev[:-1]
-    out, err = Popen(['hg', 'log', '-r', rev, '--template', '{phase}'],
+    if hg:
+        if rev.endswith('+'): rev = rev[:-1]
+        out, err = Popen(['hg', 'log', '-r', rev, '--template', '{phase}'],
                      stdout=PIPE, stderr=PIPE, cwd=my_x265_source).communicate()
-    if err:
-        raise Exception('Unable to determine revision phase: ' + err)
+        if err:
+            raise Exception('Unable to determine revision phase: ' + err)
+    else:
+        out_localchanges, err = Popen(['git', 'log', 'origin..HEAD'], stdout=PIPE, stderr=PIPE,
+                        cwd=my_x265_source).communicate()
+        out_uncommited, err = Popen(['git', 'diff-index', '--name-status', '--exit-code', 'HEAD'], stdout=PIPE, stderr=PIPE,
+                        cwd=my_x265_source).communicate()
+        if err:
+            raise Exception('Unable to determine revision phase: ' + err)
+
+        if out_localchanges or out_uncommited:
+            return 'draft'
+        return 'public'
     return out
 
 
 def hgrevisiondate(rev):
-    if rev.endswith('+'): rev = rev[:-1]
-    out, err = Popen(['hg', 'log', '-r', rev, '--template', '{isodate(date)}'],
-                     stdout=PIPE, stderr=PIPE, cwd=my_x265_source).communicate()
+    if hg:
+        if rev.endswith('+'): rev = rev[:-1]
+        out, err = Popen(['hg', 'log', '-r', rev, '--template', '{isodate(date)}'],
+                        stdout=PIPE, stderr=PIPE, cwd=my_x265_source).communicate()
+    else:
+        out, err = Popen(['git', 'show', '-s', '--format=%ci', rev],
+                        stdout=PIPE, stderr=PIPE, cwd=my_x265_source).communicate()
     if err:
         raise Exception('Unable to determine revision phase: ' + err)
     # isodate format is '2015-03-09 12:13 -0500', we want '15-03-09'
@@ -1027,9 +1076,14 @@ def hgrevisiondate(rev):
 
 
 def hggetbranch(rev):
-    if rev.endswith('+'): rev = rev[:-1]
-    out, err = Popen(['hg', 'log', '-r', rev, '--template', '{branch}'],
-                     stdout=PIPE, stderr=PIPE, cwd=my_x265_source).communicate()
+    if hg:
+        if rev.endswith('+'): rev = rev[:-1]
+        out, err = Popen(['hg', 'log', '-r', rev, '--template', '{branch}'],
+                        stdout=PIPE, stderr=PIPE, cwd=my_x265_source).communicate()
+    else:
+        out, err = Popen(['git', 'branch', '--contains', rev],
+                        stdout=PIPE, stderr=PIPE, cwd=my_x265_source).communicate()
+        out = out.replace('* ','')
     if err:
         raise Exception('Unable to determine revision phase: ' + err)
     return out
@@ -1043,28 +1097,46 @@ def hggettagdistance(rev):
     return out
 
 def isancestor(ancestor):
-    # hg log -r "descendants(1bed2e325efc) and 5ebd5d7c0a76"
-    cmds = ['hg', 'log', '-r', 'ancestors(%s) and %s' % (testrev, ancestor),
-            '--template', '"{node}"']
-    out, err = Popen(cmds, stdout=PIPE, stderr=PIPE, cwd=my_x265_source).communicate()
-    if err and 'unknown revision' not in err:
-        raise Exception('Unable to determine ancestry: ' + err)
+    if hg:
+        # hg log -r "descendants(1bed2e325efc) and 5ebd5d7c0a76"
+        cmds = ['hg', 'log', '-r', 'ancestors(%s) and %s' % (testrev, ancestor),
+               '--template', '"{node}"']
+        out, err = Popen(cmds, stdout=PIPE, stderr=PIPE, cwd=my_x265_source).communicate()
+        if err and 'unknown revision' not in err:
+            raise Exception('Unable to determine ancestry: ' + err)
+    else:
+        out, err = Popen(['git', 'merge-base', '--is-ancestor',  ancestor, testrev],
+                        stdout=PIPE, stderr=PIPE, cwd=my_x265_source).communicate()
+        if err and 'Not a valid object name' not in err:
+            raise Exception('Unable to determine ancestry: ' + err)
+        if not out: out = 1
     return bool(out)
 
 def getcommits():
     fname = 'output-changing-commits.txt'
+    hashlen = 12 if hg else 40
+
     def testrev(lines):
         for line in lines[::-1]:
-            if len(line) < 12 or line[0] == '#': continue
-            rev = line[:12]
-            cmds = ['hg', 'log', '-r', '%s' % (rev)]
-            out, err = Popen(cmds, stdout=PIPE, stderr=PIPE, cwd=my_x265_source).communicate()
-            if not 'abort: unknown revision' in err:
+            if len(line) < hashlen or line[0] == '#': continue
+            rev = line[:hashlen]
+            if hg:
+                cmds = ['hg', 'log', '-r', '%s' % (rev)]
+                out, err = Popen(cmds, stdout=PIPE, stderr=PIPE, cwd=my_x265_source).communicate()
+            else:
+                out, err = Popen(['git' ,'show', '-s', rev], stdout=PIPE, stderr=PIPE,
+                                cwd=my_x265_source).communicate()
+            if not ': unknown revision' in err:
                 return lines
             else:
                 return open(os.path.abspath(os.path.join(my_x265_source, 'test', fname))).readlines()
-    out = Popen(['hg', 'status', fname], stdout=PIPE).communicate()[0]
-    if 'M' in out:
+
+    if hg:
+        out = Popen(['hg', 'status', fname], stdout=PIPE).communicate()[0]
+    else:
+        out = Popen(['git', 'diff', fname], stdout=PIPE).communicate()[0]
+
+    if 'M' in out or 'diff' in out:
         if my_local_changers:
             print 'local %s is modified, disabling download' % fname
             l = testrev(open(fname).readlines())
@@ -1101,12 +1173,13 @@ def findchangeancestors():
 
     global changefilter
     ancestors = []
+    hashlen = 12 if hg else 40
     for line in lines:
-        if len(line) < 12 or line[0] == '#': continue
-        rev = line[:12]
+        if len(line) < hashlen or line[0] == '#': continue
+        rev = line[:hashlen]
         if isancestor(rev):
             ancestors.append(rev)
-            comment = line[13:]
+            comment = line[hashlen+1:]
             if comment.startswith('[') and ']' in comment:
                 contents = comment[1:].split(']', 1)[0]
                 changefilter[rev] = contents.split(',')
@@ -1144,16 +1217,20 @@ def cmake(generator, buildfolder, cmakeopts, **opts):
         os.environ['PATH'] += os.pathsep + opts['PATH']
         env['PATH'] += os.pathsep + opts['PATH']
 
-    proc = Popen(cmds, stdout=PIPE, stderr=PIPE, cwd=buildfolder, env=env)
+    if not hg:
+        cmds = [my_shellpath, './configure']
+        cmds.append(' '.join(cmakeopts))
+        proc = Popen(' '.join(cmds), cwd=my_x265_source, stdout=PIPE, stderr=PIPE, env=env)
+    else:
+        proc = Popen(cmds, stdout=PIPE, stderr=PIPE, cwd=buildfolder, env=env)
     out, err = proc.communicate()
     os.environ['PATH'] = origpath
-
     return out, err
 
 
 def gmake(buildfolder, generator, **opts):
     logger.settitle('make ' + buildfolder)
-    if 'MinGW' in generator:
+    if 'MinGW' in generator and hg:
         cmds = ['mingw32-make']
     else:
         cmds = ['make']
@@ -1163,10 +1240,18 @@ def gmake(buildfolder, generator, **opts):
     origpath = os.environ['PATH']
     if 'PATH' in opts:
         os.environ['PATH'] += os.pathsep + opts['PATH']
-
-    p = Popen(cmds, stdout=PIPE, stderr=PIPE, cwd=buildfolder)
+    if not hg:
+        out, errors = Popen(cmds, cwd=my_x265_source, stdout=PIPE, stderr=PIPE).communicate()
+        import glob
+        dll = glob.glob(os.path.join(my_x265_source,'*.dll'))
+        if os.path.exists(os.path.join(my_x265_source, 'x264.exe')):
+            shutil.copy(os.path.abspath(os.path.join(my_x265_source, 'x264' + exe_ext)), os.path.abspath(os.path.join(buildfolder, 'x264' + exe_ext)))
+            for file in  dll:
+                shutil.copy(os.path.abspath(os.path.join(my_x265_source, file)), os.path.abspath(os.path.join(buildfolder)))
+        return errors
+    else:
+        p = Popen(cmds, stdout=PIPE, stderr=PIPE, cwd=buildfolder)
     errors = async_poll_process(p, False)
-
     os.environ['PATH'] = origpath
     return errors
 
@@ -1413,6 +1498,8 @@ def testharness():
             _test.failuretype = 'testbench failure'
             table(_test.failuretype, empty, empty, logger.build.strip('\n'))
             logger.writeerr(prefix + err)
+
+
 def encodeharness(key, tmpfolder, sequence, command, always, inextras):
     '''
     Perform a single test encode within a tempfolder
@@ -1462,10 +1549,12 @@ def encodeharness(key, tmpfolder, sequence, command, always, inextras):
         cmds.extend(seq_details)
         cmds.extend([bitstream])
     else:
-        cmds.extend([seqfullpath, bitstream])
+        cmds.extend([seqfullpath, '-o', bitstream])
         cmds.extend(shlex.split(command))
         cmds.extend(extras)
         cmds.extend(seq_details)
+    if encoder_binary_name == 'x264':
+        cmds.extend(['--dump-yuv', 'x264-output.yuv'])
     logs, errors, summary = '', '', ''
     if not os.path.isfile(x265):
         logger.write('x265 executable not found')
@@ -1605,6 +1694,8 @@ def parsex265(tmpfolder, stdout, stderr):
             encoder_error_var = False
 	
     return summary, errors, encoder_error_var
+
+
 def checkoutputs(key, seq, command, sum, tmpdir, logs, testhash):
     global bitstream
     group = my_builds[key][1]
@@ -1867,6 +1958,7 @@ def hashbitstream(badfn):
     m = md5.new()
     m.update(open(badfn, 'rb').read())
     return m.hexdigest()
+
 def savebadstream(tmpdir):
     global bitstream
     badbitstreamfolder = os.path.join(my_goldens, 'bad-streams')
@@ -1877,12 +1969,22 @@ def savebadstream(tmpdir):
     hashfname = os.path.join(badbitstreamfolder, hashname + '.hevc')
     shutil.copy(badfn, hashfname)
     return hashfname
+
 def checkdecoder(tmpdir):
     global bitstream
-    cmds = [my_hm_decoder, '-b', bitstream]
+    if encoder_binary_name == 'x264':
+        cmds = [my_hm_decoder, '-i', bitstream, '-o', 'jm-output.yuv']
+    else:
+        cmds = [my_hm_decoder, '-b', bitstream]
     proc = Popen(cmds, stdout=PIPE, stderr=PIPE, cwd=tmpdir)
     stdout, errors = async_poll_process(proc, True)
     hashErrors = [l for l in stdout.splitlines() if '***ERROR***' in l]
+
+    if os.path.exists(os.path.join(tmpdir, 'jm-output.yuv')) and os.path.exists(os.path.join(tmpdir, 'x264-output.yuv')):
+        if not filecmp.cmp(os.path.join(tmpdir, 'jm-output.yuv'), os.path.join(tmpdir, 'x264-output.yuv')):
+            logger.testfail('yuv mismatch', 'x264 yuv is mismatched with jm yuv', '')
+            table('yuv mismatch', True , True, logger.build.strip('\n'))
+
     if hashErrors or errors:
         return 'Validation failed with %s\n\n' % my_hm_decoder + \
                '\n'.join(hashErrors[:2] + ['', errors])
@@ -1942,7 +2044,7 @@ def _test(build, tmpfolder, seq, command,  always, extras):
     global bitstream, testhashlist
     empty = True
     testhash = testcasehash(seq, command)
-    bitstream = 'bitstream.hevc'
+    bitstream = 'bitstream.hevc' if hg else 'bitstream.h264'
     testhashlist = []
     # run the encoder, abort early if any errors encountered
     logs, sum, encoder_errors, encoder_error_var = encodeharness(build, tmpfolder, seq, command,  always, extras)
