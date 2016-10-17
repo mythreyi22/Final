@@ -1825,7 +1825,7 @@ def checkoutputs(key, seq, command, sum, tmpdir, logs, testhash):
                     diff_vbv = abs(lastbitrate - newbitrate) / lastbitrate
                     if diff_vbv > vbv_tolerance:
                         diffmsg += 'VBV OUTPUT CHANGED BY %.2f%%' % (diff_vbv * 100)
-                if fps_check_variable in command:
+                if (fps_check_variable and (fps_check_variable in command)):
                     lastbitrate = float(lastsum.split(',')[0].split(' ')[1])
                     newbitrate = float(sum.split(',')[0].split(' ')[1])
                     diff_feature = abs(lastbitrate - newbitrate) / lastbitrate
