@@ -1022,20 +1022,21 @@ def hgrevisioninfo(rev):
             addstatus = True
         out, err = Popen(['hg', 'log', '-r', rev], stdout=PIPE, stderr=PIPE,
                         cwd=my_x265_source).communicate()
-        if err:
-            raise Exception('Unable to determine revision info: ' + err)
-        out_changes, err = Popen(['hg', 'status'], stdout=PIPE, stderr=PIPE,
-                     cwd=my_x265_source).communicate()[0]
     else:
         out, err = Popen(['git', 'diff-index', '--name-status', '--exit-code', 'HEAD'], stdout=PIPE, stderr=PIPE,
                         cwd=my_x265_source).communicate()
-        if err:
-            raise Exception('Unable to determine revision info: ' + err)
         if out:
             addstatus = True
-        out_changes, err = Popen(['git' ,'show', '-s', rev], stdout=PIPE, stderr=PIPE,
-                        cwd=my_x265_source).communicate()
+    if err:
+        raise Exception('Unable to determine revision info: ' + err)
+
     if addstatus:
+        if hg:
+            out_changes, err = Popen(['hg', 'status'], stdout=PIPE, stderr=PIPE,
+                                cwd=my_x265_source).communicate()[0]
+        else:
+            out_changes, err = Popen(['git' ,'show', '-s', rev], stdout=PIPE, stderr=PIPE,
+                                cwd=my_x265_source).communicate()
         out += 'Uncommitted changes in the working directory:\n' + out_changes
     return out
 
