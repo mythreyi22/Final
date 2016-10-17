@@ -1029,6 +1029,8 @@ def hgrevisioninfo(rev):
                         cwd=my_x265_source).communicate()
         if out:
             addstatus = True
+        out, err = Popen(['git' ,'show', '-s', rev], stdout=PIPE, stderr=PIPE,
+                    cwd=my_x265_source).communicate()
     if err:
         raise Exception('Unable to determine revision info: ' + err)
 
