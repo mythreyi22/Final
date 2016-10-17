@@ -1873,6 +1873,11 @@ def checkoutputs(key, seq, command, sum, tmpdir, logs, testhash):
                     return lastfname, None
         else:
             diff_vbv, diff_feature, diff_abr, diff_fps, diffmsg = outputdiff()
+            if 'Unable to parse bitrates for' in diffmsg:
+                diffmsg += '\nunable to read metrics So new golden outputs are storing again...\n'
+                logger.logfp.write('\n%s\n' % diffmsg)
+                logger.write(diffmsg)
+                return lastfname, None
             if diff_vbv > vbv_tolerance or diff_feature > feature_tolerance or diff_abr > abr_tolerance or diff_fps > fps_tolerance:
                 return lastfname, diffmsg
             elif diff_vbv < vbv_tolerance or diff_feature < feature_tolerance:
