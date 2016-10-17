@@ -1825,19 +1825,13 @@ def checkoutputs(key, seq, command, sum, tmpdir, logs, testhash):
                     diff_vbv = abs(lastbitrate - newbitrate) / lastbitrate
                     if diff_vbv > vbv_tolerance:
                         diffmsg += 'VBV OUTPUT CHANGED BY %.2f%%' % (diff_vbv * 100)
-                if (fps_check_variable and (fps_check_variable in command)):
+                elif (fps_check_variable and (fps_check_variable in command)):
                     lastbitrate = float(lastsum.split(',')[0].split(' ')[1])
                     newbitrate = float(sum.split(',')[0].split(' ')[1])
                     diff_feature = abs(lastbitrate - newbitrate) / lastbitrate
                     if diff_feature > feature_tolerance:
-                        diffmsg += 'FEATURE BITRATE OUTPUT CHANGED BY %.2f%%' % (diff_feature * 100)
-                if '--bitrate' in command:
-                    lastbitrate = float(lastsum.split('bitrate: ')[1].split(',')[0])
-                    newbitrate = float(sum.split(',')[0].split(' ')[1])
-                    diff_abr = abs(lastbitrate - newbitrate) / lastbitrate
-                    if diff_abr > abr_tolerance:
-                        diffmsg += ' ABR OUTPUT CHANGED BY %.2f%%' % (diff_abr * 100)
-                if (fps_check_variable and (fps_check_variable in command)):
+                        diffmsg += '\nFEATURE BITRATE OUTPUT CHANGED BY %.2f%%' % (diff_feature * 100)
+
                     targetfps_string = command.split(fps_check_variable)[1].split(' ')[0]
                     targetfps = float(targetfps_string)
                     for line in logs.splitlines():
@@ -1852,6 +1846,13 @@ def checkoutputs(key, seq, command, sum, tmpdir, logs, testhash):
                                 if diff_fps > fps_tolerance:
                                     diffmsg += ' \nFPS TARGET MISSED BY %.2f%% compared to target fps' % (diff_fps * 100)
                                     diffmsg+= ' for FRAME = %s' %frames_count_string
+                elif '--bitrate' in command:
+                    lastbitrate = float(lastsum.split('bitrate: ')[1].split(',')[0])
+                    newbitrate = float(sum.split(',')[0].split(' ')[1])
+                    diff_abr = abs(lastbitrate - newbitrate) / lastbitrate
+                    if diff_abr > abr_tolerance:
+                        diffmsg += ' ABR OUTPUT CHANGED BY %.2f%%' % (diff_abr * 100)
+
             except (IndexError, ValueError), e:
                 diffmsg = 'Unable to parse bitrates for %s:\n<%s>\n<%s>' % \
                            (testhash, lastsum, sum)
