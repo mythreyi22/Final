@@ -552,7 +552,9 @@ ignored_x265_warnings = (
     'Limit reference options 2 and 3 are not supported with pmode. Disabling limit reference',
     'Analysis load/save options works only with cu-tree off, Disabling cu-tree',
     'Rc Grain removes qp fluctuations caused by aq/cutree, Disabling aq,cu-tree',
-    '--tskip disabled, requires --rdlevel 3 or higher'	
+    '--tskip disabled, requires --rdlevel 3 or higher',
+    'interlace + weightp is not implemented',
+    'interlaced (1) > level limit (0)'
 )
 
 
