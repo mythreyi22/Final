@@ -98,30 +98,30 @@ try:
         # here it applies specific patch and shares libraries
         if csv_feature == True:
             out, err = Popen(['hg', 'import', my_patchlocation], cwd=my_x265_source, stdout=PIPE, stderr=PIPE).communicate()
-            if err:
-                logger.writeerr('failed to import patch\n' + str(err))
             utils.setup(sys.argv, 'smoke-tests.txt')
             from utils import logger
             my_patchrevision = utils.hgversion(my_x265_source)
             testedbranch = utils.hggetbranch(my_patchrevision)
             if err:
-                logger.write('\nfailed to apply patch\n')
-                p = Popen("hg revert --all", cwd=my_x265_source, stdout=PIPE, stderr=PIPE)
-                p = Popen("hg clean", cwd=my_x265_source, stdout=PIPE, stderr=PIPE)
-                out, err = Popen(['hg', 'strip', my_patchrevision], cwd=my_x265_source, stdout=PIPE, stderr=PIPE).communicate()
-                if err:
-                    logger.writeerr('\nfailed to strip local csv patch\n' + str(err))
-            else:
+                logger.writeerr('\nfailed to import patch\n' + err)
+                p = Popen("hg up -c", cwd=my_x265_source, stdout=PIPE, stderr=PIPE)
+            else
                 utils.buildall(None, my_upload)
                 extras = ['--psnr', '--ssim', '--csv-log-level=3', '--csv=test.csv']
                 for build in my_upload:
                     logger.setbuild(build)
                     for seq, command in tests:
                         utils.runtest(build, seq, command, always, extras)
-            utils.upload_binaries(my_ftp_location)
-            out, err = Popen(['hg', 'strip', my_patchrevision], cwd=my_x265_source, stdout=PIPE, stderr=PIPE).communicate()
-            if err:
-                logger.writeerr('\nfailed to strip local csv patch\n' + str(err))
+                logs = open(os.path.join(utils.encoder_binary_name, logger.logfname),'r')
+                fatalerror = False
+                for line in logs:
+                    if 'encoder error reported' in line or 'DECODE ERRORS' in line  or 'Validation failed' in line or 'encoder warning reported' in line:
+                        fatalerror = True
+                if fatalerror == False:
+                    utils.upload_binaries(my_ftp_location)
+                out, err = Popen(['hg', 'strip', my_patchrevision], cwd=my_x265_source, stdout=PIPE, stderr=PIPE).communicate()
+                if err:
+                    logger.writeerr('\nfailed to strip local csv patch\n' + err)
             logger.email_results(my_receiver_mailid, 'Amazon binaries upload', testedbranch)
 
 except KeyboardInterrupt:
@@ -130,7 +130,7 @@ except KeyboardInterrupt:
 finally:
     print 'clean the repo'
     if csv_feature == True:
-        p = Popen("hg revert --all", cwd=my_x265_source, stdout=PIPE, stderr=PIPE)
-        p = Popen("hg clean", cwd=my_x265_source, stdout=PIPE, stderr=PIPE)
-        cmd = ''.join(["hg strip ", my_patchrevision])
-        p = Popen(cmd, cwd=my_x265_source, stdout=PIPE, stderr=PIPE)
+        out, err = Popen(['hg', 'strip', my_patchrevision], cwd=my_x265_source, stdout=PIPE, stderr=PIPE).communicate()
+        if err:
+            print '\nfailed to strip local csv patch ' + err
+        p = Popen("hg up -c", cwd=my_x265_source, stdout=PIPE, stderr=PIPE)
