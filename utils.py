@@ -353,27 +353,31 @@ class Logger():
         self.logfp.flush()
         self.errors += 1
 
-    def close(self):
+    def close(self, logfp):
         for co, count in self.newoutputs.iteritems():
             msg = '%d test case output changes credited to %s\n' % (count, co)
             print msg
-            self.logfp.write(msg)
+            logfp.write(msg)
         if self.errors:
             print 'Errors written to %s' % self.logfname
         else:
             msg = '\nAll tests passed for %s on %s' % (testrev, my_machine_name)
             print msg
-            self.logfp.write(msg)
-        self.logfp.close()
+            logfp.write(msg)
+        logfp.close()
         self.settitle(os.path.basename(test_file) + ' complete')
 
-    def email_results(self):
+    def email_results(self, mailid=None, message='', testedbranch=''):
         if not (my_email_from and my_email_to and my_smtp_pwd):
             return
 
         import smtplib
         from email.mime.text import MIMEText
         from email.mime.multipart import MIMEMultipart
+
+        if mailid and message:
+            global my_email_to
+            my_email_to = mailid
 
         msg = MIMEMultipart('alternative')
         duration = str(datetime.datetime.now() - self.start_time).split('.')[0]
@@ -390,11 +394,11 @@ class Logger():
         msg['From'] = my_email_from
         testname = self.testname.split('-')
         status = self.errors and 'failures' or 'successful'
-        branch = hggetbranch(testrev)
+        branch = testedbranch if testedbranch else hggetbranch(testrev)
         if feature:
-            data = [feature_value, ': '] + [platform.system(), '-'] + testname + [status, '-', branch] + ['-', str(multiprocessing.cpu_count())] + ['core']		
+            data = [feature_value, ': '] + [platform.system(), '-'] + testname + [status, '-', branch] + ['-', str(multiprocessing.cpu_count())] + ['core']
         else:
-            data = [encoder_binary_name, ': '] + [platform.system(), '-'] + testname + [status, '-', branch] + ['-', str(multiprocessing.cpu_count())] + ['core']
+            data = [encoder_binary_name, ': '] + [platform.system(), '-'] + testname + [status, '-', branch] + ['-', str(multiprocessing.cpu_count())] + ['core'] + ['-', message]
         msg['Subject'] = ' '.join(data)
         if self.errors:
             msg.attach(failure_message)
@@ -482,9 +486,9 @@ def setup(argv, preferredlist):
     global logger, testrev, changers
     logger = Logger(test_file)
 
-    def closelog():
-        logger.close()
-    atexit.register(closelog)
+    def closelog(logfp):
+        logger.close(logfp)
+    atexit.register(closelog, logger.logfp)
 
     testrev = hgversion(my_x265_source)
     if encoder_binary_name == check_binary:
@@ -730,6 +734,7 @@ def upload_binaries(ftpfolder=None):
                     compilertype = 'intel'
                 ftp_path = '/'.join([my_ftp_folder, osname, compilertype, folder, build.profile])
         except EnvironmentError, e:
+            logger.writeerr('failed to open x265binary or library file\n' + str(e))
             print("failed to open x265binary or library file", e)
             return
 
@@ -751,7 +756,10 @@ def upload_binaries(ftpfolder=None):
             ftp.storbinary('STOR ' + exe_name, x265)
             ftp.storbinary('STOR ' + dll_name, dll)
             list_allfiles = ftp.nlst()
+            logger.logfp.write('\nuploaded - %s: %s, %s' %(build.profile, exe_name, dll_name))
+            logger.logfp.flush()
         except ftplib.all_errors, e:
+            logger.writeerr('\nftp failed to upload binaries\n' + str(e))
             print "ftp failed", e
             return
         
@@ -1267,6 +1275,7 @@ def buildall(prof=None, buildoptions=None):
     if not buildoptions == None:
         rebuild = True
         global buildObj
+        buildObj = {}
         for key in buildoptions:
             buildObj[key] = Build(*buildoptions[key])
     for key in buildObj:

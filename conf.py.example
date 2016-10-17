@@ -38,6 +38,8 @@ my_ftp_url = ''
 my_ftp_user = ''
 my_ftp_pass = ''
 my_ftp_folder = '' # 'Shared/HEVC/x265_Binaries'
+my_receiver_mailid = ''
+
 # set these variables for automation
 check_binary = ''
 check_variable = ''

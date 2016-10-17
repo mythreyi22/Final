@@ -40,6 +40,13 @@ except ImportError, e:
     print 'failed to import encoder_binary_name'
     encoder_binary_name = 'x265'
 
+try:
+    from conf import my_email_to
+    from conf import my_receiver_mailid
+except ImportError, e:
+    print 'failed to import my_receiver_mailid'
+    my_receiver_mailid = my_email_to
+
 utils.buildall()
 if logger.errors:
     # send results to mail
@@ -74,6 +81,8 @@ try:
              fatalerror = True
 
     if fatalerror == False and my_upload:
+        utils.setup(sys.argv, 'smoke-tests.txt')
+        from utils import logger
         for key, v in my_upload.iteritems():
             buildoption = []
             buildoption.append(v[0])
@@ -84,28 +93,36 @@ try:
             my_upload[key] = tuple(buildoption)
         utils.buildall(None, my_upload)
         utils.upload_binaries()
+        logger.email_results(my_receiver_mailid, 'Regular binaries upload')
 
         # here it applies specific patch and shares libraries
         if csv_feature == True:
-            cmd = ''.join(["hg import ", my_patchlocation])
-            p = Popen(cmd, cwd=my_x265_source, stdout=PIPE, stderr=PIPE)
+            out, err = Popen(['hg', 'import', my_patchlocation], cwd=my_x265_source, stdout=PIPE, stderr=PIPE).communicate()
+            if err:
+                logger.writeerr('failed to import patch\n' + str(err))
+            utils.setup(sys.argv, 'smoke-tests.txt')
+            from utils import logger
             my_patchrevision = utils.hgversion(my_x265_source)
-            if p.returncode:
+            testedbranch = utils.hggetbranch(my_patchrevision)
+            if err:
                 logger.write('\nfailed to apply patch\n')
                 p = Popen("hg revert --all", cwd=my_x265_source, stdout=PIPE, stderr=PIPE)
                 p = Popen("hg clean", cwd=my_x265_source, stdout=PIPE, stderr=PIPE)
-                cmd = ''.join(["hg strip ", my_patchrevision])
-                p = Popen(cmd, cwd=my_x265_source, stdout=PIPE, stderr=PIPE)
+                out, err = Popen(['hg', 'strip', my_patchrevision], cwd=my_x265_source, stdout=PIPE, stderr=PIPE).communicate()
+                if err:
+                    logger.writeerr('\nfailed to strip local csv patch\n' + str(err))
             else:
                 utils.buildall(None, my_upload)
-                extras = ['--psnr', '--ssim', '--csv-log-level=3', '--csv=test.csv', '--frames=10']
-                cmd = ''.join(["hg strip ", my_patchrevision])
-                p = Popen(cmd, cwd=my_x265_source, stdout=PIPE, stderr=PIPE)
+                extras = ['--psnr', '--ssim', '--csv-log-level=3', '--csv=test.csv']
                 for build in my_upload:
                     logger.setbuild(build)
                     for seq, command in tests:
                         utils.runtest(build, seq, command, always, extras)
             utils.upload_binaries(my_ftp_location)
+            out, err = Popen(['hg', 'strip', my_patchrevision], cwd=my_x265_source, stdout=PIPE, stderr=PIPE).communicate()
+            if err:
+                logger.writeerr('\nfailed to strip local csv patch\n' + str(err))
+            logger.email_results(my_receiver_mailid, 'Amazon binaries upload', testedbranch)
 
 except KeyboardInterrupt:
     print 'Caught CTRL+C, exiting'
