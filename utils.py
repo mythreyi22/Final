@@ -1630,8 +1630,8 @@ def parsex265(tmpfolder, stdout, stderr):
     def scansummary(output):
         ssim, psnr, bitrate = 'N/A', 'N/A', 'N/A'
         for line in output.splitlines():
+            words = line.split()
             if line.startswith('Cumulatively encoded '):
-                words = line.split()
                 if 'fps),' in words:
                     index = words.index('fps),')
                     bitrate = words[index + 1]
@@ -1645,19 +1645,33 @@ def parsex265(tmpfolder, stdout, stderr):
                 if bitrate:
                     return bitrate, ssim, psnr		
             elif line.startswith('encoded '):
-                words = line.split()
-                if 'fps),' in words:
-                    index = words.index('fps),')
-                    bitrate = words[index + 1]
+                if hg:
+                    if 'fps),' in words:
+                        index = words.index('fps),')
+                        bitrate = words[index + 1]
+                    if 'SSIM' in words:
+                        ssim = words[-2]
+                        if ssim.startswith('('): ssim = ssim[1:]
+                    if 'PSNR:' in words:
+                        index = words.index('PSNR:')
+                        psnr = words[index + 1]
+                        if psnr.endswith(','): psnr = psnr[:-1]
+                    if bitrate:
+                        return bitrate, ssim, psnr
+                else:
+                    if 'fps,' in words:
+                        index = words.index('fps,')
+                        bitrate = words[index + 1]
+                    if bitrate:
+                        return bitrate, ssim, psnr
+            elif line.startswith('x264 [info]: SSIM'):
                 if 'SSIM' in words:
-                    ssim = words[-2]
-                    if ssim.startswith('('): ssim = ssim[1:]
-                if 'PSNR:' in words:
-                    index = words.index('PSNR:')
-                    psnr = words[index + 1]
-                    if psnr.endswith(','): psnr = psnr[:-1]
-                if bitrate:
-                    return bitrate, ssim, psnr
+                    ssim = words[-1]
+                    if ssim.startswith('('): ssim = ssim[1:-3]
+            elif line.startswith('x264 [info]: PSNR'):
+                if 'PSNR' in words:
+                    psnr = words[-2]                    
+                    if psnr.startswith('G'): psnr = psnr[7:]
             else:
                 continue			
         return None
@@ -1674,23 +1688,23 @@ def parsex265(tmpfolder, stdout, stderr):
     # check for warnings and errors in x265 logs, report together with most
     # recent progress report if there was any
     lastprog = None
-    ls = len(os.linesep) # 2 on Windows, 1 on POSIX
+    ls = len(os.linesep) if not my_shellpath else 1# 2 on Windows, 1 on POSIX
     for line in stderr.splitlines(True):
         if line.endswith('\r'):
             lastprog = line
-        elif line.startswith(('x265 [debug]:', 'x265 [full]:')):
+        elif line.startswith('%s [debug]:' or '%s [full]:' % encoder_binary_name):
             lastprog = line
-        elif line.startswith('x265 [error]:') or \
-             (line.startswith('x265 [warning]:') and \
+        elif line.startswith('%s [error]:' % encoder_binary_name) or \
+             (line.startswith('%s [warning]:' % encoder_binary_name) and \
               line[16:-ls] not in ignored_x265_warnings):		
             if lastprog:
                 errors += lastprog.replace('\r', os.linesep)
                 lastprog = None
             errors += line
             logger.write(line[:-1])						
-	    if line.startswith('x265 [error]:'):
+	    if line.startswith('%s [error]:' % encoder_binary_name):
 		    encoder_error_var = True
-        elif (line.startswith('x265 [warning]:') and \
+        elif (line.startswith('%s [warning]:' % encoder_binary_name) and \
               line[16:-ls] not in ignored_x265_warnings):
             encoder_error_var = False
 	
