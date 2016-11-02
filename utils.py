@@ -33,6 +33,7 @@ changers = None      # list of all output changing commits which are ancestors
                      # of the revision under test
 changefilter = {}
 vbv_tolerance = .05 # fraction of bitrate difference allowed (5%)
+feature_tolerance = .05 #fraction of feature bitrate difference allowed (5%)
 abr_tolerance = .10 # fraction of abr difference allowed (10%)
 fps_tolerance = .10  # fraction of fps difference allowed (10%)
 logger = None
@@ -890,7 +891,7 @@ def parseY4MHeader(fname):
 
 
 def parsetestfile():
-    global test_file, vbv_tolerance
+    global test_file, vbv_tolerance, feature_tolerance
     missing = set()
     tests = []
     for line in open(test_file).readlines():
@@ -898,6 +899,9 @@ def parsetestfile():
         if line.startswith('# vbv-tolerance ='):
             vbv_tolerance = float(line.split('=')[1])
             print 'using vbv tolerance', vbv_tolerance
+        if line.startswith('# feature-tolerance ='):
+            feature_tolerance = float(line.split('=')[1])
+            print 'using feature tolerance', feature_tolerance
         if len(line) < 3 or line[0] == '#':
             continue
 
@@ -1813,7 +1817,7 @@ def checkoutputs(key, seq, command, sum, tmpdir, logs, testhash):
             # VBV encodes are non-deterministic, check that golden output
             # bitrate is within tolerance% of new bitrate. Example summary:
             # 'bitrate: 121.95, SSIM: 20.747, PSNR: 53.359'
-            diffmsg , diff_abr, diff_fps, diff_vbv = ' ', 0, 0, 0
+            diffmsg , diff_abr, diff_fps, diff_vbv, diff_feature = ' ', 0, 0, 0, 0
             try:
                 if '--vbv-bufsize' in command:
                     lastbitrate = float(lastsum.split(',')[0].split(' ')[1])
@@ -1821,6 +1825,12 @@ def checkoutputs(key, seq, command, sum, tmpdir, logs, testhash):
                     diff_vbv = abs(lastbitrate - newbitrate) / lastbitrate
                     if diff_vbv > vbv_tolerance:
                         diffmsg += 'VBV OUTPUT CHANGED BY %.2f%%' % (diff_vbv * 100)
+                if fps_check_variable in command:
+                    lastbitrate = float(lastsum.split(',')[0].split(' ')[1])
+                    newbitrate = float(sum.split(',')[0].split(' ')[1])
+                    diff_feature = abs(lastbitrate - newbitrate) / lastbitrate
+                    if diff_feature > feature_tolerance:
+                        diffmsg += 'FEATURE BITRATE OUTPUT CHANGED BY %.2f%%' % (diff_feature * 100)
                 if '--bitrate' in command:
                     lastbitrate = float(lastsum.split('bitrate: ')[1].split(',')[0])
                     newbitrate = float(sum.split(',')[0].split(' ')[1])
@@ -1846,24 +1856,25 @@ def checkoutputs(key, seq, command, sum, tmpdir, logs, testhash):
                 diffmsg = 'Unable to parse bitrates for %s:\n<%s>\n<%s>' % \
                            (testhash, lastsum, sum)
                 diff_vbv = vbv_tolerance + 1
+                diff_feature = feature_tolerance + 1
                 diff_abr = abr_tolerance + 1
                 diff_fps = fps_tolerance + 1
-            return diff_vbv, diff_abr, diff_fps, diffmsg
+            return diff_vbv, diff_feature, diff_abr, diff_fps, diffmsg
         for oc in opencommits:
             lastfname = '%s-%s-%s' % (hgrevisiondate(oc), group, oc)
             if 'vbv' in changefilter.get(oc, '') or   'bitrate' in changefilter.get(oc, '') or 'fps' in changefilter.get(oc, ''):
                 return lastfname, None
             else:
-                diff_vbv, diff_abr, diff_fps, diffmsg = outputdiff()
-                if diff_vbv > vbv_tolerance or diff_abr > abr_tolerance or diff_fps > fps_tolerance:
+                diff_vbv, diff_feature, diff_abr, diff_fps, diffmsg = outputdiff()
+                if diff_vbv > vbv_tolerance or diff_feature > feature_tolerance or diff_abr > abr_tolerance or diff_fps > fps_tolerance:
                     logger.logfp.write('\n%s\n' % diffmsg)
                     logger.write(diffmsg)
                     return lastfname, None
         else:
-            diff_vbv, diff_abr, diff_fps, diffmsg = outputdiff()
-            if diff_vbv > vbv_tolerance or diff_abr > abr_tolerance or diff_fps > fps_tolerance:
+            diff_vbv, diff_feature, diff_abr, diff_fps, diffmsg = outputdiff()
+            if diff_vbv > vbv_tolerance or diff_feature > feature_tolerance or diff_abr > abr_tolerance or diff_fps > fps_tolerance:
                 return lastfname, diffmsg
-            elif diff_vbv < vbv_tolerance:
+            elif diff_vbv < vbv_tolerance or diff_feature < feature_tolerance:
                 return lastfname, False
     
     if filecmp.cmp(golden, test):
