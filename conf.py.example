@@ -150,5 +150,7 @@ option_strings = {
     'native'  : '-DNATIVE_BUILD=ON',
     'x264_gccmain10'              : '--bit-depth=10',
     'x264_mingwmain8_extralibs'   : '--host=x86_64-w64-mingw32 --disable-win32thread --enable-static --enable-shared --extra-cflags="-static -static-libgcc -static-libstdc++ -I/E/x264/libpack-gcc48x-20150301/x86_64-w64-mingw32/include/" --extra-ldflags="-static -static-libgcc -static-libstdc++ -L/E/x264/libpack-gcc48x-20150301/x86_64-w64-mingw32/lib/"',
-    'x264_mingwmain10_extralibs'  : '--host=x86_64-w64-mingw32 --disable-win32thread --enable-static --enable-shared --bit-depth=10 --enable-static --enable-shared --extra-cflags="-static -static-libgcc -static-libstdc++ -I/E/x264/libpack-gcc48x-20150301/x86_64-w64-mingw32/include/" --extra-ldflags="-static -static-libgcc -static-libstdc++ -L/E/x264/libpack-gcc48x-20150301/x86_64-w64-mingw32/lib/"'
+    'x264_mingwmain10_extralibs'  : '--host=x86_64-w64-mingw32 --disable-win32thread --enable-static --enable-shared --bit-depth=10 --enable-static --enable-shared --extra-cflags="-static -static-libgcc -static-libstdc++ -I/E/x264/libpack-gcc48x-20150301/x86_64-w64-mingw32/include/" --extra-ldflags="-static -static-libgcc -static-libstdc++ -L/E/x264/libpack-gcc48x-20150301/x86_64-w64-mingw32/lib/"',
+    'ffmpeg-static'  : '--prefix=/usr/local --extra-cflags="-I/usr/local/include" --extra-ldflags="-L/usr/local/lib" --bindir=/usr/local/bin --pkg-config-flags=--static --enable-gpl --enable-static --enable-libx265 --cc="gcc -w"',
+    'ffmpeg-shared'  : '--prefix=/usr/local --extra-cflags="-I/usr/local/include" --extra-ldflags="-L/usr/local/lib" --bindir=/usr/local/bin --enable-gpl --enable-pic --enable-shared --disable-static --enable-libx265 --cc="gcc -w -m64 -fPIC"'
 }

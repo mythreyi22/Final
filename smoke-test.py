@@ -61,6 +61,11 @@ elif encoder_binary_name == 'x264':
 else:
     always = '-f100 --hash=1 --no-info'
 extras = ['--psnr', '--ssim']
+
+if encoder_binary_name == 'ffmpeg':
+    always = []
+    extras = []
+
 try:
 
     tests = utils.parsetestfile()

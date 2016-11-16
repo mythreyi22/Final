@@ -67,6 +67,15 @@ hg = True if version_control == 'hg' else False
 bitstream = 'bitstream.hevc' if hg else 'bitstream.h264'
 testhashlist = []
 
+ffmpeg_csp = {
+    '420-8b'    : 'yuv420p',
+    '422-8b'    : 'yuv422p',
+    '444-8b'    : 'yuv444p',
+    '420-10b'   : 'yuv420p10le',
+    '422-10b'   : 'yuv422p10le',
+    '444-10b'   : 'yuv444p10le',
+}
+
 try:
     from conf import my_machine_name, my_machine_desc, my_x265_source 
     from conf import my_sequences, my_goldens, option_strings, my_hm_decoder
@@ -513,7 +522,7 @@ def setup(argv, preferredlist):
         # we do not store golden outputs if uncommitted changes
         save_results = False
         testrev = testrev[:-1]
-    elif hggetphase(testrev) != 'public':
+    elif hggetphase(testrev) != 'public' and encoder_binary_name != 'ffmpeg':
         # we do not store golden outputs until a revision is public (pushed)
         save_results = False
     else:
@@ -1250,13 +1259,24 @@ def gmake(buildfolder, generator, **opts):
     if 'PATH' in opts:
         os.environ['PATH'] += os.pathsep + opts['PATH']
     if not hg:
-        out, errors = Popen(cmds, cwd=my_x265_source, stdout=PIPE, stderr=PIPE).communicate()
+        env = os.environ.copy()
+        if 'LD_LIBRARY_PATH' in opts:
+            env['LD_LIBRARY_PATH'] = opts['LD_LIBRARY_PATH']
+        if 'PKG_CONFIG_PATH' in opts:
+            env['PKG_CONFIG_PATH'] = opts['PKG_CONFIG_PATH']
+        out, errors = Popen(cmds, cwd=my_x265_source, stdout=PIPE, stderr=PIPE, shell=True).communicate()
         import glob
         dll = glob.glob(os.path.join(my_x265_source,'*.dll'))
-        if os.path.exists(os.path.join(my_x265_source, 'x264.exe')):
-            shutil.copy(os.path.abspath(os.path.join(my_x265_source, 'x264' + exe_ext)), os.path.abspath(os.path.join(buildfolder, 'x264' + exe_ext)))
+        if os.path.exists(os.path.join(my_x265_source, encoder_binary_name + exe_ext)):
+            shutil.copy(os.path.abspath(os.path.join(my_x265_source, encoder_binary_name + exe_ext)), os.path.abspath(os.path.join(buildfolder, encoder_binary_name + exe_ext)))
             for file in  dll:
                 shutil.copy(os.path.abspath(os.path.join(my_x265_source, file)), os.path.abspath(os.path.join(buildfolder)))
+            if encoder_binary_name == 'ffmpeg':
+                cwdir = os.getcwd()
+                os.chdir(my_x265_source)
+                os.system('sudo make install')
+                os.system('sudo ldconfig')
+                os.chdir(cwdir)
         return errors
     else:
         p = Popen(cmds, stdout=PIPE, stderr=PIPE, cwd=buildfolder)
@@ -1527,10 +1547,14 @@ def encodeharness(key, tmpfolder, sequence, command, always, inextras):
     seq_details         = []
     if sequence.lower().endswith('.yuv'):
         (width, height, fps, depth, csp) = parseYuvFilename(sequence)
-        seq_details += ['--input-res=%sx%s' % (width, height),
-                   '--fps=%s' % fps,
-                   '--input-depth=%s' % depth,
-                   '--input-csp=i%s' % csp]
+        if encoder_binary_name == 'ffmpeg':
+            f_csp = '%s-%sb' % (csp, depth)
+            seq_details += ['-s' ,'%sx%s' % (width, height), '-r', '%s' % fps, '-pix_fmt', ffmpeg_csp[f_csp]]
+        else:
+            seq_details += ['--input-res=%sx%s' % (width, height),
+                       '--fps=%s' % fps,
+                       '--input-depth=%s' % depth,
+                       '--input-csp=i%s' % csp]
     seqfullpath = os.path.join(my_sequences, sequence)
     build = buildObj[key]
     x265 = build.exe
@@ -1556,6 +1580,11 @@ def encodeharness(key, tmpfolder, sequence, command, always, inextras):
         cmds = []
         cmds.extend(command)
         cmds.extend(seq_details)
+        cmds.extend([bitstream])
+    elif encoder_binary_name == 'ffmpeg':
+        cmds.extend(seq_details)
+        cmds.extend(['-i', seqfullpath])
+        cmds.extend(shlex.split(command))
         cmds.extend([bitstream])
     else:
         cmds.extend([seqfullpath, '-o', bitstream])
@@ -1584,6 +1613,11 @@ def encodeharness(key, tmpfolder, sequence, command, always, inextras):
         elif 'ffmpeg' in ''.join(command):
             cmds = ' '.join(cmds)
             p = Popen(cmds, cwd=tmpfolder, stdout=PIPE, stderr=PIPE, preexec_fn=prefn, shell = 'TRUE')
+        elif encoder_binary_name == 'ffmpeg':
+            env = os.environ.copy()
+            if 'LD_LIBRARY_PATH' in build.opts:
+                env['LD_LIBRARY_PATH'] = build.opts['LD_LIBRARY_PATH']
+            p = Popen(cmds, cwd=tmpfolder, stdout=PIPE, stderr=PIPE, env=env, preexec_fn=prefn)
         else:
             p = Popen(cmds, cwd=tmpfolder, stdout=PIPE, stderr=PIPE, preexec_fn=prefn)
         stdout, stderr = p.communicate()
@@ -1653,7 +1687,7 @@ def parsex265(tmpfolder, stdout, stderr):
                 if bitrate:
                     return bitrate, ssim, psnr		
             elif line.startswith('encoded '):
-                if hg:
+                if hg or encoder_binary_name == 'ffmpeg':
                     if 'fps),' in words:
                         index = words.index('fps),')
                         bitrate = words[index + 1]
@@ -2080,7 +2114,7 @@ def _test(build, tmpfolder, seq, command,  always, extras):
     global bitstream, testhashlist
     empty = True
     testhash = testcasehash(seq, command)
-    bitstream = 'bitstream.hevc' if hg else 'bitstream.h264'
+    bitstream = 'bitstream.h264' if encoder_binary_name == 'x264' else 'bitstream.hevc'
     testhashlist = []
     # run the encoder, abort early if any errors encountered
     logs, sum, encoder_errors, encoder_error_var = encodeharness(build, tmpfolder, seq, command,  always, extras)
