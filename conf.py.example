@@ -116,6 +116,8 @@ my_builds = {
     #'win32' : ('vc11x86/', 'vc', 'Visual Studio 11', 'static ppa', {}),
     #'mingw' : ('mingw/', 'gcc', 'MinGW Makefiles', 'tests',
     #           {'PATH' : r'C:\mingw64\bin'}),
+    #'gcc' : ('default/', 'gcc', 'Unix Makefiles', 'ffmpeg-static', 
+    #           {'LD_LIBRARY_PATH' : r'/home/project/lib', 'PKG_CONFIG_PATH' : r'/home/project/lib/pkgconfig'})
 }
 
 # these builds are for uploading binaries on egnyte for sharing

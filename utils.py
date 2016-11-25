@@ -1226,6 +1226,10 @@ def cmake(generator, buildfolder, cmakeopts, **opts):
             env['CC'] = opts['CC']
         if 'CXX' in opts:
             env['CXX'] = opts['CXX']
+        if 'LD_LIBRARY_PATH' in opts:
+            env['LD_LIBRARY_PATH'] = opts['LD_LIBRARY_PATH']
+        if 'PKG_CONFIG_PATH' in opts:
+            env['PKG_CONFIG_PATH'] = opts['PKG_CONFIG_PATH']
 
     # note that it is not enough to insert the path into the subprocess
     # environment; it must be in the system PATH in case the compiler
@@ -1238,7 +1242,7 @@ def cmake(generator, buildfolder, cmakeopts, **opts):
     if not hg:
         cmds = [my_shellpath, './configure']
         cmds.append(' '.join(cmakeopts))
-        proc = Popen(' '.join(cmds), cwd=my_x265_source, stdout=PIPE, stderr=PIPE, env=env)
+        proc = Popen(' '.join(cmds), cwd=my_x265_source, stdout=PIPE, stderr=PIPE, env=env, shell=True)
     else:
         proc = Popen(cmds, stdout=PIPE, stderr=PIPE, cwd=buildfolder, env=env)
     out, err = proc.communicate()
@@ -1274,8 +1278,7 @@ def gmake(buildfolder, generator, **opts):
             if encoder_binary_name == 'ffmpeg':
                 cwdir = os.getcwd()
                 os.chdir(my_x265_source)
-                os.system('sudo make install')
-                os.system('sudo ldconfig')
+                os.system('make install')
                 os.chdir(cwdir)
         return errors
     else:
