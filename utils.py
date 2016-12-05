@@ -564,7 +564,8 @@ ignored_x265_warnings = (
     'Rc Grain removes qp fluctuations caused by aq/cutree, Disabling aq,cu-tree',
     '--tskip disabled, requires --rdlevel 3 or higher',
     'interlace + weightp is not implemented',
-    'interlaced (1) > level limit (0)'
+    'interlaced (1) > level limit (0)',
+    'Disabling pme and pmode: --pme and --pmode cannot be used with SEA motion search!'
 )
 
 
