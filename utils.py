@@ -944,6 +944,7 @@ def initspotchecks():
         '--asm=SSSE3',
         '--asm=SSE4',
         '--asm=AVX',
+        '--pme',
         '--recon=recon.yuv',
         '--recon=recon.y4m',
         '--csv=test.csv',
