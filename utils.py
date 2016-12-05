@@ -421,9 +421,9 @@ class Logger():
         status = self.errors and 'failures' or 'successful'
         branch = testedbranch if testedbranch else hggetbranch(testrev)
         if feature:
-            data = [feature_value, ': '] + [platform.system(), '-'] + testname + [status, '-', branch] + ['-', str(multiprocessing.cpu_count())] + ['core']
+            data = [feature_value, ': '] + [osname, '-'] + testname + [status, '-', branch] + ['-', str(multiprocessing.cpu_count())] + ['core']
         else:
-            data = [encoder_binary_name, ': '] + [platform.system(), '-'] + testname + [status, '-', branch] + ['-', str(multiprocessing.cpu_count())] + ['core'] + ['-', message]
+            data = [encoder_binary_name, ': '] + [osname, '-'] + testname + [status, '-', branch] + ['-', str(multiprocessing.cpu_count())] + ['core'] + ['-', message]
         msg['Subject'] = ' '.join(data)
         if self.errors:
             msg.attach(failure_message)
@@ -1239,12 +1239,13 @@ def cmake(generator, buildfolder, cmakeopts, **opts):
         os.environ['PATH'] += os.pathsep + opts['PATH']
         env['PATH'] += os.pathsep + opts['PATH']
 
-    if not hg:
+    if hg or (osname == 'Windows' and not my_shellpath):
+        proc = Popen(cmds, stdout=PIPE, stderr=PIPE, cwd=buildfolder, env=env)
+    else:
         cmds = [my_shellpath, './configure']
         cmds.append(' '.join(cmakeopts))
         proc = Popen(' '.join(cmds), cwd=my_x265_source, stdout=PIPE, stderr=PIPE, env=env, shell=True)
-    else:
-        proc = Popen(cmds, stdout=PIPE, stderr=PIPE, cwd=buildfolder, env=env)
+
     out, err = proc.communicate()
     os.environ['PATH'] = origpath
     return out, err
