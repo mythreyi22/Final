@@ -153,6 +153,7 @@ option_strings = {
     'nocolor' : '-DCMAKE_COLOR_MAKEFILE=OFF',
     'crt'     : '-DSTATIC_LINK_CRT=ON',
     'native'  : '-DNATIVE_BUILD=ON',
+    'multilib': '-DMULTILIB=ON',
     'x264_gccmain10'              : '--bit-depth=10',
     'x264_mingwmain8_extralibs'   : '--host=x86_64-w64-mingw32 --disable-win32thread --enable-static --enable-shared --extra-cflags="-static -static-libgcc -static-libstdc++ -I/E/x264/libpack-gcc48x-20150301/x86_64-w64-mingw32/include/" --extra-ldflags="-static -static-libgcc -static-libstdc++ -L/E/x264/libpack-gcc48x-20150301/x86_64-w64-mingw32/lib/"',
     'x264_mingwmain10_extralibs'  : '--host=x86_64-w64-mingw32 --disable-win32thread --enable-static --enable-shared --bit-depth=10 --enable-static --enable-shared --extra-cflags="-static -static-libgcc -static-libstdc++ -I/E/x264/libpack-gcc48x-20150301/x86_64-w64-mingw32/include/" --extra-ldflags="-static -static-libgcc -static-libstdc++ -L/E/x264/libpack-gcc48x-20150301/x86_64-w64-mingw32/lib/"',
