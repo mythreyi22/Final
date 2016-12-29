@@ -57,7 +57,7 @@ utils.testharness()
 if encoder_binary_name == 'x265':
     always = '-f50 --hash=1 --no-info'
 elif encoder_binary_name == 'x264':
-    always = '--frames 500'
+    always = '--frames 500 --cpu-independent'
 else:
     always = '-f100 --hash=1 --no-info'
 extras = ['--psnr', '--ssim']
