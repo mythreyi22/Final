@@ -152,6 +152,11 @@ try:
 except ImportError, e:
     my_libpairs = []
 
+try:
+    from conf import my_branch_binary
+except ImportError, e:
+    my_branch_binary = False
+
 osname = platform.system()
 if osname == 'Windows':
     exe_ext         = '.exe'
@@ -709,6 +714,16 @@ else:
         else:
             return errors
 
+def findBranch():
+    branch = 'Development'
+    out, err = Popen(['hg', 'log', '-l', '10', '--rev', 'reverse(ancestors(.))'], stderr=PIPE, stdout=PIPE, cwd=my_x265_source).communicate()	
+    out = out.split('\n')
+    for line in out:
+        if 'branch:' in line:
+            branch = line.split('branch:')[1].strip(' ')
+            if branch == 'default' or branch == 'stable':
+                return branch
+
 # ftp upload x265 binaries
 def upload_binaries(ftpfolder=None):
     global my_ftp_folder
@@ -732,7 +747,9 @@ def upload_binaries(ftpfolder=None):
         tagdistance = hggettagdistance(testrev)
 
         folder = 'Development' # default
-        if branch == 'stable':
+        if my_branch_binary == True:
+            folder = findBranch()
+        elif branch == 'stable':
             if tagdistance.endswith('+0'):
                 folder = 'Release'
                 tagdistance = tagdistance[:-2]

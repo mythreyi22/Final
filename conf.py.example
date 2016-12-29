@@ -19,6 +19,9 @@ version_control = 'hg'
 # full path of msys shell (ex: r'E:\x264\MinGW\msys\bin\sh.exe')
 my_shellpath = ''
 
+# upload binaries to the right branch, only for specific repos
+my_branch_binary = False
+
 # fill these in to email results after each completed test run
 # here password should be base64 encoded
 my_email_from   = ''
