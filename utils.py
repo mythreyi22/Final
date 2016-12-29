@@ -570,7 +570,8 @@ ignored_x265_warnings = (
     '--tskip disabled, requires --rdlevel 3 or higher',
     'interlace + weightp is not implemented',
     'interlaced (1) > level limit (0)',
-    'Disabling pme and pmode: --pme and --pmode cannot be used with SEA motion search!'
+    'Disabling pme and pmode: --pme and --pmode cannot be used with SEA motion search!',
+    'multi-pass-opt-analysis/multi-pass-opt-distortion incompatible with pmode/pme, Disabling pmode/pme'
 )
 
 
