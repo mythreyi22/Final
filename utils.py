@@ -100,6 +100,12 @@ except ImportError, e:
     sys.exit(1)
 
 try:
+    from conf import my_jm_decoder
+    my_jm_decoder = os.path.expanduser(my_jm_decoder)
+except ImportError, e:
+    print e
+
+try:
     from conf import check_binary, check_variable, fps_check_variable
 except ImportError, e:
     check_binary, check_variable, fps_check_variable = None, None, None
@@ -451,7 +457,7 @@ def setup(argv, preferredlist):
         raise Exception('Unable to find Mercurial executable %s' %version_control)
     if not find_executable('cmake'):
         raise Exception('Unable to find cmake executable')
-    if not find_executable(my_hm_decoder):
+    if not find_executable(my_hm_decoder) or not find_executable(my_jm_decoder):
         raise Exception('Unable to find HM decoder')
     if not os.path.exists(os.path.join(my_x265_source, 'CMakeLists.txt')) and not os.path.exists(os.path.join(my_x265_source, 'configure')):
         raise Exception('my_x265_source does not point to x265 source/ folder')
@@ -2063,12 +2069,13 @@ def savebadstream(tmpdir):
     shutil.copy(badfn, hashfname)
     return hashfname
 
-def checkdecoder(tmpdir):
+def checkdecoder(tmpdir, command):
     global bitstream
-    if encoder_binary_name == 'x264':
-        cmds = [my_hm_decoder, '-i', bitstream, '-o', 'jm-output.yuv']
+    decoder = my_jm_decoder if (encoder_binary_name == 'x264' or '--codec "x264"' in command) else my_hm_decoder
+    if encoder_binary_name == 'x264' or '--codec "x264"' in command:
+        cmds = [decoder, '-i', bitstream, '-o', 'jm-output.yuv']
     else:
-        cmds = [my_hm_decoder, '-b', bitstream]
+        cmds = [decoder, '-b', bitstream]
     proc = Popen(cmds, stdout=PIPE, stderr=PIPE, cwd=tmpdir)
     stdout, errors = async_poll_process(proc, True)
     hashErrors = [l for l in stdout.splitlines() if '***ERROR***' in l]
@@ -2079,7 +2086,7 @@ def checkdecoder(tmpdir):
             table('yuv mismatch', True , True, logger.build.strip('\n'))
 
     if hashErrors or errors:
-        return 'Validation failed with %s\n\n' % my_hm_decoder + \
+        return 'Validation failed with %s\n\n' % decoder + \
                '\n'.join(hashErrors[:2] + ['', errors])
     else:
         return ''
@@ -2167,7 +2174,7 @@ def _test(build, tmpfolder, seq, command,  always, extras):
         if errors is None or errors is False:
             # no golden outputs for this test yet
             logger.write('validating with decoder')
-            decodeerr = checkdecoder(tmpfolder)
+            decodeerr = checkdecoder(tmpfolder, command)
             if decodeerr:
                 hashfname = savebadstream(tmpfolder)
                 decodeerr += '\nThis bitstream was saved to %s' % hashfname
@@ -2188,7 +2195,7 @@ def _test(build, tmpfolder, seq, command,  always, extras):
         elif errors:
             typeoferror = 'VBV' if '--vbv-bufsize' in command else ('ABR' if '--bitrate' in command else '')
             # outputs did not match golden outputs
-            decodeerr = checkdecoder(tmpfolder)
+            decodeerr = checkdecoder(tmpfolder, command)
             if decodeerr:
                 prefix = '%s OUTPUT CHANGE WITH DECODE ERRORS' % typeoferror
                 hashfname = savebadstream(tmpfolder)

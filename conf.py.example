@@ -6,6 +6,7 @@ my_x265_source  = r'C:\projects\x265\source' # location of CMakeLists.txt
 my_sequences    = r'\\bigdata\sequences'
 my_goldens      = r'\\bigdata\golden'
 my_hm_decoder   = r'C:\projects\hm\bin\TAppDecoderStatic'
+my_jm_decoder   = r'C:\projects\jm\bin\ldecod'
 my_progress     = True # do you want to see build / encode status on console?
 # encoder binary name, default x265
 encoder_binary_name = 'x265'
