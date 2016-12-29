@@ -104,6 +104,7 @@ try:
     my_jm_decoder = os.path.expanduser(my_jm_decoder)
 except ImportError, e:
     print e
+    my_jm_decoder = my_hm_decoder
 
 try:
     from conf import check_binary, check_variable, fps_check_variable
