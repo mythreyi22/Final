@@ -1620,7 +1620,7 @@ def encodeharness(key, tmpfolder, sequence, command, always, inextras):
         cmds.extend(shlex.split(command))
         cmds.extend(extras)
         cmds.extend(seq_details)
-    if encoder_binary_name == 'x264':
+    if encoder_binary_name == 'x264' or '--codec "x264"' in command:
         cmds.extend(['--dump-yuv', 'x264-output.yuv'])
     logs, errors, summary = '', '', ''
     if not os.path.isfile(x265):
@@ -2144,7 +2144,7 @@ def _test(build, tmpfolder, seq, command,  always, extras):
     global bitstream, testhashlist
     empty = True
     testhash = testcasehash(seq, command)
-    bitstream = 'bitstream.h264' if encoder_binary_name == 'x264' else 'bitstream.hevc'
+    bitstream = 'bitstream.h264' if (encoder_binary_name == 'x264' or '--codec "x264"' in command) else 'bitstream.hevc'
     testhashlist = []
     # run the encoder, abort early if any errors encountered
     logs, sum, encoder_errors, encoder_error_var = encodeharness(build, tmpfolder, seq, command,  always, extras)

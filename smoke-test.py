@@ -74,7 +74,11 @@ try:
     for key in my_builds:
         logger.setbuild(key)
         for (seq, command) in tests:
-            utils.runtest(key, seq, command, always, extras)
+            if '--codec "x264"' in command:
+                alwaysforx264 = '--frames 100'
+                utils.runtest(key, seq, command, alwaysforx264, extras)
+            else:
+                utils.runtest(key, seq, command, always, extras)
 
     # send results to mail
     logger.email_results()

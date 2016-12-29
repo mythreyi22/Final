@@ -63,6 +63,10 @@ try:
     for build in my_builds:
         logger.setbuild(build)
         for seq, command in tests:
+            if '--codec "x264"' in command:
+                alwaysforx264 = ''
+                utils.runtest(build, seq, command, alwaysforx264, extras)
+                continue
             if 'ffplay' in command and not hasffplay:
                 continue
             if encoder_binary_name == 'x265':
