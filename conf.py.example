@@ -13,6 +13,7 @@ encoder_binary_name = 'x265'
 encoder_library_name = 'libx265'
 feature = False
 feature_value = ''
+feature_type = ''  #Give uhdkit feature in local conf.py file
 
 # version control type, defaulting to hg
 version_control = 'hg'

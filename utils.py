@@ -47,6 +47,11 @@ except ImportError, e:
     encoder_binary_name = 'x265'
 	
 try:
+    from conf import feature_type
+except ImportError, e:
+    feature_type = 'none'	
+	
+try:
     from conf import feature, feature_value
 except ImportError, e:
     feature, feature_value = False, ''
@@ -1621,7 +1626,26 @@ def encodeharness(key, tmpfolder, sequence, command, always, inextras):
         cmds.extend(shlex.split(command))
         cmds.extend(extras)
         cmds.extend(seq_details)
-    if encoder_binary_name == 'x264' or '--codec "x264"' in command:
+    if (encoder_binary_name == 'x264' or '--codec "x264"' in command) and feature_type in command :
+        cmds.extend(['--dump-yuv'])
+        yuv_files, yuv_file = '', ''
+        if '--bitrate' in command:
+            bitrates = command.split('--bitrate ')[1].split(' --frames')[0]
+            bitrate_list = []
+            bitrate_list = bitrates.split(',')
+            for i  in bitrate_list:
+                yuv_files += 'x264-output'+i+'.yuv,'
+            yuv_file = yuv_files[:-1]
+            cmds.extend([yuv_file])
+        elif '--crf' in command:
+            crf = command.split('--crf ')[1].split(' --frames')[0]
+            crf_list = []
+            crf_list = crf.split(',')
+            for i  in crf_list:
+                yuv_files += 'x264-output'+i+'.yuv,'
+            yuv_file = yuv_files[:-1]
+            cmds.extend([yuv_file])
+    elif encoder_binary_name == 'x264' or '--codec "x264"' in command:
         cmds.extend(['--dump-yuv', 'x264-output.yuv'])
     logs, errors, summary = '', '', ''
     if not os.path.isfile(x265):
@@ -2073,8 +2097,11 @@ def savebadstream(tmpdir):
 def checkdecoder(tmpdir, command):
     global bitstream
     decoder = my_jm_decoder if (encoder_binary_name == 'x264' or '--codec "x264"' in command) else my_hm_decoder
-    if encoder_binary_name == 'x264' or '--codec "x264"' in command:
-        cmds = [decoder, '-i', bitstream, '-o', 'jm-output.yuv']
+    if (encoder_binary_name == 'x264' or '--codec "x264"' in command) and feature_type in command:
+        hash = bitstream[:-5]	 
+        cmds = [decoder, '-i', bitstream, '-o', 'jm-output_'+hash+'.yuv']
+    elif encoder_binary_name == 'x264' or '--codec "x264"' in command:
+        cmds = [decoder, '-i', bitstream, '-o', 'jm-output.yuv']		
     else:
         cmds = [decoder, '-b', bitstream]
     proc = Popen(cmds, stdout=PIPE, stderr=PIPE, cwd=tmpdir)
@@ -2153,7 +2180,9 @@ def _test(build, tmpfolder, seq, command,  always, extras):
         testhashlist.append(testhash)
 
     for hash in testhashlist:
-        if '[' in command:
+        if '[' in command and ('--codec "x264"' in command or encoder_binary_name == 'x264'):
+            bitstream = hash + '.h264'
+        elif '[' in command:
             bitstream = hash + '.hevc'
       
         if encoder_errors:
