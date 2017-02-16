@@ -65,6 +65,7 @@ try:
         for seq, command in tests:
             if '--codec "x264"' in command:
                 alwaysforx264 = ''
+                extras = ['--psnr', '--ssim']
                 utils.runtest(build, seq, command, alwaysforx264, extras)
                 continue
             if 'ffplay' in command and not hasffplay:

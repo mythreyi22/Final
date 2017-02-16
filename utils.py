@@ -1578,6 +1578,7 @@ def encodeharness(key, tmpfolder, sequence, command, always, inextras):
        error   - full description of encoder warnings and errors
     '''
     global bitstream
+    original_command = command	
     extras = inextras[:] # make copy so we can append locally
     seq_details         = []
     if sequence.lower().endswith('.yuv'):
@@ -1629,16 +1630,16 @@ def encodeharness(key, tmpfolder, sequence, command, always, inextras):
     if (encoder_binary_name == 'x264' or '--codec "x264"' in command) and feature_type in command :
         cmds.extend(['--dump-yuv'])
         yuv_files, yuv_file = '', ''
-        if '--bitrate' in command:
-            bitrates = command.split('--bitrate ')[1].split(' --frames')[0]
+        if '--bitrate' in original_command:	
+            bitrates = original_command.split('--bitrate ')[1].split(']')[0]
             bitrate_list = []
             bitrate_list = bitrates.split(',')
             for i  in bitrate_list:
                 yuv_files += 'x264-output'+i+'.yuv,'
             yuv_file = yuv_files[:-1]
             cmds.extend([yuv_file])
-        elif '--crf' in command:
-            crf = command.split('--crf ')[1].split(' --frames')[0]
+        elif '--crf' in original_command:
+            crf = original_command.split('--crf ')[1].split(']')[0]
             crf_list = []
             crf_list = crf.split(',')
             for i  in crf_list:
