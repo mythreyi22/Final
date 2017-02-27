@@ -1769,6 +1769,9 @@ def parsex265(tmpfolder, stdout, stderr):
                 if 'PSNR' in words:
                     psnr = words[-2]                    
                     if psnr.startswith('G'): psnr = psnr[7:]
+                    bitrate = words[-1]
+                    bitrate = bitrate[5:]
+                    return bitrate, ssim, psnr
             else:
                 continue			
         return None
