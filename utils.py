@@ -762,7 +762,8 @@ def upload_binaries(ftpfolder=None):
 
         folder = 'Development' # default
         if my_branch_binary == True:
-            folder = findBranch()
+            folder = '' # findBranch()
+            osname = ''
         elif branch == 'stable':
             if tagdistance.endswith('+0'):
                 folder = 'Release'
