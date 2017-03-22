@@ -761,10 +761,7 @@ def upload_binaries(ftpfolder=None):
         tagdistance = hggettagdistance(testrev)
 
         folder = 'Development' # default
-        if my_branch_binary == True:
-            folder = '' # findBranch()
-            osname = ''
-        elif branch == 'stable':
+        if branch == 'stable':
             if tagdistance.endswith('+0'):
                 folder = 'Release'
                 tagdistance = tagdistance[:-2]
@@ -772,7 +769,7 @@ def upload_binaries(ftpfolder=None):
                 folder = 'Stable'
         if ftpfolder:
             my_ftp_folder = ftpfolder
-        ftp_path = '/'.join([my_ftp_folder, osname, folder, build.profile])
+        ftp_path = '/'.join([my_ftp_folder, build.profile]) if my_branch_binary == True else '/'.join([my_ftp_folder, osname, folder, build.profile])
         # open x265 binary & library files and give appropriate names for them to upload
         # ex: Darwin - x265-1.5+365-887ac5e457e0, libx265-1.5+365-887ac5e457e0.dylib
         if encoder_binary_name == 'x265':
