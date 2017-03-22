@@ -728,14 +728,15 @@ else:
             return errors
 
 def findBranch():
-    branch = 'Development'
     out, err = Popen(['hg', 'log', '-l', '10', '--rev', 'reverse(ancestors(.))'], stderr=PIPE, stdout=PIPE, cwd=my_x265_source).communicate()	
     out = out.split('\n')
     for line in out:
         if 'branch:' in line:
             branch = line.split('branch:')[1].strip(' ')
-            if branch == 'default' or branch == 'stable':
-                return branch
+            if branch == 'default':
+                return 'Development'
+            elif branch == 'stable':
+                return 'Stable'
 
 # ftp upload x265 binaries
 def upload_binaries(ftpfolder=None):
