@@ -18,6 +18,7 @@
 # 2) not required [sao], [weightp], [cutree] etc.., because these are
 # already set in presets so golden outputs will store for that preset.
 
+94d59c325e97 New 10-bit and 12-bit lambda tables
 a0eee4b41185 [slower,veryslow] Enable limit-tu in slower and veryslow presets
 db5e22b856f5 New 8-bit lambda tables
 164fbeca146f [ssim-rd] fix for high bit-depth
