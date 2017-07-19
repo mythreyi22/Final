@@ -13,6 +13,7 @@ import platform
 header = {}
 CWD = os.getcwd()
 path = {}
+osname = platform.system()
 try:
     from paths_cfg import my_sequences, my_bitstreams
     from paths_cfg import my_RAMDISK, my_compareFPS, my_csvupload
@@ -135,7 +136,6 @@ class Test:
         self.table = ['<htm><body><table border="1">']
 
     def ramdisk(self):
-        osname = platform.system()
         if self.my_RAMDISK == True:
             self.inputsequences_path = self.my_RAMDiskpath
             self.outputfile_path = self.my_RAMDiskpath
@@ -158,6 +158,8 @@ class Test:
                 self.branch = sys.argv[index+1]
             elif arg == '--mailid':
                 my_email_to = sys.argv[index+1]
+            elif arg == '--discardout':
+                self.out = True
             elif arg == '--':
                 self.cli = sys.argv[index+1:]
                 if not os.name == 'nt':
@@ -171,6 +173,7 @@ class Test:
                 print '\t   --iter <N>          N times to run the command line, default 1 (optional)'
                 print '\t   --branch <string>   binary built from stable\default branch, default NULL (optional)'
                 print '\t   --mailid <string>   receiver mail id to get the results, default NULL (optional)'
+                print '\t   --discardout        to not to generate outputs, default set to my_bitstreams in conf.py'
                 print '\t   -- <string>         binary and additional encoder options'
                 print '\t\n\n for full information please read the readme.md file'
                 sys.exit(0)
@@ -214,15 +217,17 @@ class Test:
                         output_files =  output_files[:-1]
                         self.commands.write(' '.join([self.cli,\
                                                     '--input', os.path.join(self.inputsequences_path, commandline), 
-                                                    '--csv',  csv_files, 
-                                                    '-o ', output_files, 
-                                                    '\n']))
+                                                    '--csv',  csv_files,
+                                                    '-o ',
+                                                    output_files if not self.out == True else '//dev//null' if osname == 'Linux' else 'nul'
+                                                    ,'\n']))
                     else:
                         self.commands.write(' '.join([self.cli,\
                                                     '--input', os.path.join(self.inputsequences_path, cmd.strip('\r\n')), 
                                                     '--csv',  os.path.join(self.resultdir, (self.tag if self.tag != '' else 'x265Benchmark') + '.csv'), 
-                                                    '-o ', os.path.join(self.outputfile_path, ''.join(cmd.strip('\r\n').split(' '))) + self.tag + '.hevc', 
-                                                    '\n']))
+                                                    '-o ',
+                                                    os.path.join(self.outputfile_path, ''.join(cmd.strip('\r\n').split(' '))) + self.tag + '.hevc' if not self.out == True else '//dev//null' if osname == 'Linux' else 'nul'
+                                                    , '\n']))
                 self.sequences.add(cmd.split(' ')[0])
 
         for file in glob.glob("..//AWSsetup//*.txt"):
@@ -234,8 +239,9 @@ class Test:
                                 self.commands.write(' '.join([self.cli,\
                                                             '--input', os.path.join(self.inputsequences_path, cmd.strip('\r\n')), 
                                                             '--csv',  os.path.join(self.resultdir, (self.tag if self.tag != '' else 'x265Benchmark') + '.csv'), 
-                                                            '-o ', os.path.join(self.outputfile_path, ''.join(cmd.strip('\r\n').split(' '))) + self.tag + '.hevc', 
-                                                            '\n']))
+                                                            '-o ',
+                                                            os.path.join(self.outputfile_path, ''.join(cmd.strip('\r\n').split(' '))) + self.tag + '.hevc'  if not self.out == True else '//dev//null' if osname == 'Linux' else 'nul'
+                                                            , '\n']))
                             self.sequences.add(cmd.split(' ')[0])
         self.commands.close()
 

@@ -14,11 +14,14 @@ Run ./x265Batch.py --help for a list of options
         --tag <string>       specific name for your test, default NULL (optional)
         --iter <N>           N times to run the command line, default 1 (optional)
         --branch <string>    binary built from stable\default branch, default NULL (optional)
+        --mailid <string>    receiver mail id to get the results, default NULL (optional)'
+        --discardout         to not to generate outputs, default set to my_bitstreams in conf.py'
         -- <string>          binary and additional encoder options
 
 Examples:
 * x265Batch.py -- ./x265 --psnr --ssim
 * x265Batch.py --tag AVXTest --branch stable --cfg D:\TESTING\commands.conf.txt --iter 3 -- x265_1.7+423-4e0090318769.exe --psnr --ssim --asm=AVX
+* x265Batch.py --tag AVXTest --branch default --discardout --cfg D:\TESTING\commands.conf.txt --iter 3 -- x265_1.7+423-4e0090318769.exe --psnr --ssim --asm=AVX
 
 
 
