@@ -2298,7 +2298,7 @@ def runtest(key, seq, commands, always, extras):
         testhash = testcasehash(seq, commands)
         cmds.append((commands, testhash))	
     else:       	
-        for command in commands.split(','):
+        for command in commands.split('::'):
             command = command.strip()
             if always:
                 command = command + ' ' + always
