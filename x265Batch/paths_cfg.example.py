@@ -7,6 +7,8 @@ my_bitstreams    = r''
 # are you created enough RAM disk? if True, then give path
 my_RAMDISK       = False
 my_RAMDiskpath   = r'/mnt/RAMDISK'
+ffmpeg_feature   = False #Set True for ffmpeg performance test
+lib_path = r'' #set path installation path of the binary
 
 # compare current test performance results with golden (previous) test results
 my_compareFPS = False

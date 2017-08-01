@@ -29,6 +29,16 @@ try:
     from paths_cfg import feature
 except ImportError, e:
     feature = 'empty'
+	
+try:
+    from paths_cfg import lib_path
+except ImportError, e:
+    lib_path = ''
+
+try:
+    from paths_cfg import ffmpeg_feature
+except ImportError, e:
+    ffmpeg_feature = False	
 
 try:
     from paths_cfg import my_RAMDiskpath
@@ -202,7 +212,15 @@ class Test:
         with open(self.cfg) as f:
             for cmd in f:
                 for i in range(self.iter):
-                    if feature in cmd:
+                    if (ffmpeg_feature == True):
+                        ffmpegcommand = (self.cli).split('--psnr ')[0]
+                        cmd = cmd[:-1]
+                        self.commands.write(' '.join([ffmpegcommand ,\
+                                                    '-i', os.path.join(self.inputsequences_path,  cmd.strip('\r\n')),
+                                                    ':csv=',  os.path.join(self.resultdir, (self.tag if self.tag != '' else 'x265Benchmark') + '.csv"'),
+                                                    output_files if not self.out == True else ' -f null /dev/null' if osname == 'Linux' else ' -f null /dev/null '
+                                                    ,'\n']))								
+					elif feature in cmd:
                         commandline = cmd.split('[')[0]
                         commandline += cmd.split('[')[1].split(']')[0]
                         bitrates = cmd.split('--bitrate ')[1].split(']')[0]
@@ -399,6 +417,8 @@ def email_results(test, f1, f2):
 def encode(test): 
     with open(test.fullcommandlines) as lines:
         for cmd in lines:
+            if(ffmpeg_feature == True):
+                os.environ["LD_LIBRARY_PATH"]=lib_path		
             test.setup(cmd)
             print('encoding...', cmd)
             ret = sub.Popen(cmd, shell=True, stderr=test.logfp, stdout=test.logfp)
