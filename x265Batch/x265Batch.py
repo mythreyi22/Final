@@ -92,6 +92,7 @@ class Test:
         self.cfg = ''
         self.cli = ''
         self.iter = 1
+        self.out = False
 
         self.video = ''
         self.preset = ''
