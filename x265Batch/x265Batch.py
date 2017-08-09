@@ -213,6 +213,7 @@ class Test:
             for cmd in f:
                 for i in range(self.iter):
                     if (ffmpeg_feature == True):
+                        output_files = ''
                         ffmpegcommand = (self.cli).split('--psnr ')[0]
                         cmd = cmd[:-1]
                         self.commands.write(' '.join([ffmpegcommand ,\
@@ -220,7 +221,7 @@ class Test:
                                                     ':csv=',  os.path.join(self.resultdir, (self.tag if self.tag != '' else 'x265Benchmark') + '.csv"'),
                                                     output_files if not self.out == True else ' -f null /dev/null' if osname == 'Linux' else ' -f null /dev/null '
                                                     ,'\n']))								
-					elif feature in cmd:
+                    elif feature in cmd:
                         commandline = cmd.split('[')[0]
                         commandline += cmd.split('[')[1].split(']')[0]
                         bitrates = cmd.split('--bitrate ')[1].split(']')[0]
