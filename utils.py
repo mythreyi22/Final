@@ -583,7 +583,8 @@ ignored_x265_warnings = (
     'interlace + weightp is not implemented',
     'interlaced (1) > level limit (0)',
     'Disabling pme and pmode: --pme and --pmode cannot be used with SEA motion search!',
-    'multi-pass-opt-analysis/multi-pass-opt-distortion incompatible with pmode/pme, Disabling pmode/pme'
+    'multi-pass-opt-analysis/multi-pass-opt-distortion incompatible with pmode/pme, Disabling pmode/pme',
+    'GOP Parallel Encoder: set min keyint = max keyint'
 )
 
 
