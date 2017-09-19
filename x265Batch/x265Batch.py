@@ -215,7 +215,10 @@ class Test:
                     if (ffmpeg_feature == True):
                         output_files = ''
                         ffmpegcommand = (self.cli).split('--psnr ')[0]
-                        cmd = cmd[:-1]
+                        if cmd[-1] == '"':
+                            cmd = cmd[:-1]
+                        elif cmd[-2] == '"':
+                            cmd = cmd[:-2]
                         self.commands.write(' '.join([ffmpegcommand ,\
                                                     '-i', os.path.join(self.inputsequences_path,  cmd.strip('\r\n')),
                                                     ':csv=',  os.path.join(self.resultdir, (self.tag if self.tag != '' else 'x265Benchmark') + '.csv"'),
@@ -289,23 +292,23 @@ class Test:
             pass
 
     def parsecsv(self, tok, index, cmdline):
-        if tok == '--input':
+        if tok == '--input' or (ffmpeg_feature == True and tok == '-i'):
             self.video = os.path.basename(cmdline[index + 1])
-        elif tok == '-p' or tok == '--preset':
+        elif tok == '-p' or tok == '--preset'  or (ffmpeg_feature == True and tok == '-preset'):
             self.preset = cmdline[index + 1]
-        elif tok == '--bitrate':
+        elif tok == '--bitrate' or (ffmpeg_feature == True and tok == '-bitrate'):
             self.abr = cmdline[index + 1]
-        elif tok == '-q' or tok == '--qp':
+        elif tok == '-q' or tok == '--qp'  or (ffmpeg_feature == True and tok == '-qp'):
             self.cqp = cmdline[index + 1]
-        elif tok == '--crf':
+        elif tok == '--crf'  or (ffmpeg_feature == True and tok == '-crf'):
             self.crf = cmdline[index + 1]
-        elif tok == '--vbv-bufsize':
+        elif tok == '--vbv-bufsize'  or (ffmpeg_feature == True and tok == '-vbv-bufsize'):
             self.vbvbufsize = cmdline[index + 1]
-        elif tok == '--vbv-maxrate':
+        elif tok == '--vbv-maxrate'  or (ffmpeg_feature == True and tok == '-vbv-maxrate'):
             self.vbvmaxrate = cmdline[index + 1]
-        elif tok == '--feature':
+        elif tok == '--feature'  or (ffmpeg_feature == True and tok == '-feature'):
             self.feature = cmdline[index + 1]
-        elif tok == '--preset':
+        elif tok == '--preset'  or (ffmpeg_feature == True and tok == '-preset'):
             self.preset = cmdline[index + 1]			
 
 
