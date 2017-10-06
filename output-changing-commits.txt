@@ -18,6 +18,7 @@
 # 2) not required [sao], [weightp], [cutree] etc.., because these are
 # already set in presets so golden outputs will store for that preset.
 
+667bbf65185e [slices] Fix VBV hanging issue for multiple threads - output for slices updated
 006c75cf822e Allocate frame threads based on available pool threads and change frame thread count
 94d59c325e97 New 10-bit and 12-bit lambda tables
 a0eee4b41185 [slower,veryslow] Enable limit-tu in slower and veryslow presets
