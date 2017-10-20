@@ -583,7 +583,8 @@ ignored_x265_warnings = (
     'interlace + weightp is not implemented',
     'interlaced (1) > level limit (0)',
     'Disabling pme and pmode: --pme and --pmode cannot be used with SEA motion search!',
-    'multi-pass-opt-analysis/multi-pass-opt-distortion incompatible with pmode/pme, Disabling pmode/pme'
+    'multi-pass-opt-analysis/multi-pass-opt-distortion incompatible with pmode/pme, Disabling pmode/pme',
+    'Turning on repeat-headers for HDR compatibility'
 )
 
 
@@ -1594,6 +1595,12 @@ def encodeharness(key, tmpfolder, sequence, command, always, inextras):
     build = buildObj[key]
     x265 = build.exe
     cmds = [x265]
+    import glob
+    files = glob.iglob(os.path.join(os.path.join(my_x265_source,'test'), "*.json"))
+    for file in files:
+        if os.path.isfile(file):
+            shutil.copy2(file, os.path.abspath(tmpfolder))
+
     if '[' in command:
         command = wrapper.arrangecli(seqfullpath, command, always, extras, None, None)
         cmds.append(seqfullpath)
