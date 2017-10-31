@@ -1636,22 +1636,11 @@ def encodeharness(key, tmpfolder, sequence, command, always, inextras):
     if (encoder_binary_name == 'x264' or '--codec "x264"' in command) and feature_type in command :
         cmds.extend(['--dump-yuv'])
         yuv_files, yuv_file = '', ''
-        if '--bitrate' in original_command:	
-            bitrates = original_command.split('--bitrate ')[1].split(']')[0]
-            bitrate_list = []
-            bitrate_list = bitrates.split(',')
-            for i  in bitrate_list:
-                yuv_files += 'x264-output'+i+'.yuv,'
-            yuv_file = yuv_files[:-1]
-            cmds.extend([yuv_file])
-        elif '--crf' in original_command:
-            crf = original_command.split('--crf ')[1].split(']')[0]
-            crf_list = []
-            crf_list = crf.split(',')
-            for i  in crf_list:
-                yuv_files += 'x264-output'+i+'.yuv,'
-            yuv_file = yuv_files[:-1]
-            cmds.extend([yuv_file])
+        for hash  in testhashlist:
+            yuv_files += 'x264-output_'+hash+'.yuv,'
+        yuv_file = yuv_files[:-1]
+        cmds.extend([yuv_file])
+
     elif encoder_binary_name == 'x264' or '--codec "x264"' in command:
         cmds.extend(['--dump-yuv', 'x264-output.yuv'])
     logs, errors, summary = '', '', ''
@@ -2123,6 +2112,16 @@ def checkdecoder(tmpdir, command):
             logger.testfail('yuv mismatch', 'x264 yuv is mismatched with jm yuv', '')
             table('yuv mismatch', True , True, logger.build.strip('\n'))
 
+    if '--codec "x264"' in command and feature_type in command:
+        filecount = 0	
+        for hash in testhashlist:
+            if os.path.exists(os.path.join(tmpdir, 'jm-output_'+hash+'.yuv')) and os.path.exists(os.path.join(tmpdir, 'x264-output_'+hash+'.yuv')):
+                if not filecmp.cmp(os.path.join(tmpdir, 'jm-output_'+hash+'.yuv'), os.path.join(tmpdir, 'x264-output_'+hash+'.yuv')):
+                   logger.testfail('yuv mismatch', 'x264 yuv is mismatched with jm yuv for file ', filecount, '')
+                   table('yuv mismatch', True , True, logger.build.strip('\n'))
+                   break				   
+            filecount += 1	  #To know which file has failed		
+			
     if hashErrors or errors:
         return 'Validation failed with %s\n\n' % decoder + \
                '\n'.join(hashErrors[:2] + ['', errors])
