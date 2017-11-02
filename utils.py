@@ -2117,7 +2117,8 @@ def checkdecoder(tmpdir, command):
         for hash in testhashlist:
             if os.path.exists(os.path.join(tmpdir, 'jm-output_'+hash+'.yuv')) and os.path.exists(os.path.join(tmpdir, 'x264-output_'+hash+'.yuv')):
                 if not filecmp.cmp(os.path.join(tmpdir, 'jm-output_'+hash+'.yuv'), os.path.join(tmpdir, 'x264-output_'+hash+'.yuv')):
-                   logger.testfail('yuv mismatch', 'x264 yuv is mismatched with jm yuv for file ', filecount, '')
+                   logmessage = 'x264 yuv is mismatched with jm yuv for '+str(filecount)+' file'			
+                   logger.testfail('yuv mismatch', logmessage, '')
                    table('yuv mismatch', True , True, logger.build.strip('\n'))
                    break				   
             filecount += 1	  #To know which file has failed		
